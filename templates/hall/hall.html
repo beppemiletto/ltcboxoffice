@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{%load static%}
+{% block content %}
+<section class="section-content padding-y bg">
+<div class="container">
+    <div class="card">
+        <div class="row no-gutters">
+            <h2>Elenco file hall status per gli eventi validi:</h2>
+        </div>
+    </div>
+
+<!-- ============================ COMPONENT 1 ================================= -->
+<div class="card">
+    {%for event in events%}
+	<div class="row">
+		<aside class="col-md-9">
+            {{event.show.shw_title}}
+            <br>
+            <p class="text">{{event.get_json_path}}</p>
+		</aside>
+		<div class="col-md-3 border-left">
+            <a href="{% url 'hall_detail' event.event_slug %}"> Get Hall JSON File </a>
+        </div>
+
+
+
+
+	</div> <!-- row.// -->
+    {%endfor%}
+</div> <!-- card.// -->
+<!-- ============================ COMPONENT 1 END .// ================================= -->
+
+
+
+
+</div> <!-- container .//  -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+{% endblock %}

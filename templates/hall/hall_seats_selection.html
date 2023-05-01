@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+ <meta charset="UTF-8">
+<style>
+table, th, td {
+    border: 0px dotted green;
+    border-collapse: collapse;
+
+}
+th, td {
+    padding: 0px;
+    font-size:80%;
+    text-align: center;
+}
+
+p { font-size:90%;
+}
+
+.button_seat {
+    background-color: #909090;
+    border: none;
+    color: white;
+    padding: 0px 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 9px;
+    margin: 0px 0px;
+    cursor: pointer;
+}
+
+.button_seat_NA {
+    background-color: #A01010;
+    border: none;
+    color: black;
+    padding: 0px 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 9px;
+    margin: 0px 0px;
+    cursor: pointer;
+}
+</style>
+<script type="text/javascript">
+var seat_name = [
+				 'A5','A6','A7','A8','A9','A10','A11','A12','A13','A14','A15','A16','A17','A18',
+			'B4','B5','B6','B7','B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18',
+		'C3','C4','C5','C6','C7','C8','C9','C10','C11','C12','C13','C14','C15','C16','C17','C18',
+		'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18',
+		'E3','E4','E5','E6','E7','E8','E9','E10','E11','E12','E13','E14','E15','E16','E17','E18',
+	'F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','F13','F14','F15','F16','F17','F18','F19',
+	'G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13','G14','G15','G16','G17','G18','G19',	
+	'H2','H3','H4','H5','H6','H7','H8','H9','H10','H11','H12','H13','H14','H15','H16','H17','H18','H19',	
+	'I2','I3','I4','I5','I6','I7','I8','I9','I10','I11','I12','I13','I14','I15','I16','I17','I18','I19',	
+	'L2','L3','L4','L5','L6','L7','L8','L9','L10','L11','L12','L13','L14','L15','L16','L17','L18','L19',	
+	'M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12','M13','M14','M15','M16','M17','M18','M19',		
+	'N2','N3','N4','N5','N6','N7','N8','N9','N10','N11','N12','N13','N14','N15','N16','N17','N18','N19',		
+'O1','O2','O3','O4','O5','O6','O7','O8','O9','O10','O11','O12','O13','O14','O15','O16','O17','O18','O19','O20',	
+'P1','P2','P3','P4','P5','P6','P7','P8','P9','P10','P11','P12','P13','P14','P15','P16','P17','P18','P19','P20',	
+'Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10','Q11','Q12','Q13','Q14','Q15','Q16','Q17','Q18','Q19','Q20'
+			]
+var choice =[];
+function selectSeat(seat) {
+		var seatNumberSelected=seat_name.indexOf(seat);
+		var seatStatus = seatsStatus[seatNumberSelected]
+		if (seatStatus == '1') {
+			if (choice.length <=14){
+			toggleStatus(seatNumberSelected,'5')
+			choice.splice(0,0,seat);    return render(request, 'hall/hall_detail.html', context)
+
+			console.log(choice);
+			seatsStatus[seatNumberSelected]='5'
+			}
+			else {
+				alert("Spiacenti ma puoi prenotare al massimo 15 posti per questo evento.")
+			}
+		}
+		if (seatStatus == '5') {
+			toggleStatus(seatNumberSelected,'1')
+			seatRemoved=choice.indexOf(seat);
+			if (seatRemoved>-1){
+			choice.splice(seatRemoved,1);
+			}
+			console.log(choice);
+		seatsStatus[seatNumberSelected]='1'
+		}
+		if (seatStatus == '2') {
+		alert('Posto non disponibile!');
+			console.log("Choice=",choice);
+		}
+		if (seatStatus == '3') {
+		alert('Posto non disponibile!');
+			console.log("Choice=",choice);
+		}
+		if (seatStatus == '4') {
+		alert('Posto non disponibile!');
+			console.log("Choice=",choice);
+		}
+
+	//set value
+	document.getElementById('selected_seats').value = choice;	
+	//get value
+	var hidderSelectedSeatsValue = document.getElementById('selected_seats').value;
+	console.log("Hidden element=",hidderSelectedSeatsValue);
+}
+function toggleStatus(seat,newStatus){
+	var property = document.getElementById(seat_name[seat]);
+        if (newStatus == '5') {
+            property.style.backgroundColor = "#DFDF00"
+		}
+        if (newStatus == '1') {
+            property.style.backgroundColor = "#00DF00"
+		}
+}
+
+function readStatus() {
+seatsStatus = [{% for seat in  status %} {{seat}} ,{%endfor%}];
+var statusLen = seatsStatus.length;
+var i;
+var text = "";
+for (i = 0; i < 263; i++) {
+	var property = document.getElementById(seat_name[i]);
+        if (seatsStatus[i] == '5') {
+            property.style.backgroundColor = "#DFDF00"
+		}
+        if (seatsStatus[i] == '1') {
+            property.style.backgroundColor = "#00DF00"
+		}
+        if (seatsStatus[i] == '2') {
+            property.style.backgroundColor = "#DF0000"
+		}
+		if (seatsStatus[i] == '0') {
+            property.style.backgroundColor = "#050505"
+		}
+	}
+//get value
+//var hidderSelectedSeatsValue = document.getElementById('myHiddenField').value;
+
+}
+</script>
+</head>
+    
+<link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+<body onload="readStatus()">
+	<div class="w3-container w3-orange" style="width:800px">
+		<h7>Teatro Comunale di Cambiano  {{event.show}} / {{event.event_date}}</h7>
+	</div>
+	<div class="w3-row-padding2">
+		<div class="w3-full-padding2">
+<table style="width:800px">
+	<tr>
+	<td colspan = "7"> </td><td colspan = "7"><p>Palco </p> </td><td colspan = "7"> </td>
+	</tr>
+	<tr>
+		<td id='demo' colspan = "4">	</td>
+		<td id='A5'><button class="button_seat_NA" onclick="selectSeat('A5')">A05</button></td>
+		<td id='A6'><button class="button_seat_NA" onclick="selectSeat('A6')">A06</button></td>
+		<td id='A7'><button class="button_seat_NA" onclick="selectSeat('A7')">A07</button></td>
+		<td id='A8'><button class="button_seat_NA" onclick="selectSeat('A8')">A08</button></td>
+		<td id='A9'><button class="button_seat_NA" onclick="selectSeat('A9')">A09</button></td>
+		<td id='A10'><button class="button_seat_NA" onclick="selectSeat('A10')">A10</button></td>
+		<td> <p>Fila A </p></td>
+		<td id='A11'><button class="button_seat_NA" onclick="selectSeat('A11')">A11</button></td>
+		<td id='A12'><button class="button_seat_NA" onclick="selectSeat('A12')">A12</button></td>
+		<td id='A13'><button class="button_seat_NA" onclick="selectSeat('A13')">A13</button></td>
+		<td id='A14'><button class="button_seat_NA" onclick="selectSeat('A14')">A14</button></td>
+		<td id='A15'><button class="button_seat_NA" onclick="selectSeat('A15')">A15</button></td>
+		<td id='A16'><button class="button_seat_NA" onclick="selectSeat('A16')">A16</button></td>
+		<td id='A17'><button class="button_seat_NA" onclick="selectSeat('A17')">A17</button></td>
+		<td id='A18'><button class="button_seat_NA" onclick="selectSeat('A18')">A18</button></td>
+		<td colspan = "2">	</td>
+	</tr>
+	<tr>
+		<td colspan = "3">	</td>
+		<td id='B4'><button class="button_seat_NA" onclick="selectSeat('B4')">B04</button></td>
+		<td id='B5'><button class="button_seat_NA" onclick="selectSeat('B5')">B05</button></td>
+		<td id='B6'><button class="button_seat_NA" onclick="selectSeat('B6')">B06</button></td>
+		<td id='B7'><button class="button_seat_NA" onclick="selectSeat('B7')">B07</button></td>
+		<td id='B8'><button class="button_seat_NA" onclick="selectSeat('B8')">B08</button></td>
+		<td id='B9'><button class="button_seat_NA" onclick="selectSeat('B9')">B09</button></td>
+		<td id='B10'><button class="button_seat_NA" onclick="selectSeat('B10')">B10</button></td>
+		<td> <p>Fila B </p></td>
+		<td id='B11'><button class="button_seat_NA" onclick="selectSeat('B11')">B11</button></td>
+		<td id='B12'><button class="button_seat_NA" onclick="selectSeat('B12')">B12</button></td>
+		<td id='B13'><button class="button_seat_NA" onclick="selectSeat('B13')">B13</button></td>
+		<td id='B14'><button class="button_seat_NA" onclick="selectSeat('B14')">B14</button></td>
+		<td id='B15'><button class="button_seat_NA" onclick="selectSeat('B15')">B15</button></td>
+		<td id='B16'><button class="button_seat_NA" onclick="selectSeat('B16')">B16</button></td>
+		<td id='B17'><button class="button_seat_NA" onclick="selectSeat('B17')">B17</button></td>
+		<td id='B18'><button class="button_seat_NA" onclick="selectSeat('B18')">B18</button></td>		<td colspan = "2">	</td>
+	</tr>
+	<tr>
+		<td colspan = "2">	</td>
+		<td id='C3'><button class="button_seat" onclick="selectSeat('C3')">C03</button></td>
+		<td id='C4'><button class="button_seat" onclick="selectSeat('C4')">C04</button></td>
+		<td id='C5'><button class="button_seat" onclick="selectSeat('C5')">C05</button></td>
+		<td id='C6'><button class="button_seat" onclick="selectSeat('C6')">C06</button></td>
+		<td id='C7'><button class="button_seat" onclick="selectSeat('C7')">C07</button></td>
+		<td id='C8'><button class="button_seat" onclick="selectSeat('C8')">C08</button></td>
+		<td id='C9'><button class="button_seat" onclick="selectSeat('C9')">C09</button></td>
+		<td id='C10'><button class="button_seat" onclick="selectSeat('C10')">C10</button></td>
+		<td> <p>Fila C </p></td>
+		<td id='C11'><button class="button_seat" onclick="selectSeat('C11')">C11</button></td>
+		<td id='C12'><button class="button_seat" onclick="selectSeat('C12')">C12</button></td>
+		<td id='C13'><button class="button_seat" onclick="selectSeat('C13')">C13</button></td>
+		<td id='C14'><button class="button_seat" onclick="selectSeat('C14')">C14</button></td>
+		<td id='C15'><button class="button_seat" onclick="selectSeat('C15')">C15</button></td>
+		<td id='C16'><button class="button_seat" onclick="selectSeat('C16')">C16</button></td>
+		<td id='C17'><button class="button_seat" onclick="selectSeat('C17')">C17</button></td>
+		<td id='C18'><button class="button_seat" onclick="selectSeat('C18')">C18</button></td>
+		<td colspan = "2">	</td>
+	</tr>
+	<tr>
+		<td colspan = "2">	</td>
+		<td id='D3'><button class="button_seat" onclick="selectSeat('D3')">D03</button></td>
+		<td id='D4'><button class="button_seat" onclick="selectSeat('D4')">D04</button></td>
+		<td id='D5'><button class="button_seat" onclick="selectSeat('D5')">D05</button></td>
+		<td id='D6'><button class="button_seat" onclick="selectSeat('D6')">D06</button></td>
+		<td id='D7'><button class="button_seat" onclick="selectSeat('D7')">D07</button></td>
+		<td id='D8'><button class="button_seat" onclick="selectSeat('D8')">D08</button></td>
+		<td id='D9'><button class="button_seat" onclick="selectSeat('D9')">D09</button></td>
+		<td id='D10'><button class="button_seat" onclick="selectSeat('D10')">D10</button></td>
+		<td> <p>Fila D </p></td>
+		<td id='D11'><button class="button_seat" onclick="selectSeat('D11')">D11</button></td>
+		<td id='D12'><button class="button_seat" onclick="selectSeat('D12')">D12</button></td>
+		<td id='D13'><button class="button_seat" onclick="selectSeat('D13')">D13</button></td>
+		<td id='D14'><button class="button_seat" onclick="selectSeat('D14')">D14</button></td>
+		<td id='D15'><button class="button_seat" onclick="selectSeat('D15')">D15</button></td>
+		<td id='D16'><button class="button_seat" onclick="selectSeat('D16')">D16</button></td>
+		<td id='D17'><button class="button_seat" onclick="selectSeat('D17')">D17</button></td>
+		<td id='D18'><button class="button_seat" onclick="selectSeat('D18')">D18</button></td>
+		<td colspan = "2">	</td>
+	</tr>
+	<tr>
+		<td colspan = "2">	</td>
+		<td id='E3'><button class="button_seat" onclick="selectSeat('E3')">E03</button></td>
+		<td id='E4'><button class="button_seat" onclick="selectSeat('E4')">E04</button></td>
+		<td id='E5'><button class="button_seat" onclick="selectSeat('E5')">E05</button></td>
+		<td id='E6'><button class="button_seat" onclick="selectSeat('E6')">E06</button></td>
+		<td id='E7'><button class="button_seat" onclick="selectSeat('E7')">E07</button></td>
+		<td id='E8'><button class="button_seat" onclick="selectSeat('E8')">E08</button></td>
+		<td id='E9'><button class="button_seat" onclick="selectSeat('E9')">E09</button></td>
+		<td id='E10'><button class="button_seat" onclick="selectSeat('E10')">E10</button></td>
+		<td> <p>Fila E </p></td>
+		<td id='E11'><button class="button_seat" onclick="selectSeat('E11')">E11</button></td>
+		<td id='E12'><button class="button_seat" onclick="selectSeat('E12')">E12</button></td>
+		<td id='E13'><button class="button_seat" onclick="selectSeat('E13')">E13</button></td>
+		<td id='E14'><button class="button_seat" onclick="selectSeat('E14')">E14</button></td>
+		<td id='E15'><button class="button_seat" onclick="selectSeat('E15')">E15</button></td>
+		<td id='E16'><button class="button_seat" onclick="selectSeat('E16')">E16</button></td>
+		<td id='E17'><button class="button_seat" onclick="selectSeat('E17')">E17</button></td>
+		<td id='E18'><button class="button_seat" onclick="selectSeat('E18')">E18</button></td>
+		<td colspan = "2">	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='F2'><button class="button_seat" onclick="selectSeat('F2')">F02</button></td>
+		<td id='F3'><button class="button_seat" onclick="selectSeat('F3')">F03</button></td>
+		<td id='F4'><button class="button_seat" onclick="selectSeat('F4')">F04</button></td>
+		<td id='F5'><button class="button_seat" onclick="selectSeat('F5')">F05</button></td>
+		<td id='F6'><button class="button_seat" onclick="selectSeat('F6')">F06</button></td>
+		<td id='F7'><button class="button_seat" onclick="selectSeat('F7')">F07</button></td>
+		<td id='F8'><button class="button_seat" onclick="selectSeat('F8')">F08</button></td>
+		<td id='F9'><button class="button_seat" onclick="selectSeat('F9')">F09</button></td>
+		<td id='F10'><button class="button_seat" onclick="selectSeat('F10')">F10</button></td>
+		<td> <p>Fila F </p></td>
+		<td id='F11'><button class="button_seat" onclick="selectSeat('F11')">F11</button></td>
+		<td id='F12'><button class="button_seat" onclick="selectSeat('F12')">F12</button></td>
+		<td id='F13'><button class="button_seat" onclick="selectSeat('F13')">F13</button></td>
+		<td id='F14'><button class="button_seat" onclick="selectSeat('F14')">F14</button></td>
+		<td id='F15'><button class="button_seat" onclick="selectSeat('F15')">F15</button></td>
+		<td id='F16'><button class="button_seat" onclick="selectSeat('F16')">F16</button></td>
+		<td id='F17'><button class="button_seat" onclick="selectSeat('F17')">F17</button></td>
+		<td id='F18'><button class="button_seat" onclick="selectSeat('F18')">F18</button></td>
+		<td id='F19'><button class="button_seat" onclick="selectSeat('F19')">F19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='G2'><button class="button_seat" onclick="selectSeat('G2')">G02</button></td>
+		<td id='G3'><button class="button_seat" onclick="selectSeat('G3')">G03</button></td>
+		<td id='G4'><button class="button_seat" onclick="selectSeat('G4')">G04</button></td>
+		<td id='G5'><button class="button_seat" onclick="selectSeat('G5')">G05</button></td>
+		<td id='G6'><button class="button_seat" onclick="selectSeat('G6')">G06</button></td>
+		<td id='G7'><button class="button_seat" onclick="selectSeat('G7')">G07</button></td>
+		<td id='G8'><button class="button_seat" onclick="selectSeat('G8')">G08</button></td>
+		<td id='G9'><button class="button_seat" onclick="selectSeat('G9')">G09</button></td>
+		<td id='G10'><button class="button_seat" onclick="selectSeat('G10')">G10</button></td>
+		<td> <p>Fila G </p></td>
+		<td id='G11'><button class="button_seat" onclick="selectSeat('G11')">G11</button></td>
+		<td id='G12'><button class="button_seat" onclick="selectSeat('G12')">G12</button></td>
+		<td id='G13'><button class="button_seat" onclick="selectSeat('G13')">G13</button></td>
+		<td id='G14'><button class="button_seat" onclick="selectSeat('G14')">G14</button></td>
+		<td id='G15'><button class="button_seat" onclick="selectSeat('G15')">G15</button></td>
+		<td id='G16'><button class="button_seat" onclick="selectSeat('G16')">G16</button></td>
+		<td id='G17'><button class="button_seat" onclick="selectSeat('G17')">G17</button></td>
+		<td id='G18'><button class="button_seat" onclick="selectSeat('G18')">G18</button></td>
+		<td id='G19'><button class="button_seat" onclick="selectSeat('G19')">G19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='H2'><button class="button_seat" onclick="selectSeat('H2')">H02</button></td>
+		<td id='H3'><button class="button_seat" onclick="selectSeat('H3')">H03</button></td>
+		<td id='H4'><button class="button_seat" onclick="selectSeat('H4')">H04</button></td>
+		<td id='H5'><button class="button_seat" onclick="selectSeat('H5')">H05</button></td>
+		<td id='H6'><button class="button_seat" onclick="selectSeat('H6')">H06</button></td>
+		<td id='H7'><button class="button_seat" onclick="selectSeat('H7')">H07</button></td>
+		<td id='H8'><button class="button_seat" onclick="selectSeat('H8')">H08</button></td>
+		<td id='H9'><button class="button_seat" onclick="selectSeat('H9')">H09</button></td>
+		<td id='H10'><button class="button_seat" onclick="selectSeat('H10')">H10</button></td>
+		<td> <p>Fila H </p></td>
+		<td id='H11'><button class="button_seat" onclick="selectSeat('H11')">H11</button></td>
+		<td id='H12'><button class="button_seat" onclick="selectSeat('H12')">H12</button></td>
+		<td id='H13'><button class="button_seat" onclick="selectSeat('H13')">H13</button></td>
+		<td id='H14'><button class="button_seat" onclick="selectSeat('H14')">H14</button></td>
+		<td id='H15'><button class="button_seat" onclick="selectSeat('H15')">H15</button></td>
+		<td id='H16'><button class="button_seat" onclick="selectSeat('H16')">H16</button></td>
+		<td id='H17'><button class="button_seat" onclick="selectSeat('H17')">H17</button></td>
+		<td id='H18'><button class="button_seat" onclick="selectSeat('H18')">H18</button></td>
+		<td id='H19'><button class="button_seat" onclick="selectSeat('H19')">H19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td colspan="21"> corridoio	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='I2'><button class="button_seat" onclick="selectSeat('I2')">I02</button></td>
+		<td id='I3'><button class="button_seat" onclick="selectSeat('I3')">I03</button></td>
+		<td id='I4'><button class="button_seat" onclick="selectSeat('I4')">I04</button></td>
+		<td id='I5'><button class="button_seat" onclick="selectSeat('I5')">I05</button></td>
+		<td id='I6'><button class="button_seat" onclick="selectSeat('I6')">I06</button></td>
+		<td id='I7'><button class="button_seat" onclick="selectSeat('I7')">I07</button></td>
+		<td id='I8'><button class="button_seat" onclick="selectSeat('I8')">I08</button></td>
+		<td id='I9'><button class="button_seat" onclick="selectSeat('I9')">I09</button></td>
+		<td id='I10'><button class="button_seat" onclick="selectSeat('I10')">I10</button></td>
+		<td> <p>Fila I </p></td>
+		<td id='I11'><button class="button_seat" onclick="selectSeat('I11')">I11</button></td>
+		<td id='I12'><button class="button_seat" onclick="selectSeat('I12')">I12</button></td>
+		<td id='I13'><button class="button_seat" onclick="selectSeat('I13')">I13</button></td>
+		<td id='I14'><button class="button_seat" onclick="selectSeat('I14')">I14</button></td>
+		<td id='I15'><button class="button_seat" onclick="selectSeat('I15')">I15</button></td>
+		<td id='I16'><button class="button_seat" onclick="selectSeat('I16')">I16</button></td>
+		<td id='I17'><button class="button_seat" onclick="selectSeat('I17')">I17</button></td>
+		<td id='I18'><button class="button_seat" onclick="selectSeat('I18')">I18</button></td>
+		<td id='I19'><button class="button_seat" onclick="selectSeat('I19')">I19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='L2'><button class="button_seat" onclick="selectSeat('L2')">L02</button></td>
+		<td id='L3'><button class="button_seat" onclick="selectSeat('L3')">L03</button></td>
+		<td id='L4'><button class="button_seat" onclick="selectSeat('L4')">L04</button></td>
+		<td id='L5'><button class="button_seat" onclick="selectSeat('L5')">L05</button></td>
+		<td id='L6'><button class="button_seat" onclick="selectSeat('L6')">L06</button></td>
+		<td id='L7'><button class="button_seat" onclick="selectSeat('L7')">L07</button></td>
+		<td id='L8'><button class="button_seat" onclick="selectSeat('L8')">L08</button></td>
+		<td id='L9'><button class="button_seat" onclick="selectSeat('L9')">L09</button></td>
+		<td id='L10'><button class="button_seat" onclick="selectSeat('L10')">L10</button></td>
+		<td> <p>Fila L </p></td>
+		<td id='L11'><button class="button_seat" onclick="selectSeat('L11')">L11</button></td>
+		<td id='L12'><button class="button_seat" onclick="selectSeat('L12')">L12</button></td>
+		<td id='L13'><button class="button_seat" onclick="selectSeat('L13')">L13</button></td>
+		<td id='L14'><button class="button_seat" onclick="selectSeat('L14')">L14</button></td>
+		<td id='L15'><button class="button_seat" onclick="selectSeat('L15')">L15</button></td>
+		<td id='L16'><button class="button_seat" onclick="selectSeat('L16')">L16</button></td>
+		<td id='L17'><button class="button_seat" onclick="selectSeat('L17')">L17</button></td>
+		<td id='L18'><button class="button_seat" onclick="selectSeat('L18')">L18</button></td>
+		<td id='L19'><button class="button_seat" onclick="selectSeat('L19')">L19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='M2'><button class="button_seat" onclick="selectSeat('M2')">M02</button></td>
+		<td id='M3'><button class="button_seat" onclick="selectSeat('M3')">M03</button></td>
+		<td id='M4'><button class="button_seat" onclick="selectSeat('M4')">M04</button></td>
+		<td id='M5'><button class="button_seat" onclick="selectSeat('M5')">M05</button></td>
+		<td id='M6'><button class="button_seat" onclick="selectSeat('M6')">M06</button></td>
+		<td id='M7'><button class="button_seat" onclick="selectSeat('M7')">M07</button></td>
+		<td id='M8'><button class="button_seat" onclick="selectSeat('M8')">M08</button></td>
+		<td id='M9'><button class="button_seat" onclick="selectSeat('M9')">M09</button></td>
+		<td id='M10'><button class="button_seat" onclick="selectSeat('M10')">M10</button></td>
+		<td> <p>Fila M </p></td>
+		<td id='M11'><button class="button_seat" onclick="selectSeat('M11')">M11</button></td>
+		<td id='M12'><button class="button_seat" onclick="selectSeat('M12')">M12</button></td>
+		<td id='M13'><button class="button_seat" onclick="selectSeat('M13')">M13</button></td>
+		<td id='M14'><button class="button_seat" onclick="selectSeat('M14')">M14</button></td>
+		<td id='M15'><button class="button_seat" onclick="selectSeat('M15')">M15</button></td>
+		<td id='M16'><button class="button_seat" onclick="selectSeat('M16')">M16</button></td>
+		<td id='M17'><button class="button_seat" onclick="selectSeat('M17')">M17</button></td>
+		<td id='M18'><button class="button_seat" onclick="selectSeat('M18')">M18</button></td>
+		<td id='M19'><button class="button_seat" onclick="selectSeat('M19')">M19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td>	</td>
+		<td id='N2'><button class="button_seat" onclick="selectSeat('N2')">N02</button></td>
+		<td id='N3'><button class="button_seat" onclick="selectSeat('N3')">N03</button></td>
+		<td id='N4'><button class="button_seat" onclick="selectSeat('N4')">N04</button></td>
+		<td id='N5'><button class="button_seat" onclick="selectSeat('N5')">N05</button></td>
+		<td id='N6'><button class="button_seat" onclick="selectSeat('N6')">N06</button></td>
+		<td id='N7'><button class="button_seat" onclick="selectSeat('N7')">N07</button></td>
+		<td id='N8'><button class="button_seat" onclick="selectSeat('N8')">N08</button></td>
+		<td id='N9'><button class="button_seat" onclick="selectSeat('N9')">N09</button></td>
+		<td id='N10'><button class="button_seat" onclick="selectSeat('N10')">N10</button></td>
+		<td> <p>Fila N </p></td>
+		<td id='N11'><button class="button_seat" onclick="selectSeat('N11')">N11</button></td>
+		<td id='N12'><button class="button_seat" onclick="selectSeat('N12')">N12</button></td>
+		<td id='N13'><button class="button_seat" onclick="selectSeat('N13')">N13</button></td>
+		<td id='N14'><button class="button_seat" onclick="selectSeat('N14')">N14</button></td>
+		<td id='N15'><button class="button_seat" onclick="selectSeat('N15')">N15</button></td>
+		<td id='N16'><button class="button_seat" onclick="selectSeat('N16')">N16</button></td>
+		<td id='N17'><button class="button_seat" onclick="selectSeat('N17')">N17</button></td>
+		<td id='N18'><button class="button_seat" onclick="selectSeat('N18')">N18</button></td>
+		<td id='N19'><button class="button_seat" onclick="selectSeat('N19')">N19</button></td>
+		<td>	</td>
+	</tr>
+	<tr>
+		<td id='O1'><button class="button_seat" onclick="selectSeat('O1')">O01</button></td>
+		<td id='O2'><button class="button_seat" onclick="selectSeat('O2')">O02</button></td>
+		<td id='O3'><button class="button_seat" onclick="selectSeat('O3')">O03</button></td>
+		<td id='O4'><button class="button_seat" onclick="selectSeat('O4')">O04</button></td>
+		<td id='O5'><button class="button_seat" onclick="selectSeat('O5')">O05</button></td>
+		<td id='O6'><button class="button_seat" onclick="selectSeat('O6')">O06</button></td>
+		<td id='O7'><button class="button_seat" onclick="selectSeat('O7')">O07</button></td>
+		<td id='O8'><button class="button_seat" onclick="selectSeat('O8')">O08</button></td>
+		<td id='O9'><button class="button_seat" onclick="selectSeat('O9')">O09</button></td>
+		<td id='O10'><button class="button_seat" onclick="selectSeat('O10')">O10</button></td>
+		<td> <p>Fila O </p></td>
+		<td id='O11'><button class="button_seat" onclick="selectSeat('O11')">O11</button></td>
+		<td id='O12'><button class="button_seat" onclick="selectSeat('O12')">O12</button></td>
+		<td id='O13'><button class="button_seat" onclick="selectSeat('O13')">O13</button></td>
+		<td id='O14'><button class="button_seat" onclick="selectSeat('O14')">O14</button></td>
+		<td id='O15'><button class="button_seat" onclick="selectSeat('O15')">O15</button></td>
+		<td id='O16'><button class="button_seat" onclick="selectSeat('O16')">O16</button></td>
+		<td id='O17'><button class="button_seat" onclick="selectSeat('O17')">O17</button></td>
+		<td id='O18'><button class="button_seat" onclick="selectSeat('O18')">O18</button></td>
+		<td id='O19'><button class="button_seat" onclick="selectSeat('O19')">O19</button></td>
+		<td id='O20'><button class="button_seat" onclick="selectSeat('O20')">O20</button></td>
+	</tr>
+	<tr>
+		<td id='P1'><button class="button_seat" onclick="selectSeat('P1')">P01</button></td>
+		<td id='P2'><button class="button_seat" onclick="selectSeat('P2')">P02</button></td>
+		<td id='P3'><button class="button_seat" onclick="selectSeat('P3')">P03</button></td>
+		<td id='P4'><button class="button_seat" onclick="selectSeat('P4')">P04</button></td>
+		<td id='P5'><button class="button_seat" onclick="selectSeat('P5')">P05</button></td>
+		<td id='P6'><button class="button_seat" onclick="selectSeat('P6')">P06</button></td>
+		<td id='P7'><button class="button_seat" onclick="selectSeat('P7')">P07</button></td>
+		<td id='P8'><button class="button_seat" onclick="selectSeat('P8')">P08</button></td>
+		<td id='P9'><button class="button_seat" onclick="selectSeat('P9')">P09</button></td>
+		<td id='P10'><button class="button_seat" onclick="selectSeat('P10')">P10</button></td>
+		<td> <p>Fila P </p></td>
+		<td id='P11'><button class="button_seat" onclick="selectSeat('P11')">P11</button></td>
+		<td id='P12'><button class="button_seat" onclick="selectSeat('P12')">P12</button></td>
+		<td id='P13'><button class="button_seat" onclick="selectSeat('P13')">P13</button></td>
+		<td id='P14'><button class="button_seat" onclick="selectSeat('P14')">P14</button></td>
+		<td id='P15'><button class="button_seat" onclick="selectSeat('P15')">P15</button></td>
+		<td id='P16'><button class="button_seat" onclick="selectSeat('P16')">P16</button></td>
+		<td id='P17'><button class="button_seat" onclick="selectSeat('P17')">P17</button></td>
+		<td id='P18'><button class="button_seat" onclick="selectSeat('P18')">P18</button></td>
+		<td id='P19'><button class="button_seat" onclick="selectSeat('P19')">P19</button></td>
+		<td id='P20'><button class="button_seat" onclick="selectSeat('P20')">P20</button></td>
+	</tr>
+	<tr>
+		<td id='Q1'><button class="button_seat" onclick="selectSeat('Q1')">Q01</button></td>
+		<td id='Q2'><button class="button_seat" onclick="selectSeat('Q2')">Q02</button></td>
+		<td id='Q3'><button class="button_seat" onclick="selectSeat('Q3')">Q03</button></td>
+		<td id='Q4'><button class="button_seat" onclick="selectSeat('Q4')">Q04</button></td>
+		<td id='Q5'><button class="button_seat" onclick="selectSeat('Q5')">Q05</button></td>
+		<td id='Q6'><button class="button_seat" onclick="selectSeat('Q6')">Q06</button></td>
+		<td id='Q7'><button class="button_seat" onclick="selectSeat('Q7')">Q07</button></td>
+		<td id='Q8'><button class="button_seat" onclick="selectSeat('Q8')">Q08</button></td>
+		<td id='Q9'><button class="button_seat" onclick="selectSeat('Q9')">Q09</button></td>
+		<td id='Q10'><button class="button_seat" onclick="selectSeat('Q10')">Q10</button></td>
+		<td> <p>Fila Q </p></td>
+		<td id='Q11'><button class="button_seat" onclick="selectSeat('Q11')">Q11</button></td>
+		<td id='Q12'><button class="button_seat" onclick="selectSeat('Q12')">Q12</button></td>
+		<td id='Q13'><button class="button_seat" onclick="selectSeat('Q13')">Q13</button></td>
+		<td id='Q14'><button class="button_seat" onclick="selectSeat('Q14')">Q14</button></td>
+		<td id='Q15'><button class="button_seat" onclick="selectSeat('Q15')">Q15</button></td>
+		<td id='Q16'><button class="button_seat" onclick="selectSeat('Q16')">Q16</button></td>
+		<td id='Q17'><button class="button_seat" onclick="selectSeat('Q17')">Q17</button></td>
+		<td id='Q18'><button class="button_seat" onclick="selectSeat('Q18')">Q18</button></td>
+		<td id='Q19'><button class="button_seat" onclick="selectSeat('Q19')">Q19</button></td>
+		<td id='Q20'><button class="button_seat" onclick="selectSeat('Q20')">Q20</button></td>
+	</tr>
+	<tr>
+		<td colspan="21"> Clicca qui <a href="{% url 'hall' %}"><font size="3" color="red">Annulla tutto</font> per tornare al menu principale.</a></td>
+	</tr>
+
+</table>
+
+			</div>
+
+
+		</div>
+		<div class="w3-container w3-orange" style="width:800px">
+<form method="POST" action="{% url 'hall' %}">
+	{% csrf_token %}
+<table style="border: 2px solid white;">
+    <tr> <th colspan="2"> Prenotazione a nome di: </th></tr>
+    {{ form.as_table }}
+</table>
+  <input type="submit" value="Finito">
+
+  <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
+  <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
+</form>
+
+<p>Clicca su Finito per terminare la selezione dei posti.</p>
+		</div>
+
+</body>
+</html>

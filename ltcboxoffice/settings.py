@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'billboard',
     'accounts',
+    'store',
+    'hall',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'billboard.context_processors.menu_links',
             ],
         },
     },
@@ -119,7 +122,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
     'ltcboxoffice/static',
@@ -128,6 +131,9 @@ STATICFILES_DIRS = [
 # media files configurations
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# event csv files HALL STATUS configurations
+HALL_STATUS_FILES_ROOT = BASE_DIR / 'hall_jsons' 
 
 
 

@@ -12,10 +12,11 @@
 <link href="{% static 'images/favicon.ico' %}" rel="shortcut icon" type="image/x-icon">
 
 <!-- jQuery -->
-<script src="{% static 'js/jquery-2.0.0.min.js' %}"type="text/javascript"></script>
+<!-- <script src="{% static 'js/jquery-2.0.0.min.js' %}" type="text/javascript"></script> -->
+<script src="{% static 'js/jquery-3.6.4.min.js' %}" type="text/javascript"></script>
 
 <!-- Bootstrap4 files-->
-<script src="{% static 'js/bootstrap.bundle.min.js' %}"type="text/javascript"></script>
+<script src="{% static 'js/bootstrap.bundle.min.js' %}" type="text/javascript"></script>
 <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet" type="text/css"/>
 
 <!-- Font awesome 5 -->
@@ -26,14 +27,16 @@
 <link href="{% static 'css/responsive.css' %}" rel="stylesheet" media="only screen and (max-width: 1200px)" />
 
 <!-- custom javascript -->
-<script src="{% static 'js/script.js' %}"type="text/javascript"></script>
+<script src="{% static 'js/script.js' %}" type="text/javascript"></script>
 
 <script type="text/javascript">
 /// some script
 
 // jquery ready start
 $(document).ready(function() {
-	// jQuery code
+	var my_doc;
+        my_doc = document.getRootNode()
+        console.log(my_doc)
 
 }); 
 // jquery end
@@ -49,8 +52,4 @@ $(document).ready(function() {
         <!-- content -->
         {% endblock %}
         
-        {% block footer %}
-        <!-- <footer></footer> -->
-        {% endblock %}
-
         {% include 'includes/footer.html' %}

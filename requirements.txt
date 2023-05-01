@@ -1,0 +1,7 @@
+asgiref==3.6.0
+backports.zoneinfo==0.2.1
+Django==4.2
+django-adaptors==0.2.5
+Pillow==9.5.0
+pytz==2023.3
+sqlparse==0.4.4
