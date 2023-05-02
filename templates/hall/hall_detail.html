@@ -86,7 +86,7 @@
 <!-- ============================ COMPONENT 1 END .// ================================= -->
 
 <div class="card">
-    <form method="POST" action="{% url 'hall_detail' event.event_slug %}">
+    <form method="POST" action="{% url 'add_cart' event.id %}">
         {% csrf_token %}
         <div class="form-row align-items-center">
             <div class="col-sm-3 my-1">
@@ -111,7 +111,7 @@
             </div>
         </div>
         <div class="col-auto my-1">
-            <button type="submit" class="btn btn-primary">Compra posti</button>
+            <button type="submit" class="btn btn-primary">Vai alla cassa</button>
         </div>
     </div>
     <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
@@ -148,17 +148,19 @@
             var seatNumberSelected=seat_name.indexOf(seat);
             console.log('Numero del posto selezionato = '+seatNumberSelected)
             var seatStatus = seatsStatus[seatNumberSelected]
+            // seat status = 0 significa posto libero 
             if (seatStatus == '0') {
-                if (choice.length <=14){
-                toggleStatus(seatNumberSelected,'5')
+                if (choice.length <= 20){
+                toggleStatus(seatNumberSelected,'3')
                 choice.splice(0,0,seat);
-                console.log(choice);
-                seatsStatus[seatNumberSelected]='5'
+                seatsStatus[seatNumberSelected]='3'
                 }
                 else {
-                    alert("Spiacenti ma puoi acquistare al massimo 15 posti per questo evento.")
+                    alert("Spiacenti ma puoi acquistare al massimo 20 posti per questo evento.")
                 }
             }
+            
+            // seat status = 5 Non ancora definito
             if (seatStatus == '5') {
                 toggleStatus(seatNumberSelected,'1')
                 seatRemoved=choice.indexOf(seat);
@@ -168,14 +170,26 @@
                 console.log(choice);
             seatsStatus[seatNumberSelected]='1'
             }
+            // seat status =1 Non ancora definito
+            if (seatStatus == '1') {
+            alert('Posto non disponibile!');
+                console.log("Choice=",choice);
+            }
+
+            // seat status = 2 Non ancora definito
             if (seatStatus == '2') {
             alert('Posto non disponibile!');
                 console.log("Choice=",choice);
             }
+            // seat status = 3 significa posto in fase di acquisto. Non puo esistere se nessuna sessione aperta
             if (seatStatus == '3') {
-            alert('Posto non disponibile!');
+                toggleStatus(seatNumberSelected,'0')
+                choice.splice(choice.indexOf(seat), 1);
+                // choice.splice(0,0,seat);
+                seatsStatus[seatNumberSelected]='0'
                 console.log("Choice=",choice);
             }
+            // seat status = 4 Non ancora definito
             if (seatStatus == '4') {
             alert('Posto non disponibile!');
                 console.log("Choice=",choice);
@@ -190,12 +204,19 @@
     function toggleStatus(seat,newStatus){
         var property = document.getElementById(seat_name[seat]);
             if (newStatus == '5') {
-                property.style.backgroundColor = "#DFDF00"
+                property.className = "table-warning"
+            }
+            if (newStatus == '3') {
+                property.className = "table-warning"
             }
             if (newStatus == '1') {
-                property.style.backgroundColor = "#00DF00"
+                property.className = "table-warning"
             }
-    }
+            if (newStatus == '0') {
+                property.className = "table-success"
+            }
+
+        }
     
     function readStatus() {
         seatsStatus = [{% for k, seat in  hall_status.items %} '{{seat.status}}', {%endfor%}];
