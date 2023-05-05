@@ -150,13 +150,13 @@
             var seatStatus = seatsStatus[seatNumberSelected]
             // seat status = 0 significa posto libero 
             if (seatStatus == '0') {
-                if (choice.length <= 20){
+                if (choice.length <= 10){
                 toggleStatus(seatNumberSelected,'3')
                 choice.splice(0,0,seat);
                 seatsStatus[seatNumberSelected]='3'
                 }
                 else {
-                    alert("Spiacenti ma puoi acquistare al massimo 20 posti per questo evento.")
+                    alert("Spiacenti ma puoi acquistare al massimo 10 posti per volta.")
                 }
             }
             
@@ -183,6 +183,7 @@
             }
             // seat status = 3 significa posto in fase di acquisto. Non puo esistere se nessuna sessione aperta
             if (seatStatus == '3') {
+                // alert('Posto selezionato in precedenza. Per rimuovere le selezioni premere <Annulla tutto>');
                 toggleStatus(seatNumberSelected,'0')
                 choice.splice(choice.indexOf(seat), 1);
                 // choice.splice(0,0,seat);
@@ -210,7 +211,7 @@
                 property.className = "table-warning"
             }
             if (newStatus == '1') {
-                property.className = "table-warning"
+                property.className = "table-danger"
             }
             if (newStatus == '0') {
                 property.className = "table-success"
@@ -226,25 +227,24 @@
         for (i = 0; i < 263; i++) {
             // console.log('Posto '+ seat_name[i]+' - stato : '+seatsStatus[i])
             var property = document.getElementById(seat_name[i]);
-                if (seatsStatus[i] == '5') {
-                    property.className = "table-success"
-                }
-                if (seatsStatus[i] == '1') {
-                    property.className = "table-warning"
-                }
-                if (seatsStatus[i] == '2') {
-                    property.className = "table-danger"
-                }
-                if (seatsStatus[i] == '3') {
-                    property.className = "table-danger"
-                }
-                if (seatsStatus[i] == '0') {
-                    property.className = "table-success"
-                }
+            if (seatsStatus[i] == '0') {
+                property.className = "table-success"
             }
-        //get value
-        //var hiddenSelectedSeatsValue = document.getElementById('myHiddenField').value;
-     }
+            else if (seatsStatus[i] == '1') {
+                    property.className = "table-danger"
+            }
+            else if (seatsStatus[i] == '2') {
+                property.className = "table-danger"
+            }
+            else if (seatsStatus[i] == '3') {
+                property.className = "table-warning";
+                choice.splice(0,0,seat_name[i]);
+            }
+            else if (seatsStatus[i] == '5') {
+                property.className = "table-success"
+            }
+            }
+        }
 
 </script>
 <script type="text/javascript">

@@ -1,6 +1,14 @@
 from django.db import models
 from store.models import Event
 
+# Generics
+ingressi_strings = [
+    'Gratuito', # for index == 0
+    'Intero', # for index == 1
+    'Ridotto', # for index == 1
+]
+
+
 # Create your models here.
 class Cart(models.Model):
     cart_id         = models.CharField(max_length=250, blank=True)
@@ -18,3 +26,8 @@ class CartItem(models.Model):
 
     def __str__(self) -> str:
         return '{}-{}@{}'.format(self.seat, self.ingresso, self.event.event_slug)
+    
+    def ingresso_str(self):
+        return ingressi_strings[self.ingresso]
+    
+

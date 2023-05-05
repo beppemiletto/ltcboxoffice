@@ -31,8 +31,8 @@
 
 <hr>
 <div class="row">
-	<table class="table table-hover table-dark">
-		<thead>
+	<table class="table table-hover table-bordered">
+		<thead class="thead-light">
 			<tr>
 			  {%for event in events%}
 			  <th scope="col">Data della replica</th>
@@ -44,16 +44,26 @@
 			  {%for event in events%}
 			  
 			  <td>
-					  <a href="{{event.event_slug}}">
-					  <small>{{event.date_time|date:"D d m Y"}}</small>
+					  <a href="{{event.event_slug}}" class="btn btn-outline-primary">
+						<span class="text-center">
+							{{event.date_time|date:"D d m Y"}}
+							<br>
+							{{event.date_time|date:"H : i"}}
+						</span> <i class="fas fa-shopping-cart"></i>
 					</a>
-					  <br>
-					  <small>{{event.date_time|date:"H : i"}}</small>
-					</td>
+				</td>
 				{%endfor%}
 			  </tr>
 			</tbody>
 		  </table>
+	</div> <!-- row.// -->
+	<div class="row">
+		<div class="card bg-primary text-white">
+			<div class="card-body">
+				<h5>Seleziona una data e ora nella tabella qui sopra per 
+					andare alla pagina di selezione dei posti a sedere.</h5>
+			</div>
+		</div>
 	</div> <!-- row.// -->
 
 </article> <!-- product-info-aside .// -->

@@ -11,6 +11,7 @@ class Event(models.Model):
     price_full      = models.FloatField()
     price_reduced   = models.FloatField()
     event_slug      = models.CharField(max_length=200, blank=True)
+    sold_out        = models.BooleanField(default=False)
     
     def __str__(self) -> str:
         return self.show.slug
@@ -26,8 +27,9 @@ class Event(models.Model):
     def save(self, *args, **kwargs):
         self.event_slug = self.get_unique_id
         super(Event, self).save(*args, **kwargs)
-        json_filename = self.event_slug+'.json'
-        json_filename_fullpath = os.path.join(settings.HALL_STATUS_FILES_ROOT, json_filename)
+        # json_filename = self.event_slug+'.json'
+        # json_filename_fullpath = os.path.join(settings.HALL_STATUS_FILES_ROOT, json_filename)
+        json_filename_fullpath = self.get_json_path()
         seats = Seat.objects.filter(active=True)
         event_hall = {}
         for seat in seats:

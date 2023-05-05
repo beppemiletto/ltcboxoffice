@@ -4,8 +4,11 @@
 <!-- ========================= SECTION PAGETOP ========================= -->
 <section class="section-pagetop bg">
     <div class="container">
-        <h2 class="title-page">Our Store</h2>
-        
+        {%if 'search' in request.path %}
+        <h3 class="title-page">Risultati della ricerca con parola '{{keyword}}'</h3>
+        {%else%}        
+        <h3 class="title-page">Botteghino</h3>        
+        {%endif%}
     </div> <!-- container //  -->
     </section>
     <!-- ========================= SECTION INTRO END// ========================= -->
@@ -24,7 +27,7 @@
                     <h6 class="title">Sezioni del<br>cartellone</h6>
                 </a>
             </header>
-            <div class="filter-content collapse show" id="collapse_1" style="">
+            <div class="filter-content collapse show" id="collapse_1" >
                 <div class="card-body">
                     
                     <ul class="list-menu">
@@ -50,9 +53,10 @@
             </div>
     </header><!-- sect-heading -->
     
-    <div class="row">0
-        {% for k , show in billboard.items %}
-        <div class="col-md-4">
+    <div class="row">
+        {%if billboard%}
+        {% for show in billboard %}
+        <div class="col-md-5">
             <figure class="card card-product-grid">
                 <div class="img-wrap"> 
                     <a href="{{show.show_url}}" class="img-wrap"> <img src="{{show.image.url}}"> </a>
@@ -61,7 +65,19 @@
                 </div> <!-- img-wrap.// -->
                 <figcaption class="info-wrap">
                     <div class="fix-height">
-                        <a href="{{show.show_url}}" class="title">{{ show.title }}</a>
+                        <a href="{{show.show_url}}" class="title">
+                            <h5>
+                                <strong>
+                                    <u>
+                                        {{ show.title }}
+                                    </u>
+                                </strong>
+                            </h5>
+                        </a>
+                        <div class="price-wrap mt-2">
+                            <span class="text">Da {{show.from_date|date:"D d m Y"}} alle  {{show.from_date|date:"H : i"}}</span>
+                        </div> <!-- price-wrap.// -->
+
                         <div class="price-wrap mt-2">
                             <span class="price">Intero € {{show.price_full}} </span>
                             <span class="price">Ridotto € {{show.price_reduced}} </span>
@@ -72,18 +88,38 @@
             </figure>
         </div> <!-- col.// -->
         {% endfor %}
-    
+        {%else%}
+        <h2>
+            <span class="badge bg-secondary text-white">
+                Nessun risultato trovato nella ricerca usando la parola '{{keyword}}'.
+            </span>
+        </h2>
+        {%endif%}
     </div> <!-- row end.// -->
     
     
     <nav class="mt-4" aria-label="Page navigation sample">
-      <ul class="pagination">
-        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-      </ul>
+        {%if billboard.has_other_pages %}
+        <ul class="pagination">
+            {%if billboard.has_previous%}
+            <li class="page-item"><a class="page-link" href="?page={{billboard.previous_page_number}}">Previous</a></li>
+            {%else%}
+            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+            {%endif%}
+            {%for i in billboard.paginator.page_range%}
+            {%if billboard.number == i %}
+            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
+            {%else%}
+            <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
+            {%endif%}
+            {%endfor%}
+            {%if billboard.has_next%}
+            <li class="page-item"><a class="page-link" href="?page={{billboard.next_page_number}}">Next</a></li>
+            {%else%}
+            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+            {%endif%}
+        </ul>
+      {%endif%}
     </nav>
     
         </main> <!-- col.// -->

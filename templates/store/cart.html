@@ -1,21 +1,28 @@
 {%extends 'base.html'%}
 {%load static%}
+{%load index%}
 
 {% block content%}
 <section class="section-content padding-y bg">
     <div class="container">
     
     <!-- ============================ COMPONENT 1 ================================= -->
-    
+    {%if not cart_items%}
+        <H2 class="text-center">Il tuo carrello non contiene nessun posto da acquistare.</H2>
+         <br>
+        <div class="text-center">
+            <a href="{%url 'store'%}" class="btn btn-outline-primary"> Continua l'acquisto.</a>
+        </div>
+    {%else%}
     <div class="row">
         <aside class="col-lg-9">
     <div class="card">
     <table class="table table-borderless table-shopping-cart">
     <thead class="text-muted">
     <tr class="small text-uppercase">
-      <th scope="col">Product</th>
-      <th scope="col" width="120">Quantity</th>
-      <th scope="col" width="120">Price</th>
+      <th scope="col">Evento e posto</th>
+      <th scope="col" width="120">Tipo Ingresso</th>
+      <th scope="col" width="120">Prezzo</th>
       <th scope="col" class="text-right" width="200"> </th>
     </tr>
     </thead>
@@ -38,26 +45,26 @@
         </td>
         <td> 
             <!-- col.// -->
-                        <div class="col"> 
-                            <div class="input-group input-spinner">
+                            <div class="input-group-sm input-spinner">
                                 <div class="input-group-prepend">
-                                <button class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </button>
+                                <a href="{%url 'minus_ingresso' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
                                 </div>
-                                <input type="text" class="form-control"  value="1">
+                                <input type="text" class="form-control"  value="{{item.ingresso}}">
                                 <div class="input-group-append">
-                                <button class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </button>
+                                <a href="{%url 'plus_ingresso' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
                                 </div>
                             </div> <!-- input-group.// -->
                         </div> <!-- col.// -->
         </td>
         <td> 
             <div class="price-wrap"> 
-                <var class="price">$1156.00</var> 
-                <small class="text-muted"> $315.20 each </small> 
+                {{item.ingresso_str}}
+                <br>
+                <var class="price">{{prices|index:item.ingresso}}</var> 
             </div> <!-- price-wrap .// -->
         </td>
         <td class="text-right"> 
-        <a href="" class="btn btn-danger"> Remove</a>
+        <a href="{%url 'remove_cart' item.id%}" class="btn btn-danger"> Elimina</a>
         </td>
     </tr>
     {%endfor%}
@@ -71,16 +78,16 @@
             <div class="card">
             <div class="card-body">
                 <dl class="dlist-align">
-                  <dt>Total price:</dt>
-                  <dd class="text-right">$69.97</dd>
+                  <dt>Totale:</dt>
+                  <dd class="text-right">€ {{total}}</dd>
                 </dl>
                 <dl class="dlist-align">
-                  <dt>Tax:</dt>
-                  <dd class="text-right"> $10.00</dd>
+                  <dt>IVA ({{vat_rate}} %):</dt>
+                  <dd class="text-right">€ {{tax}}</dd>
                 </dl>
                 <dl class="dlist-align">
-                  <dt>Total:</dt>
-                  <dd class="text-right text-dark b"><strong>$59.97</strong></dd>
+                  <dt>Imponibile:</dt>
+                  <dd class="text-right text-dark b"><strong>€ {{taxable}}</strong></dd>
                 </dl>
                 <hr>
                 <p class="text-center mb-3">
@@ -96,7 +103,7 @@
     
     </div> <!-- row.// -->
     <!-- ============================ COMPONENT 1 END .// ================================= -->
-    
+    {%endif%}
     </div> <!-- container .//  -->
     </section>
     <!-- ========================= SECTION CONTENT END// ========================= -->
