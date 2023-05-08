@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.db import models
 from store.models import Event
 
@@ -29,5 +30,9 @@ class CartItem(models.Model):
     
     def ingresso_str(self):
         return ingressi_strings[self.ingresso]
+    
+    @admin.display
+    def cart_item_extended_name(self):
+        return('{}-{} seat {}'.format(self.event,self.event.pk, self.seat))
     
 

@@ -60,7 +60,7 @@
             <div class="price-wrap"> 
                 {{item.ingresso_str}}
                 <br>
-                <var class="price">{{prices|index:item.ingresso}}</var> 
+                <var class="price">{{prices|index:item.ingresso|stringformat:".2f"}}</var> 
             </div> <!-- price-wrap .// -->
         </td>
         <td class="text-right"> 
@@ -79,15 +79,15 @@
             <div class="card-body">
                 <dl class="dlist-align">
                   <dt>Totale:</dt>
-                  <dd class="text-right">€ {{total}}</dd>
+                  <dd class="text-right">€ {{taxable|stringformat:".2f"}}</dd>
                 </dl>
                 <dl class="dlist-align">
                   <dt>IVA ({{vat_rate}} %):</dt>
-                  <dd class="text-right">€ {{tax}}</dd>
+                  <dd class="text-right">€ {{tax|stringformat:".2f"}}</dd>
                 </dl>
                 <dl class="dlist-align">
                   <dt>Imponibile:</dt>
-                  <dd class="text-right text-dark b"><strong>€ {{taxable}}</strong></dd>
+                  <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
                 <hr>
                 <p class="text-center mb-3">
