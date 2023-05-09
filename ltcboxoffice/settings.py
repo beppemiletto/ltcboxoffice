@@ -144,4 +144,8 @@ HALL_STATUS_FILES_ROOT = BASE_DIR / 'hall_jsons'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+from django.contrib.messages import constants as messages
 
+MESSAGE_TAGS = {
+    messages.ERROR: "danger",
+}
