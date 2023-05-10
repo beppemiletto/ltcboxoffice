@@ -1,0 +1,19 @@
+{%autoescape off%}
+
+Salve {{user.first_name}},
+
+questo indirizzo email è stato fornito durante un processo di registrazione sul sito {{domain.name}}.
+
+Per completare il processo di registrazione dell'utente '{{user.email}}' 
+dovresti fornire la conferma della tua mail cliccando sul collegamento qui in basso.
+
+http://{{domain}}{%url 'activate' uidb64=uid token=token%}
+
+
+Se non sei stato tu a richiedere questa iscrizione, per favore ignora questa mail e cancellala.
+
+Cordiali saluti
+
+lo staff del Laboratorio Teatrale di Cambiano
+
+{%endautoescape%}

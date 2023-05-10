@@ -65,7 +65,7 @@
                             {%if user.id is not None %}
                             <small class="title text-muted">Benvenuto {{user.first_name}}</small>
                             <div> 
-                                <a href="{%url 'login'%}">Pannello controllo</a> <span class="dark-transp"> | </span>
+                                <a href="{%url 'dashboard'%}">Pannello controllo</a> <span class="dark-transp"> | </span>
                                 <a href="{%url 'logout'%}"> Esci</a>
                             </div>
                             {%else%}
