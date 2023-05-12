@@ -69,58 +69,36 @@
             {%endif%}
         </tr> <!-- row.// -->
         {%endfor%}
-        <tr>
-            <td class="table-primary" colspan = "21"> </td>
-        </tr>
-        <tr>
-            <td class="table-active" colspan="21"> 
-                Clicca qui 
-                <a href="{% url 'hall_detail' event.event_slug %}">
-                    <small color="red">
-                        Annulla tutto</small> per tornare al menu principale.</a>
-                    </td>
-        </tr>
-
+        
     </table>
 </div> <!-- card.// -->
 <!-- ============================ COMPONENT 1 END .// ================================= -->
-
-<div class="card">
-    <form method="POST" action="{% url 'add_cart' event.id %}">
-        {% csrf_token %}
-        <div class="form-row align-items-center">
-            <div class="col-sm-3 my-1">
-                <label class="sr-only" for="inlineFormInputName">Nome</label>
-            <input type="text" class="form-control" id="inlineFormInputName" placeholder="Jane Doe">
-        </div>
-        <div class="col-sm-3 my-1">
-            <label class="sr-only" for="inlineFormInputGroupUsername">Username</label>
-            <div class="input-group">
-                <div class="input-group-prepend">
-                <div class="input-group-text">@</div>
-              </div>
-              <input type="text" class="form-control" id="inlineFormInputGroupUsername" placeholder="Username">
-            </div>
-        </div>
-        <div class="col-auto my-1">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="autoSizingCheck2">
-                <label class="form-check-label" for="autoSizingCheck2">
-                    Ricordami
-                </label>
-            </div>
-        </div>
-        <div class="col-auto my-1">
-            <button type="submit" class="btn btn-primary">Vai alla cassa</button>
+<div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <form method="POST" action="{% url 'add_cart' event.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Inserisci nel carrello.</button>
+                <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
+                <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
+            </form>
         </div>
     </div>
-    <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
-    <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
-</form>
-
+    <div class="col-sm">
+        <div class="card">
+            <a href="{% url 'hall_detail' event.event_slug %}">
+                    <button type="button" class="btn btn-warning">Azzera i posti (reset)</button>
+                </a>
+            </div>
+        </div> 
+        <div class="col-sm">
+            <div class="card"> 
+                <a href="{% url 'home'%}">
+                    <button type="button" class="btn btn-info">Esci dalla selezione posti</button>
+                </a>
+        </div>
+  </div>
 </div>
-
-
 </div> <!-- container .//  -->
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->
@@ -190,7 +168,8 @@
                 seatsStatus[seatNumberSelected]='0'
                 console.log("Choice=",choice);
             }
-            // seat status = 4 Non ancora definito
+            // seat status = 4 Il posto e' stato selezionato da un utente e messo nel carrello
+            // POSTO NEL CARRELLO  - SEAT IN CART 
             if (seatStatus == '4') {
             alert('Posto non disponibile!');
                 console.log("Choice=",choice);
@@ -206,6 +185,9 @@
         var property = document.getElementById(seat_name[seat]);
             if (newStatus == '5') {
                 property.className = "table-warning"
+            }
+            if (newStatus == '4') {
+                property.className = "table-info"
             }
             if (newStatus == '3') {
                 property.className = "table-warning"
@@ -242,6 +224,10 @@
             }
             else if (seatsStatus[i] == '5') {
                 property.className = "table-success"
+            }
+    
+            else if (seatsStatus[i] == '4') {
+                property.className = "table-info"
             }
             }
         }

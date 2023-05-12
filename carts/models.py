@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db import models
 from store.models import Event
+from accounts.models import Account
 
 # Generics
 ingressi_strings = [
@@ -19,8 +20,9 @@ class Cart(models.Model):
         return self.cart_id
 
 class CartItem(models.Model):
+    user            = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     event           = models.ForeignKey(Event, on_delete=models.CASCADE)
-    cart            = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    cart            = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)
     seat            = models.CharField(max_length=3, default='C03')
     ingresso        = models.IntegerField(default=1)
     is_active       = models.BooleanField(default=True)

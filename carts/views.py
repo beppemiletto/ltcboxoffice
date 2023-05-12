@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
 from store.models import Event
 from .models import Cart, CartItem
 import os, json
@@ -29,7 +30,7 @@ def add_cart(request, event_id):
                     if seat['status']== 3:
                         seat['status'] = 0
                 for seat in selected_seats:
-                    hall_status[seat]['status'] = 3 
+                    hall_status[seat]['status'] = 4 
                 with open(json_file_path,'w') as jfp:
                     json.dump(hall_status,jfp)
             except:
@@ -53,7 +54,12 @@ def add_cart(request, event_id):
                     cart = cart,
                     seat = seat,
                     ingresso = 1,
+                    
+                    
                 )
+                if request.user.is_authenticated:
+                    cart_item.user=request.user
+                    
                 cart_item.save()
     else:
         return HttpResponse("<H1>Nessun posto selezionato message error</H1><br><a href='/'>Torna al cartellone</a>")
@@ -111,6 +117,44 @@ def cart(request, total=0, cart_items=None):
     vat_rate = 10 # % IVA
     prices=[]
     try: 
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+            if cart_items:
+                cart = cart_items[0].cart
+            else:
+                cart = None
+
+        else:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+        # active_cart_id = request.session['active_cart_id']
+        # cart = Cart.objects.get(cart_id=active_cart_id)
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        for item in cart_items:
+            prices = [0.00, item.event.price_full, item.event.price_reduced]
+            total += (prices[item.ingresso])
+        taxable = int(total / (1 + vat_rate / 100) *100)/100
+        tax = int((total - taxable) *100)/100
+
+        context = {
+            'cart': cart,
+            'cart_items': cart_items,
+            'total': total,
+            'taxable': taxable,
+            'tax': tax,
+            'vat_rate': vat_rate,
+            'prices': prices,
+        }
+    except ObjectDoesNotExist:
+        context = {}
+
+    return render(request, 'store/cart.html', context)
+
+@login_required(login_url='login')
+def checkout(request, total=0, cart_items=None):
+
+    vat_rate = 10 # % IVA
+    prices=[]
+    try: 
         cart = Cart.objects.get(cart_id=_cart_id(request))
         # active_cart_id = request.session['active_cart_id']
         # cart = Cart.objects.get(cart_id=active_cart_id)
@@ -132,5 +176,4 @@ def cart(request, total=0, cart_items=None):
         }
     except ObjectDoesNotExist:
         context = {}
-
-    return render(request, 'store/cart.html', context)
+    return render(request, 'store/checkout.html', context)
