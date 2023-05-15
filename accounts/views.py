@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+import requests
 from .forms import RegistrationForm
 from .models import Account
 from carts.models import Cart, CartItem
@@ -85,7 +86,15 @@ def login(request):
                 pass
             auth.login(request, user)
             messages.success(request, 'Adesso sei loggato come {}'.format(email))
-            return redirect('dashboard')
+            url = request.META.get('HTTP_REFERER')
+            try:
+                query = requests.utils.urlparse(url).query
+                params = dict(x.split('=') for x in query.split('&'))
+                if 'next' in params:
+                    nextPage = params['next']
+                    return redirect(nextPage)
+            except:
+                return redirect('dashboard')
         else:
             messages.error(request, 'Le credenziali fornite non sono valide')
             return redirect('login')

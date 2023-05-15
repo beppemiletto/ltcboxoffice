@@ -155,10 +155,16 @@ def checkout(request, total=0, cart_items=None):
     vat_rate = 10 # % IVA
     prices=[]
     try: 
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-        # active_cart_id = request.session['active_cart_id']
-        # cart = Cart.objects.get(cart_id=active_cart_id)
-        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        if request.user.is_authenticated:
+            cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+            if cart_items:
+                cart = cart_items[0].cart
+            else:
+                cart = None
+
+        else:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         for item in cart_items:
             prices = [0.00, item.event.price_full, item.event.price_reduced]
             total += (prices[item.ingresso])
