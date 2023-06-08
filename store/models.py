@@ -10,6 +10,7 @@ class Event(models.Model):
     date_time       = models.DateTimeField()
     price_full      = models.FloatField()
     price_reduced   = models.FloatField()
+    vat_rate        = models.FloatField(default=10)
     event_slug      = models.CharField(max_length=200, blank=True)
     sold_out        = models.BooleanField(default=False)
     

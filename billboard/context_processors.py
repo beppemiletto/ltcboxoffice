@@ -5,3 +5,5 @@ from store.models import Event
 def menu_links(request):
     links = Section.objects.all()
     return dict(links=links)
+
+

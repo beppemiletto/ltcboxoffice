@@ -4,6 +4,7 @@ from django.urls import reverse
 
 
 
+
 # Create your models here.
 class Section(models.Model):
     name                    = models.CharField(max_length=50, unique=True)
@@ -34,5 +35,3 @@ class Show(models.Model):
     def get_url(self):
         return reverse('show_detail', args=[self.section.slug, self.slug])
     
-
-

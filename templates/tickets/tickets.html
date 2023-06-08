@@ -1,0 +1,71 @@
+{%extends 'base.html'%}
+{%load static%}
+
+
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+    
+    <!-- ============================ COMPONENT 1 ================================= -->
+    {%if not show_dict%}
+        <H2 class="text-center">Non ci sono spettacoli in cartellone e/o attivi da aprire.</H2>
+         <br>
+        <div class="text-center">
+            <a href="{%url 'home'%}" class="btn btn-outline-primary">Controlla lo stato del database.</a>
+        </div>
+    {%else%}
+    <div class="row">
+    <div class="card">
+    <table class="table table-borderless table-shopping-cart">
+    <thead class="text-muted">
+    <tr class="small text-uppercase">
+
+      <th scope="col">Spettacolo Titolo</th>
+      <th scope="col" width="120">Codice spettacolo</th>
+      <th scope="col" width="120">Inserito nella sezione</th>
+      <th scope="col" class="text-right" width="200"> Referente (email)</th>
+      <th scope="col" class="text-right" width="400"> Eventi</th>
+    </tr>
+    </thead>
+    <tbody>
+        {%for pk, item in show_dict.items%}
+    <tr>
+        <td>
+            <figure class="itemside align-items-center">
+                <div class="aside"><img src="{{item.show.shw_image.url}}" class="img-sm"></div>
+                <figcaption class="info">
+                    <a href="#" class="title text-dark">{{item.show.shw_title}}</a>
+                </figcaption>
+            </figure>
+        </td>
+        <td> 
+            {{item.show.shw_code}}
+        </td>
+        <td> 
+            <div class="price-wrap"> 
+                <var class="price">{{item.show.section.name}}</var> 
+            </div> <!-- price-wrap .// -->
+        </td>
+        <td class="text-right"> 
+            {{item.show.responsible_mail}}
+        </td>
+        <td>
+            {% for event in item.event_list %}
+            <a href="{%url 'event_list' event.event_slug%}">   {{event.date_time|date:"D d m Y"}}</a>
+            <br>
+            {%endfor%}
+        </td>
+    </tr>
+    {%endfor%}
+    </tbody>
+    </table>
+    </div> <!-- card.// -->
+    
+    </div> <!-- row.// -->
+    <!-- ============================ COMPONENT 1 END .// ================================= -->
+    {%endif%}
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

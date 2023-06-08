@@ -27,7 +27,7 @@
                     <th scope="row"><small>{{event.show.shw_title}}</small></th>
                     <td><small>{{event.date_time|date:"D d m Y"}}</small></td>
                     <td><small>{{event.date_time|date:"H : i"}}</small></td>
-                    <td><small>{{event.price_full}} - {{event.price_reduced}}</small></td>
+                    <td><small>Intero: {{event.price_full|stringformat:".2f"}} - Ridotto: {{event.price_reduced|stringformat:".2f"}}</small></td>
                   </tr>
                 </tbody>
               </table>
@@ -38,7 +38,7 @@
 
 <!-- ============================ COMPONENT 1 ================================= -->
 <div class="card">
-    <table class="table table-hover">
+    <table class="table table-hover table-sm">
         <tr>
             <td class="table-primary" colspan = "10"> </td>
             <td class="table-primary" colspan = "1"><p>STAGE</p> </td>
@@ -46,6 +46,10 @@
         </tr>
         
         {%for k, row in rows.items %}
+        {%if row.data.name == 'I'%}
+        <tr> <td class="table-primary" colspan="21"></td></tr>
+
+        {%endif%}
         
         <tr >
             {%if row.data.off_start%}
@@ -67,6 +71,7 @@
             {%if row.data.off_end%}
             <td class="table-primary" colspan = "{{row.data.off_end}}"> </td>
             {%endif%}
+
         </tr> <!-- row.// -->
         {%endfor%}
         
@@ -138,15 +143,10 @@
                 }
             }
             
-            // seat status = 5 Non ancora definito
+            // seat status = 5 Venduto -  Sold - Payed
             if (seatStatus == '5') {
-                toggleStatus(seatNumberSelected,'1')
-                seatRemoved=choice.indexOf(seat);
-                if (seatRemoved>-1){
-                choice.splice(seatRemoved,1);
-                }
-                console.log(choice);
-            seatsStatus[seatNumberSelected]='1'
+                alert('Posto non disponibile! Venduto');
+                console.log("Choice=",choice);
             }
             // seat status =1 Non ancora definito
             if (seatStatus == '1') {
@@ -171,7 +171,7 @@
             // seat status = 4 Il posto e' stato selezionato da un utente e messo nel carrello
             // POSTO NEL CARRELLO  - SEAT IN CART 
             if (seatStatus == '4') {
-            alert('Posto non disponibile!');
+            alert('Posto non disponibile! Nel carrello di un acquirente!');
                 console.log("Choice=",choice);
             }
     
@@ -184,7 +184,7 @@
     function toggleStatus(seat,newStatus){
         var property = document.getElementById(seat_name[seat]);
             if (newStatus == '5') {
-                property.className = "table-warning"
+                property.className = "table-secondary"
             }
             if (newStatus == '4') {
                 property.className = "table-info"
@@ -223,7 +223,7 @@
                 choice.splice(0,0,seat_name[i]);
             }
             else if (seatsStatus[i] == '5') {
-                property.className = "table-success"
+                property.className = "table-secondary"
             }
     
             else if (seatsStatus[i] == '4') {

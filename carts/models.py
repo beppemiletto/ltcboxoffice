@@ -7,7 +7,7 @@ from accounts.models import Account
 ingressi_strings = [
     'Gratuito', # for index == 0
     'Intero', # for index == 1
-    'Ridotto', # for index == 1
+    'Ridotto', # for index == 2
 ]
 
 
@@ -20,11 +20,13 @@ class Cart(models.Model):
         return self.cart_id
 
 class CartItem(models.Model):
+    INGRESSI = ((0,'Gratuito'), (1,'Intero'), (2,'Ridotto'),)
     user            = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     event           = models.ForeignKey(Event, on_delete=models.CASCADE)
     cart            = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)
     seat            = models.CharField(max_length=3, default='C03')
-    ingresso        = models.IntegerField(default=1)
+    ingresso        = models.IntegerField( choices=INGRESSI,default=1)
+    price           = models.FloatField(default = 0.0, blank=True)
     is_active       = models.BooleanField(default=True)
 
     def __str__(self) -> str:
@@ -32,6 +34,9 @@ class CartItem(models.Model):
     
     def ingresso_str(self):
         return ingressi_strings[self.ingresso]
+    
+    def item_record(self):
+        return('{}-{}'.format(self.event.pk, self.seat))
     
     @admin.display
     def cart_item_extended_name(self):

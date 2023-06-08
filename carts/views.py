@@ -54,6 +54,7 @@ def add_cart(request, event_id):
                     cart = cart,
                     seat = seat,
                     ingresso = 1,
+                    price = event.price_full,
                     
                     
                 )
@@ -94,6 +95,13 @@ def plus_ingresso(request, item_id = None):
     else:
         ingresso_new = 2
     item.ingresso = ingresso_new
+    if ingresso_new == 0:
+        item.price = 0.0
+    elif ingresso_new == 1:
+        item.price = item.event.price_full
+    elif ingresso_new == 2:
+        item.price = item.event.price_reduced
+
     item.save()
 
     # return HttpResponse('<H1>CartItem number {} move ingresso from {} to {}</H1>'.format(item_id, ingresso_old, ingresso_new))
@@ -108,14 +116,20 @@ def minus_ingresso(request, item_id = None):
     else:
         ingresso_new = 0
     item.ingresso = ingresso_new
+    if ingresso_new == 0:
+        item.price = 0.0
+    elif ingresso_new == 1:
+        item.price = item.event.price_full
+    elif ingresso_new == 2:
+        item.price = item.event.price_reduced
     item.save()
 
     # return HttpResponse('<H1>CartItem number {} move ingresso from {} to {}</H1>'.format(item_id, ingresso_old, ingresso_new))
     return redirect('cart')
 
 def cart(request, total=0, cart_items=None):
-    vat_rate = 10 # % IVA
     prices=[]
+    vat_rate = 0.0
     try: 
         if request.user.is_authenticated:
             cart_items = CartItem.objects.filter(user=request.user, is_active=True)
@@ -130,6 +144,7 @@ def cart(request, total=0, cart_items=None):
         # cart = Cart.objects.get(cart_id=active_cart_id)
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         for item in cart_items:
+            vat_rate = item.event.vat_rate
             prices = [0.00, item.event.price_full, item.event.price_reduced]
             total += (prices[item.ingresso])
         taxable = int(total / (1 + vat_rate / 100) *100)/100
@@ -151,9 +166,9 @@ def cart(request, total=0, cart_items=None):
 
 @login_required(login_url='login')
 def checkout(request, total=0, cart_items=None):
-
+    taxable = 0.0
+    tax = 0.0
     vat_rate = 10 # % IVA
-    prices=[]
     try: 
         if request.user.is_authenticated:
             cart_items = CartItem.objects.filter(user=request.user, is_active=True)
@@ -165,10 +180,12 @@ def checkout(request, total=0, cart_items=None):
         else:
             cart = Cart.objects.get(cart_id=_cart_id(request))
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+
         for item in cart_items:
-            prices = [0.00, item.event.price_full, item.event.price_reduced]
-            total += (prices[item.ingresso])
-        taxable = int(total / (1 + vat_rate / 100) *100)/100
+            vat_rate = item.event.vat_rate
+            total += item.price
+            taxable += int(item.price / (1 + vat_rate / 100) *100)/100
+        
         tax = int((total - taxable) *100)/100
 
         context = {
@@ -178,7 +195,6 @@ def checkout(request, total=0, cart_items=None):
             'taxable': taxable,
             'tax': tax,
             'vat_rate': vat_rate,
-            'prices': prices,
         }
     except ObjectDoesNotExist:
         context = {}

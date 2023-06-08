@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+{%load index%}
+
+{% block content %}
+
+
+    <section class="section-content padding-y bg">
+        <div class="container">
+
+            <!-- ============================ COMPONENT 1 ================================= -->
+            <h4 class="text-center text-black-75 text-capitalize mb-10">Controlla il tuo ordine ed effettua il pagamento.</h4>
+
+            <div class="row">
+                <aside class="col-lg-8">
+                    <div class="card">
+                        <h5 class="card-header">Indirizzo invio fattura</h5>
+                        <div class="card-body">
+                            <p class="card-text mb-0">{{ order.full_name_address }} </p>
+                            {% if order.order_note %}
+                                <b>Order Note:</b> {{ order.order_note }}
+                            {% endif %}
+
+                        </div>
+                    </div> <!-- card.// -->
+                    <div class="card">
+                        <h5 class="card-header">Metodo di pagamento</h5>
+                        <div class="card-body">
+                            <p class="card-text">PayPal.</p>
+                        </div>
+                    </div> <!-- card.// -->
+                    <div class="card">
+                        <h5 class="card-header">Riepilogo ordine numero {{order.order_number}}</h5>
+                        <div class="card-body">
+                            <table class="table table-borderless table-shopping-cart">
+                                <thead class="text-muted">
+                                <tr class="small text-uppercase">
+                                    <th scope="col">Evento</th>
+                                    <th scope="col" width="220">Posti</th>
+                                    <th scope="col" width="180">Sub Totale</th>
+
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for k, group in grouped_cart_items.items %}
+                                    <tr>
+                                        <td>
+                                            <figure class="itemside align-items-center">
+                                                <div class="aside"><img src="{{ group.event.show.shw_image.url }}" class="img-sm"></div>
+                                                <figcaption class="info">
+                                                    <p  class="title text-dark">{{ group.event.show.shw_title }}</p>
+                                                    <p class="text-muted small">{{group.event.date_time|date:"D d-m-Y"}}</p>
+                                                        <p class="text-muted small">Ore {{group.event.date_time|date:"H : i"}}</p>
+                                                    </figcaption>
+                                                </figure>
+                                            </td>
+                                            <td>
+                                            <p  class="title text-dark">{{ group.seat }}</p>
+                                        </td>
+                                        <td>
+                                            <div class="price-wrap">
+                                                <var class="price"> € {{group.price_tot|stringformat:".2f"}} </var>
+                                            </div> <!-- price-wrap .// -->
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div> <!-- card.// -->
+                </aside> <!-- col.// -->
+                <aside class="col-lg-4">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <dl class="dlist-align">
+                                <dt>Totale imponibile:</dt>
+                                <dd class="text-right">€ {{ total|stringformat:".2f" }}</dd>
+                            </dl>
+                            <dl class="dlist-align">
+                                <dt>IVA:</dt>
+                                <dd class="text-right"> € {{ tax|stringformat:".2f" }}</dd>
+                            </dl>
+                            <dl class="dlist-align">
+                                <dt>Totale IVA Inclusa:</dt>
+                                <dd class="text-right text-dark b"><strong>€ {{ grand_total|stringformat:".2f" }}</strong></dd>
+                            </dl>
+                            <hr>
+                            <p class="text-center mb-3">
+                                <img src="{% static './images/misc/payments.png' %}" height="26">
+                            </p>
+                            <div id="paypal-button-container">
+                                <!--    Paypal Button Will Load -->
+                            </div>
+                        </div> <!-- card-body.// -->
+                    </div> <!-- card.// -->
+
+                </aside> <!-- col.// -->
+
+
+            </div> <!-- row.// -->
+            <!-- ============================ COMPONENT 1 END .// ================================= -->
+
+        </div> <!-- container .//  -->
+
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+
+    <script>
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+        var amount = "{{ grand_total|stringformat:'.2f' }}"
+        var url = "{% url 'payments' %}"
+        var csrftoken = getCookie('csrftoken');
+        var orderID = "{{order.order_number}}"
+        var payment_method = 'PayPal'
+        // Render the paypal button into #paypal-button-container
+        paypal.Buttons({
+
+            style: {
+                layout: 'vertical',
+                color: 'blue',
+                shape: 'pill',
+                label: 'pay',
+                height: 40
+            },
+
+            // Set up the transaction
+            createOrder: function(data, actions) {
+                return actions.order.create({
+
+                    purchase_units: [{
+                        amount: {
+                            value: amount,
+                        }
+                    }]
+                });
+            },
+            
+            // Finalize the transaction
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    //Shows a success message to the buyer
+                    console.log(details);
+                    sendData();
+                    function sendData(){
+                        fetch(url,{
+                            method : "POST",
+                            headers: {
+                                "Content-type": "application/json",
+                                "X-CSRFToken": csrftoken,
+                            },
+                            body: JSON.stringify({
+                                orderID: orderID,
+                                transID: details.id,
+                                payment_method: payment_method,
+                                status: details.status,
+
+                            }),
+                            
+                        })
+                        // .then(response => response.json())
+                        // .then(data => console.log(data));
+                    }
+                });
+            }
+
+        }).render('#paypal-button-container');
+    </script>
+
+{% endblock %}

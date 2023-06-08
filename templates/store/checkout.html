@@ -14,7 +14,7 @@
                         <div class="card-body">
                             <h4 class="card-title mb-4">Indirizzo invio fattura</h4>
                             <!-- place_order -->
-                            <form action="{% url 'home' %}" method="post"> 
+                            <form action="{% url 'place_order' %}" method="post"> 
                                 {% csrf_token %}
                                 <div class="form-row">
                                     <div class="col form-group">
@@ -47,17 +47,17 @@
                                     </div>
                                 </div>
                                 <div class="form-row">
+                                    <div class="col-4 form-group">
+                                        <label for="">CAP</label>
+                                        <input type="text" name="post_code" class="form-control" value="{{ userprofile.post_code }}"  required>
+                                    </div>
                                     <div class="col-6 form-group">
                                         <label for="">Città</label>
                                         <input type="text" name="city" class="form-control" value="{{ userprofile.city }}"  required>
                                     </div>
                                     <div class="col-2 form-group">
                                         <label for="">Provincia</label>
-                                        <input type="text" name="state" class="form-control" value="{{ userprofile.province }}"  required>
-                                    </div>
-                                    <div class="col-4 form-group">
-                                        <label for="">Paese</label>
-                                        <input type="text" name="country" class="form-control" value="{{ userprofile.country }}"  required>
+                                        <input type="text" name="province" class="form-control" value="{{ userprofile.province }}"  required>
                                     </div>
                                 </div>
                                 <div class="form-row">
@@ -99,7 +99,7 @@
                                         </td>
                                         <td>
                                             <div class="price-wrap">
-                                                <var class="price"> € {{prices|index:cart_item.ingresso|stringformat:".2f"}} </var>
+                                                <var class="price"> € {{cart_item.price|stringformat:".2f"}} </var>
                                             </div> <!-- price-wrap .// -->
                                         </td>
                                     </tr>
@@ -111,7 +111,7 @@
                                     <tr class="small text-center">
                                         <th scope="col">Ingressi Acquistati</th>
                                         <th scope="col">Imponibile</th>
-                                        <th scope="col">IVA (10%)</th>
+                                        <th scope="col">IVA </th>
                                         <th scope="col">Totale Ordine</th>
                                     </tr>
                                 </thead>

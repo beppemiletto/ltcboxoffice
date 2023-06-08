@@ -37,11 +37,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cookie_consent',
     'billboard',
     'accounts',
     'store',
     'hall',
     'carts',
+    'orders',
+    'tickets',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+COOKIE_CONSENT_NAME = "cookie_consent"
 
 ROOT_URLCONF = 'ltcboxoffice.urls'
 
