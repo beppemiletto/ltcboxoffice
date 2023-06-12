@@ -3,6 +3,8 @@ from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from store.models import Event
+from orders.models import Order
+from accounts.models import UserProfile
 from .models import Cart, CartItem
 import os, json
 
@@ -188,7 +190,45 @@ def checkout(request, total=0, cart_items=None):
         
         tax = int((total - taxable) *100)/100
 
+        current_user = request.user
+        try:
+            former_order = Order.objects.filter(user=current_user).order_by('-created_at').first()
+            user_data = {
+            'user': current_user,
+            'first_name': former_order.first_name,
+            'last_name': former_order.last_name,
+            'phone': former_order.phone,
+            'email': former_order.email,
+            'address_line_1': former_order.address_line_1,
+            'address_line_2': former_order.address_line_2,
+            'post_code': former_order.post_code,
+            'city': former_order.city,
+            'province': former_order.province,
+            'order_note': former_order.order_note,
+            }
+
+        except:
+            userprofile = UserProfile.objects.get(user=current_user)
+
+            user_data = {
+            'user': current_user,
+            'first_name': userprofile.user.first_name,
+            'last_name': userprofile.user.last_name,
+            'phone': userprofile.user.phone_number,
+            'email': userprofile.user.email,
+            'address_line_1': userprofile.address_line1,
+            'address_line_2': userprofile.address_line2,
+            'post_code': userprofile.post_code,
+            'city': userprofile.city,
+            'province': userprofile.province,
+            'order_note': '',
+
+            }
+
+
+
         context = {
+            'user_data': user_data,
             'cart': cart,
             'cart_items': cart_items,
             'total': total,

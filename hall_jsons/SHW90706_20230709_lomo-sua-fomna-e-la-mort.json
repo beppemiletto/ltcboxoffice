@@ -1096,7 +1096,7 @@
         "num_in_row": "9",
         "number": 139,
         "row": "I",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "I10": {
@@ -1106,7 +1106,7 @@
         "num_in_row": "10",
         "number": 140,
         "row": "I",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "I11": {

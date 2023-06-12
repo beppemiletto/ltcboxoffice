@@ -6,7 +6,7 @@
         "num_in_row": "3",
         "number": 30,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C04": {
@@ -16,7 +16,7 @@
         "num_in_row": "4",
         "number": 31,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C05": {
@@ -26,7 +26,7 @@
         "num_in_row": "5",
         "number": 32,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C06": {

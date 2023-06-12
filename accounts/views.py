@@ -1,12 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 import requests
-from .forms import RegistrationForm
-from .models import Account
+from .forms import RegistrationForm, UserForm, UserProfileForm
+from .models import Account, UserProfile
 from carts.models import Cart, CartItem
 from carts.views import _cart_id
+from orders.models import Order, OrderEvent
 import random
 import string
 
@@ -41,6 +42,12 @@ def register(request):
                             last_name=last_name, email=email, username=username, password=password)
             user.phone_number = phone_number
             user.save()
+
+            # create userprofile
+            profile = UserProfile()
+            profile.user_id = user.id
+            profile.profile_picture = 'default/default-user.png'
+            profile.save()
 
             # user activation
             current_site = get_current_site(request)
@@ -191,3 +198,81 @@ def resetPassword(request):
     else:
         return render(request, 'accounts/resetPassword.html')
 
+def my_orders(request):
+    orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
+    context = {
+        'orders':orders,
+    }
+    return render(request, 'accounts/my_orders.html', context)
+
+
+def edit_profile(request):
+    userprofile = get_object_or_404(UserProfile, user=request.user)
+    ok_user: bool = False
+    ok_userprofile: bool = False
+    if request.method == 'POST':
+        user_form = UserForm(request.POST, instance=request.user)
+        userprofile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile )
+        if user_form.is_valid():
+            user_form.save()
+            ok_user=True
+        if userprofile_form.is_valid():
+            userprofile_form.save()
+            ok_userprofile=True
+
+        if ok_user and ok_userprofile:
+            messages.success(request, 'Il tuo profilo è stato aggiornato')
+            return redirect('edit_profile')
+
+    else:
+        user_form = UserForm(instance=request.user)
+        userprofile_form = UserProfileForm(instance=userprofile) 
+    context = {
+        'user_form': user_form,
+        'profile_form': userprofile_form,
+        'userprofile': userprofile,
+    }   
+    
+    return render(request, 'accounts/edit_profile.html', context)
+
+@login_required(login_url='login')
+def order_detail(request, order_id):
+    order_details = OrderEvent.objects.filter(order__order_number=order_id)
+    order = Order.objects.get(order_number=order_id)
+    context = {
+        'order_details': order_details,
+        'order': order,
+    }
+
+    return render(request, 'accounts/order_details.html', context)
+
+
+def change_password(request):
+    if request.method == "POST":
+        current_password = request.POST['current_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+
+        user = Account.objects.get(username__exact=request.user.username)
+
+        if new_password == confirm_password:
+            success = user.check_password(current_password)
+            if success:
+                user.set_password(new_password)
+                user.save()
+                auth.logout(request)
+                messages.success(request, 'Password aggiornata con successo')
+                return redirect('login')
+            else:
+                messages.error(request,'La vecchia password non corrisponde')
+                return redirect('change_password')
+
+        else:
+            messages.error(request,'Le nuove password non corrispondono')
+            return redirect('change_password')
+
+
+
+
+
+    return render(request, 'accounts/change_password.html')

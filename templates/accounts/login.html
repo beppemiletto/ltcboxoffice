@@ -19,7 +19,7 @@
     <div class="card mx-auto" style="max-width: 512px; margin-top:100px;">
           <div class="card-body">
           <h4 class="card-title mb-4">Login</h4><h5>fornisci le tue credenziali di accesso</h5>
-          {%include 'includes/alert.html'%}
+          {%include 'includes/alerts.html'%}
           <form action="{%url 'login'%}" method="POST">
             {%csrf_token%}
             <div class="form-group">
