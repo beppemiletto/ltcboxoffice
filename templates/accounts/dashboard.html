@@ -13,24 +13,28 @@
                     <main class="col-md-9">
                         <article class="card">
                             <header class="card-header">
-                                <strong class="d-inline-block mr-3">Logged in as:</strong>
+                                <strong class="d-inline-block mr-3">Sei entrato come:</strong>
                                 <span>{{ user.full_name }}</span>
                             </header>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="card">
+                                        <div class="card" style="text-align: center;">
                                             <div class="card-body">
-                                                <h5 class="card-title">Total Orders</h5>
+                                                {%if orders_count > 0%}
+                                                <h5 class="card-title">I tuoi precedenti acquisti ammontano a:</h5>
                                                 <h4>{{ orders_count }}</h4>
-                                                <a href="#">View Orders</a>
+                                                <a href="{%url 'my_orders'%}">Vai al dettaglio dei tuoi ordini</a>
+                                                {%else %}
+                                                <h5 class="card-title">Non hai acquisti per ora.</h5>
+                                                {%endif%}
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="card" style="text-align: center;">
                                             <div class="card-body">
-                                               <img src="{{ userprofile.profile_picture.url }}" alt="User Profile Picture" class="avatar" width="75" height="75" style="border-radius:45%;">
+                                               <img src="{{ userprofile.profile_picture.url }}" alt="Immagine Utente" class="avatar" width="75" height="75" style="border-radius:45%;">
                                                 <p class="mb-0">{{ user.email }}</p>
                                                 <p>{{ user.phone_number }}</p>
                                             </div>

@@ -136,7 +136,14 @@ def activate(request, uidb64, token):
 
 @login_required(login_url= 'login')
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
+    orders_count = orders.count()
+    userprofile = UserProfile.objects.get(user = request.user) 
+    context ={
+        'orders_count': orders_count,
+        'userprofile': userprofile,
+    }
+    return render(request, 'accounts/dashboard.html', context)
 
 
 def forgotPassword(request):
@@ -197,7 +204,8 @@ def resetPassword(request):
             return redirect('resetPassword')
     else:
         return render(request, 'accounts/resetPassword.html')
-
+    
+@login_required(login_url='login')
 def my_orders(request):
     orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
     context = {
@@ -205,7 +213,7 @@ def my_orders(request):
     }
     return render(request, 'accounts/my_orders.html', context)
 
-
+@login_required(login_url='login')
 def edit_profile(request):
     userprofile = get_object_or_404(UserProfile, user=request.user)
     ok_user: bool = False
@@ -246,7 +254,7 @@ def order_detail(request, order_id):
 
     return render(request, 'accounts/order_details.html', context)
 
-
+@login_required(login_url='login')
 def change_password(request):
     if request.method == "POST":
         current_password = request.POST['current_password']
