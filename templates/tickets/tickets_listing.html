@@ -1,0 +1,177 @@
+{%extends 'base.html'%}
+{%load static%}
+
+
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container overflow-hidden">
+    
+    <!-- ============================ COMPONENT 1 ================================= -->
+    {%if not tickets_list%}
+        <H2 class="text-center">Hai aperto questa pagina ma non hai nessun biglietto da scaricare.</H2>
+         <br>
+        <div class="text-center">
+            <a href="{%url 'home'%}" class="btn btn-outline-primary">Ritorna alla home page.</a>
+        </div>
+    {%else%}
+    <div class="row gy-5" id="tickets_table">
+    <table class="table table-bordered">
+    <thead class="text-muted">
+    <tr class="small text-uppercase">
+        <th colspan="5">
+            <h4> I tuoi biglietti </h4>
+        </th>
+    </tr>
+    <tr class="small text-uppercase">
+
+      <th scope="col">Biglietto Numero</th>
+      <th scope="col" width="120">Posto</th>
+      <th scope="col" width="360">Spettacolo</th>
+      <th scope="col" width="240">Data e ora</th>
+      <th scope="col" width="120"><i class="fa fa-download" style="font-size:24px;"></i></th>
+    </tr>
+    </thead>
+    <tbody>
+        {%for item in tickets_list%}
+    <tr>
+        <td>
+                <p class="title text-dark">{{item.number}}</p>
+        </td>
+        <td> 
+            {{item.seat}}
+        </td>
+        <td> 
+            {{item.orderevent.event.show.shw_title}}
+        </td>
+        <td> 
+            <div class="padding-b-2">{{item.orderevent.event.date_time|date:"D d-m-Y"}}</div>
+            <div class="padding-b-2">Ore {{item.orderevent.event.date_time|date:"H : i"}}</div>
+        </td>
+        <td> 
+            <a href="/media/tickets/{{item.pdf_path}}" download> <i class="fa fa-download" style="font-size:24px;" id="ticket_item"></i></a>
+        </td>
+    </tr>
+    {%endfor%}
+
+    </tbody>
+    </table>
+    </div> <!-- row.// -->
+    <div class="row gy-5">
+        <div class="col-8">
+        <p> Puoi scaricare i tuoi biglietti singolarmente cliccando sull'icona download nella tabella qui sopra, 
+            oppure, cliccando sul pulsante  "Start download" qui di fianco puoi scaricare un file compresso contenente 
+            tutti i biglietti formato PDF allegati.</p>
+        </div>
+        <div class="col-4">
+            <div class="btn-container">
+                <button class="btn-primary" id="download">Start Download</button>
+            </div> 
+        </div>
+        </div> <!-- row.// -->    {%endif%}
+        <div class="row gy-5">
+            <div class="col-8">
+            <p> Abbandona la pagina di download. In ogni momento, nella tua gestione del profilo utente, 
+                puoi scaricare i biglietti acquistati fino alla data dello spettacolo a cui si riferiscono.
+            </div>
+            <div class="col-4">
+                <div class="btn-container">
+                    <a href="{%url 'home'%}"> <button class="btn-primary" id="esci">Esci dalla pagina di download.</button></a>
+                </div> 
+            </div>
+            </div> <!-- row.// -->    
+    
+    </div> <!-- container .//  -->
+</section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+<script type="text/javascript">
+    $(document).ready(function() { setButton();
+                console.log('Ready!!!!');
+            }); 
+            function setButton(){
+                const btn = document.querySelector('#download');
+                console.log('Btn Ready!!!!', btn);
+                
+    btn.addEventListener('click', async () => {
+        const container = document.querySelector("#tickets_table")
+        const tickets_list = container.querySelectorAll('a');
+        console.log("Tickets list = ",tickets_list);
+        let urls = [];
+        let filenames = []
+        tickets_list.forEach((ticket) => {
+            const ticket_href = ticket.href;
+            const filename = ticket_href.slice(ticket_href.lastIndexOf('/')+1);
+            urls.push(ticket_href);
+            filenames.push(filename)
+            
+                
+        })
+    console.log("urls =", urls);
+    const promises = urls.map(async (url) => {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return blob;
+    })
+
+    const res = await Promise.all(promises);
+
+    console.log(res);
+
+    const zip = new JSZip();
+
+    
+    res.forEach((blob, index) => {
+        const file_name = filenames[index]; 
+        zip.file(`${file_name}`, blob);
+
+    })
+
+    const readme = zip.folder('readme');
+    readme.file('readme.txt', 'Created with JSZip');
+
+    const zipFile = await zip.generateAsync({ type: 'blob' });
+    
+    console.log(zipFile);
+
+    downloadZip(zipFile)
+
+    })
+    function downloadZip(file) {
+        const a = document.createElement('a');
+        const date = new Date();
+        let year$ = date.getFullYear().toString().padStart(4,0);
+        // console.log(year$);
+        
+        let month$ = (date.getMonth()+1).toString().padStart(2,0);
+        // console.log(month$);
+        let day$ = date.getDate().toString().padStart(2,0);
+        // console.log(day$);
+        let hours$ = date.getHours().toString().padStart(2,0);
+        // console.log(hours$);
+        let minutes$ = date.getMinutes().toString().padStart(2,0);
+        // console.log(minutes$);
+        let seconds$ = date.getSeconds().toString().padStart(2,0);
+        // console.log(seconds$);
+
+
+        const zipfilename_root = 'LTCBoxoffice_biglietti_';
+        let zipfilename = zipfilename_root.concat(year$,month$,day$,'_',hours$,minutes$,seconds$);
+        a.download = zipfilename;
+
+        const url = URL.createObjectURL(file);
+
+        a.style.display = 'none';
+
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+
+    }
+}
+        // jquery end
+        </script>    
+
+{%endblock%}

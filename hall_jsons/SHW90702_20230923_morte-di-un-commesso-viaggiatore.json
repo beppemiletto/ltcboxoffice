@@ -86,7 +86,7 @@
         "num_in_row": "11",
         "number": 38,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C12": {
@@ -96,7 +96,7 @@
         "num_in_row": "12",
         "number": 39,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C13": {
@@ -756,7 +756,7 @@
         "num_in_row": "11",
         "number": 105,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G12": {
@@ -766,7 +766,7 @@
         "num_in_row": "12",
         "number": 106,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G13": {
@@ -776,7 +776,7 @@
         "num_in_row": "13",
         "number": 107,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G14": {

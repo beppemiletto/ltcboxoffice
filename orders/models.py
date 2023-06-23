@@ -64,7 +64,7 @@ class Order(models.Model):
 
     def __str__(self):
         if self.user is not None:
-            return self.user.first_name
+            return f"{self.user.last_name}-{self.pk}"
         else:
             return 'A generic Order'
 
@@ -72,6 +72,27 @@ class Order(models.Model):
 class OrderEvent(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True)
+    seats_price = models.CharField(max_length=512, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.event != None:
+            return self.event.show.shw_title+'-'+self.event.date_time.strftime("%m/%d/%Y, %H:%M:%S")+'@'+self.user.last_name
+        else:
+            return ''
+        
+    def seats_dict(self):
+        self.dict_seats = {}
+        for item in self.seats_price.split(','):
+            seat, ingresso = item.split('$')
+            self.dict_seats[seat] = [seat, ingresso]
+        return self.dict_seats
+
+class UserEvent(models.Model):
+    ordersevents = models.CharField(max_length=100)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True)
     seats_price = models.CharField(max_length=512, blank=True, default='')

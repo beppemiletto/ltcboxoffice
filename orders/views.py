@@ -4,7 +4,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from carts.models import CartItem
-from .models import Order, Payment, OrderEvent
+from .models import Order, Payment, OrderEvent, UserEvent
 from store.models import Event
 from .forms import OrderForm
 import datetime
@@ -18,7 +18,7 @@ def round_euro(the_float):
 def payments(request):
     current_user = request.user
     body = json.loads(request.body)
-    print(body)
+    #print(body)
     order = Order.objects.get(user=current_user, is_ordered=False, order_number= body['orderID'])
     payment = Payment(
         user=current_user,
@@ -37,7 +37,7 @@ def payments(request):
     order.save()
 
     # Move the cart items to the Order Product table and modifiy the Hall Status Json file of event
-    # Reduce the quantity of sold products
+
     cart_items = CartItem.objects.filter(user=request.user).order_by('event')
     for item in cart_items:
         seat= item.seat
@@ -51,8 +51,10 @@ def payments(request):
                 json.dump(event_hall,fp,indent=4, separators=(',', ': '))
         else:
             print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
+
+        #Manage the OrderEvent record 
         try:
-            orderevent = OrderEvent.objects.get(user=current_user, event=event)
+            orderevent = OrderEvent.objects.get(user=current_user, event=event, order=order)
             items = orderevent.seats_price
             items += ',{}${}'.format(seat, item.ingresso)
             orderevent.seats_price = items
@@ -67,10 +69,31 @@ def payments(request):
             orderevent.seats_price = items
             orderevent.save()
 
+        # Manage the UserEvent record (cross table connecting all orders of one user to one event
+        # collecting all setas and prices of User for One event)
+        try:
+            userevent = UserEvent.objects.get(user=current_user, event=event)
+            ordersevents = userevent.ordersevents
+            if str(orderevent.pk) not in ordersevents:
+                ordersevents += ',{}'.format(orderevent.pk)
+                userevent.ordersevents = ordersevents
+            items = userevent.seats_price
+            items += ',{}${}'.format(seat, item.ingresso)
+            userevent.seats_price = items
+            userevent.save()
+        except:
+            userevent = UserEvent()
+            userevent.ordersevents = str(orderevent.pk)
+            userevent.event = event
+            userevent.user = current_user
+            items = '{}${}'.format(seat, item.ingresso)
+            userevent.seats_price = items
+            userevent.save()
 
 
 
- 
+
+
     # Clear the cart
 
     CartItem.objects.filter(user=current_user).delete()
@@ -89,6 +112,8 @@ def payments(request):
     send_email.send()
 
     # Send order number and transaction id back to sendData method via JsonResponse
+
+    order.status = None
 
     data = {
         'order_number': order.order_number,
@@ -174,8 +199,14 @@ def place_order(request):
             data.save()
 
             order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
+            
+            if grand_total != 0:
+                payment_required: int = 1
+            else: 
+                payment_required: int = 0
 
             context = {
+                'payment_required': payment_required,
                 'order': order,
                 'cart_items': cart_items,
                 'total': taxable,
@@ -194,5 +225,20 @@ def place_order(request):
         return redirect('checkout')
     
 def order_complete(request):
-    return
+    order_number = request.GET.get('order_number')
+    transID = request.GET.get('payment_id')
+    try:
+        order = Order.objects.get(order_number=order_number, is_ordered=True)
+        order_events = OrderEvent.objects.filter(order_id=order.id)
+        order.status = Order.STATUS[2][-1]
+        order.save()
+        payment = Payment.objects.get(payment_id=transID)
+        context = {
+            'order': order,
+            'order_events': order_events,
+            'payment': payment,
+        }
+        return render(request, 'orders/order_complete.html', context)
+    except (Order.DoesNotExist, Payment.DoesNotExist):
+        return redirect('home')
 

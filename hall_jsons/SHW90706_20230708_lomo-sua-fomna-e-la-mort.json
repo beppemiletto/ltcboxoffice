@@ -86,7 +86,7 @@
         "num_in_row": "11",
         "number": 38,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C12": {
@@ -96,7 +96,7 @@
         "num_in_row": "12",
         "number": 39,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C13": {
@@ -106,7 +106,7 @@
         "num_in_row": "13",
         "number": 40,
         "row": "C",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "C14": {
@@ -226,7 +226,7 @@
         "num_in_row": "9",
         "number": 52,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D10": {
@@ -236,7 +236,7 @@
         "num_in_row": "10",
         "number": 53,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D11": {
@@ -246,7 +246,7 @@
         "num_in_row": "11",
         "number": 54,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D12": {
@@ -256,7 +256,7 @@
         "num_in_row": "12",
         "number": 55,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D13": {
@@ -266,7 +266,7 @@
         "num_in_row": "13",
         "number": 56,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D14": {
@@ -276,7 +276,7 @@
         "num_in_row": "14",
         "number": 57,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D15": {
@@ -286,7 +286,7 @@
         "num_in_row": "15",
         "number": 58,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D16": {
@@ -296,7 +296,7 @@
         "num_in_row": "16",
         "number": 59,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D17": {
@@ -306,7 +306,7 @@
         "num_in_row": "17",
         "number": 60,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D18": {
@@ -316,7 +316,7 @@
         "num_in_row": "18",
         "number": 61,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "E03": {
@@ -2246,7 +2246,7 @@
         "num_in_row": "11",
         "number": 254,
         "row": "Q",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "Q12": {
@@ -2256,7 +2256,7 @@
         "num_in_row": "12",
         "number": 255,
         "row": "Q",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "Q13": {

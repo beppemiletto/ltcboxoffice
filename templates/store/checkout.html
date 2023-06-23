@@ -144,8 +144,11 @@
                             </table>
                         
                             
-                            
-                            <button type="submit" name="submit" class="btn btn-primary btn-block">Ordina</button>
+                            {%if total != 0 %}
+                            <button type="submit" name="submit" class="btn btn-primary btn-block">Ordina e procedi con pagamento</button>
+                            {%else%}
+                            <button type="submit" name="submit" class="btn btn-primary btn-block">Prenota. Non occorre il pagamento.</button>
+                            {%endif%}
                             <a href="{% url 'store' %}" class="btn btn-light btn-block">Continua Acquisti</a>
                         </form>
                         </div> <!-- card-body.// -->

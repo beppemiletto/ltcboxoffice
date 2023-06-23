@@ -1,0 +1,17 @@
+<script>
+    const btn = document.querySelector('button');
+
+    btn.addEventListener('click',() => {
+        const tickets_list = document.querySelectorAll('a');
+        console.log("Tickets list = ",tickets_list);
+
+        let urls = [];
+
+        tickets_list.forEach((ticket) => {
+            urls.push(ticket.href);
+            console.log("Ticket url =", ticket.href);
+        })
+
+    })
+
+</script>

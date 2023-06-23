@@ -14,7 +14,7 @@
             <div class="row">
                 <aside class="col-lg-8">
                     <div class="card">
-                        <h5 class="card-header">Indirizzo invio fattura</h5>
+                        <h5 class="card-header">Indirizzo invio ricevuta</h5>
                         <div class="card-body">
                             <p class="card-text mb-0">{{ order.full_name_address }} </p>
                             {% if order.order_note %}
@@ -107,30 +107,33 @@
     </section>
     <!-- ========================= SECTION CONTENT END// ========================= -->
 
-    <script>
+<script>
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
-
-        var amount = "{{ grand_total|stringformat:'.2f' }}"
-        var url = "{% url 'payments' %}"
-        var csrftoken = getCookie('csrftoken');
-        var orderID = "{{order.order_number}}"
-        var payment_method = 'PayPal'
-        // Render the paypal button into #paypal-button-container
+    var payment_required = "{{ payment_required }}"
+    console.log("Payment_required =", payment_required);
+    var amount = "{{ grand_total|stringformat:'.2f' }}"
+    var url = "{% url 'payments' %}"
+    var csrftoken = getCookie('csrftoken');
+    var orderID = "{{order.order_number}}"
+    var payment_method = 'PayPal'
+    var redirect_url = "{% url 'order_complete' %}"
+    // Render the paypal button into #paypal-button-container
+    if (payment_required >0){
         paypal.Buttons({
 
             style: {
@@ -144,7 +147,6 @@ function getCookie(name) {
             // Set up the transaction
             createOrder: function(data, actions) {
                 return actions.order.create({
-
                     purchase_units: [{
                         amount: {
                             value: amount,
@@ -175,13 +177,41 @@ function getCookie(name) {
                             }),
                             
                         })
-                        // .then(response => response.json())
-                        // .then(data => console.log(data));
+                        .then((response) => response.json())
+                        .then((data) => {
+                            window.location.href = redirect_url + '?order_number='+data.order_number+'&payment_id='+data.transID;
+                        });
                     }
                 });
             }
 
         }).render('#paypal-button-container');
-    </script>
+    }
+    else
+    { console.log("No pagamento!") 
+    sendData();
+                    function sendData(){
+                        fetch(url,{
+                            method : "POST",
+                            headers: {
+                                "Content-type": "application/json",
+                                "X-CSRFToken": csrftoken,
+                            },
+                            body: JSON.stringify({
+                                orderID: orderID,
+                                transID: "00000000",
+                                payment_method: "NO",
+                                status: "NOPay",
+
+                            }),
+                            
+                        })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            window.location.href = redirect_url + '?order_number='+data.order_number+'&payment_id='+data.transID;
+                        });
+                    }
+    }
+</script>
 
 {% endblock %}
