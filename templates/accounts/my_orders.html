@@ -15,10 +15,14 @@
                             <strong class="d-inline-block mr-3">I tuoi ordini precedenti:</strong>
                         </header>
                         <div class="card-body">
+                            {% if orders %}
                             <div class="row">
                                 <div class="col-md-12">
                                     <table class="table table-hover">
                                           <thead>
+                                            <tr >
+                                                <th colspan="5">Ordini per eventi futuri (biglietti ancora utilizzabili) </th>
+                                            </tr>
                                             <tr>
                                               <th scope="col">Ordine #</th>
                                               <th scope="col">Nome</th>
@@ -28,9 +32,9 @@
                                             </tr>
                                           </thead>
                                           <tbody>
-                                          {% for order in orders %}
+                                          {% for order in future_orders %}
                                                 <tr>
-                                                  <th scope="row"><a href="{% url 'order_detail' order.order_number %}">{{ order.order_number }}</th>
+                                                  <th scope="row"><a href="{% url 'order_detail_tkts' order.order_number %}">{{ order.order_number }}</th>
                                                   <td>{{ order.full_name }}</td>
                                                   <td>{{ order.phone }}</td>
                                                   <td>$ {{ order.order_total }}</td>
@@ -42,6 +46,46 @@
                                     </table>
                                 </div>
                             </div> <!-- row.// -->
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr >
+                                                <th colspan="5">Ordini per eventi passati (biglietti non più disponibili) </th>
+                                            </tr>
+                                            <tr>
+                                                <th scope="col">Ordine #</th>
+                                                <th scope="col">Nome</th>
+                                                <th scope="col">Telefono</th>
+                                                <th scope="col">Totale Ordine</th>
+                                                <th scope="col">Data e ora inoltro</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in past_orders %}
+                                            <tr>
+                                                <th scope="row"><a href="{% url 'order_detail' order.order_number %}">{{ order.order_number }}</th>
+                                                    <td>{{ order.full_name }}</td>
+                                                    <td>{{ order.phone }}</td>
+                                                    <td>$ {{ order.order_total }}</td>
+                                                    <td>{{ order.created_at }}</td>
+                                                </tr>
+
+                                          {% endfor %}
+                                          </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="button">
+                                    <H6>
+                                        Nessun ordine trovato!
+                                    </H6>
+                                </div>
+                                {%endif%}
+                            </div> <!-- row.// -->
+                            
+
                         </div> <!-- card-body .// -->
 
                     </article> <!-- order-group.// -->

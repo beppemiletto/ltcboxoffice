@@ -286,7 +286,7 @@
         "num_in_row": "15",
         "number": 58,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D16": {
@@ -296,7 +296,7 @@
         "num_in_row": "16",
         "number": 59,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D17": {
@@ -306,7 +306,7 @@
         "num_in_row": "17",
         "number": 60,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D18": {
@@ -316,7 +316,7 @@
         "num_in_row": "18",
         "number": 61,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "E03": {

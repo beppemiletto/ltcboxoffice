@@ -10,6 +10,8 @@ from carts.views import _cart_id
 from orders.models import Order, OrderEvent
 import random
 import string
+from datetime import datetime
+import pytz
 
 # verification mail
 from django.contrib.sites.shortcuts import get_current_site
@@ -207,11 +209,27 @@ def resetPassword(request):
     
 @login_required(login_url='login')
 def my_orders(request):
+    future_orders = [] 
+    past_orders = [] 
+
     orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
+    now = datetime.now(pytz.timezone('Europe/Rome'))
+    for order in orders:
+        orders_event = OrderEvent.objects.filter(order=order)
+        for order_event in orders_event:
+            if order_event.event.date_time > now:
+                future_orders.append(order)
+            else:
+                past_orders.append(order)
+
+
     context = {
         'orders':orders,
+        'future_orders': future_orders,
+        'past_orders': past_orders,
     }
     return render(request, 'accounts/my_orders.html', context)
+        
 
 @login_required(login_url='login')
 def edit_profile(request):
@@ -253,6 +271,23 @@ def order_detail(request, order_id):
     }
 
     return render(request, 'accounts/order_details.html', context)
+
+# prepara pagina dettaglio ordini con link per scaricare biglietti
+@login_required(login_url='login')
+def order_detail_tkts(request, order_id):
+    now = datetime.now(pytz.timezone('Europe/Rome'))
+    order_details_future = []
+    order_details = OrderEvent.objects.filter(order__order_number=order_id)
+    for details in order_details:
+        if details.event.date_time > now:
+            order_details_future.append(details)
+    order = Order.objects.get(order_number=order_id)
+    context = {
+        'order_details': order_details_future,
+        'order': order,
+    }
+
+    return render(request, 'accounts/order_details_tkts.html', context)
 
 @login_required(login_url='login')
 def change_password(request):

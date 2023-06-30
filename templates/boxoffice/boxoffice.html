@@ -1,0 +1,38 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+{% block content %}
+<!-- ========================= SECTION MAIN ========================= -->
+<section class="section-intro padding-y-sm">
+<div class="container">
+
+<div class="intro-banner-wrap">
+	<img src="{% static 'images/banners/banner-CassaBoxOffice_1200x300.png' %}" class="img-fluid rounded">
+</div>
+
+</div> <!-- container //  -->
+</section>
+<!-- ========================= SECTION MAIN END// ========================= -->
+
+<!-- ========================= SECTION  ========================= -->
+<section class="section-name padding-y-sm">
+<div class="container">
+	<div class="row">
+		<h1>Menu iniziale <span class="badge alert-success"> Scegli </span></h1>
+	</div>
+	<div class="row">
+
+		<a href="{%url 'event' next_close_event.pk%}">
+			<button type="button" class="btn btn-primary btn-lg btn-block">Apri sessione di cassa per spettacolo: '{{next_close_event.show.shw_title}} del {{next_close_event.date_time}}'</button>
+		</a>
+		<button type="button" class="btn btn-secondary btn-lg btn-block">Apri situazione sala per un evento</button>
+		
+	</div>
+
+</div><!-- container // -->
+</section>
+<!-- ========================= SECTION  END// ========================= -->
+
+</body>
+</html>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.templatetags.static import static
 from django.contrib.auth.decorators import login_required
@@ -51,16 +51,6 @@ def print_ticket(request):
         event = Event.objects.get(id=ordereventobj.event.pk)
         show = Show.objects.get(id=event.show.pk)
 
-
-        response_str = 'This is the order event to be processed<br>id = {} - {} - {}<br>ricevuto da {} {}<br><br>'.format(
-            ordereventobj.pk, 
-            ordereventobj.seats_price, 
-            ordereventobj.payment,
-            ordereventobj.payment.user.first_name,
-            ordereventobj.payment.user.last_name
-            
-            )
-        usermail = ordereventobj.user.email
         seats_dict = ordereventobj.seats_dict()
         # verifica utente per contesto di vendita
         # se utente Staff allora assume vendita in cassa
@@ -75,39 +65,45 @@ def print_ticket(request):
         if event.price_full == 0.0 and event.price_reduced == 0.00:
             sell_code = 'Prenotazione'
 
+        event_tickets = Ticket.objects.filter(orderevent__event=event)
+        
+
 
 
         for k, seat in seats_dict.items():
-            price = int(seat[-1])
-            ticket = Ticket()
-            ticket.price = price
-            ticket.payment = ordereventobj.payment
-            ticket.orderevent = ordereventobj
-            ticket.seat = k
-            ticket.user = ordereventobj.user
-
-            # definisce il numero seriale del biglietto su base serata
             try:
-                event_tickets = Ticket.objects.filter(orderevent__event=event)
-                serial = event_tickets.count()+1
+                tickets_all = Ticket.objects.filter(orderevent__event=event)
+                ticket = get_object_or_404(tickets_all, seat= k)
             except:
-                serial=1
-            if sell_code is not None:
-                ticket.sell_mode = sell_code
-            ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk}.{f'{serial:03d}'}"
-            response_str += 'I am going to print ticket for seat {} <br>'.format(seat[0])
-            ticket.save()
-            result, pdf_file = printer(ticket_number=ticket.number)
-            if result:
-                ticket.status= 'Printed'
-                ticket.pdf_path = pdf_file.split('/')[-1]
+                print('va stampato')
+
+                price = int(seat[-1])
+                ticket = Ticket()
+                ticket.price = price
+                ticket.payment = ordereventobj.payment
+                ticket.orderevent = ordereventobj
+                ticket.seat = k
+                ticket.user = ordereventobj.user
+
+                # definisce il numero seriale del biglietto su base serata
+                try:
+                    event_tickets = Ticket.objects.filter(orderevent__event=event)
+                    serial = event_tickets.count()+1
+                except:
+                    serial=1
+                if sell_code is not None:
+                    ticket.sell_mode = sell_code
+                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk}.{f'{serial:03d}'}"
                 ticket.save()
-                tickets_list.append(ticket)
-                usermail = ticket.user.email
+                result, pdf_file = printer(ticket_number=ticket.number)
+                if result:
+                    ticket.status= 'Printed'
+                    ticket.pdf_path = pdf_file.split('/')[-1]
+                    ticket.save()
+            tickets_list.append(ticket)
     context = {
-        'ticket_user': ticket.user,
+        'ticket_user': ordereventobj.user,
         'tickets_list':tickets_list,
-        'usermail': usermail,
     }
 
         
