@@ -5,12 +5,20 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
 from .models import SellingSeats
 from .forms import SellingForm
+from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from store.models import Event
 from orders.models import OrderEvent, UserEvent
+from tickets.models import Ticket
+from tickets.reportlab_ticket_printer import TicketPrinter
+from accounts.models import Account
 from hall.models import Row
+from billboard.models import Show
+import time
 from datetime import datetime, timedelta
 import pytz
 import json , os
+from pdf2image import convert_from_path
+from PIL import Image, ImageFilter
 
 # Create your views here.
 @login_required(login_url='login')
@@ -51,6 +59,17 @@ def event(request, event_id):
     current_event = Event.objects.get(id=event_id)
     event_orders = OrderEvent.objects.filter(event__id=current_event.pk)
     users_event = UserEvent.objects.filter(event__id=current_event.pk)
+    # verifica esistenza dell'OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
+    # se manca il record specifico lo crea
+    boxoffice_orderevent = None
+    if event_orders.count() > 0:
+        boxoffice_orderevent = event_orders.get(user__last_name = 'Laboratorio')
+    if boxoffice_orderevent is None:
+        boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+        boxoffice_orderevent = OrderEvent()
+        boxoffice_orderevent.user = boxoffice_user
+        boxoffice_orderevent.event = current_event
+        boxoffice_orderevent.save()
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
@@ -209,3 +228,95 @@ def boxoffice_minus_price(request, item_id = None):
     item.save()
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
+
+def boxoffice_print(request, event_id):
+    printer = EscPosDummy()
+    # printer_net = EscPosNetwork(host='localhost', port= 9100)
+    printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
+
+
+    current_event = Event.objects.get(id = event_id)
+    costs = [0, current_event.price_reduced, current_event.price_full]
+    ingressi = ['Gratuito','Ridotto', 'Intero']
+    show= current_event.show
+    sold_seats = SellingSeats.objects.all()
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    tickets_list = []
+    for sold_seat in sold_seats:
+        try:
+            tickets_all = Ticket.objects.filter(event=current_event)
+            serial = tickets_all.count() + 1
+        except:
+            serial = 1
+        ticket = Ticket()
+        data = {}
+        ticket.sell_mode = ticket.SELLING_MODE[ticket.SELLING_MODE.index(('C','Cassa'))][0]
+        ticket.status = 'New'
+
+        ticket.seat = sold_seat.seat
+        data['seat'] = sold_seat.seat
+
+        ticket.price = sold_seat.price
+        data['ingresso'] = ingressi[sold_seat.price]
+        data['costo'] = costs[sold_seat.price]
+
+        ticket.payment = None
+        boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+        ticket.orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
+        ticket.event = current_event
+        ticket.user = boxoffice_user
+        
+        ticket.number=f"{ticket.sell_mode[0]}{current_event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+        data['numero']= ticket.number
+
+        ticket.save()
+
+        ticket_print = TicketPrinter(
+            save_path = 'media/tickets',
+            numero=ticket.number,
+            show= show.shw_title,
+            evento_datetime=current_event.date_time, 
+            evento = current_event,
+            seat= ticket.seat, 
+            ingresso= ingressi[ticket.price],
+            price= costs[ticket.price]
+        )
+
+        filename = ticket_print.build_background()
+        ticket_print.write_text()
+        img = ticket_print.make_qrcode(user=ticket.user, event=current_event.pk)
+        ticket_print.draw_qrcode(img_path=img)
+        images = convert_from_path(filename)
+        images[-1].save('the_ticket.png', 'PNG')
+
+        with Image.open('the_ticket.png') as ticket_image_rgba:
+            ticket_image_rgba.load()
+        ticket_image_l = ticket_image_rgba.convert('L')
+        ticket_image_l_rotated= ticket_image_l.transpose(Image.ROTATE_90)
+        # threshold = 127
+        # ticket_image_l_rotated = ticket_image_l_rotated.point(lambda x: 255 if x > threshold else 0)
+        # ticket_image_l_rotated = ticket_image_l_rotated.filter(ImageFilter.CONTOUR)
+        ticket_image_l_rotated.save('the_ticket.png', 'PNG')
+        time.sleep(0.5)
+
+        printer_usb.print_ticket_image('the_ticket.png')        
+
+    
+        hall_status[ticket.seat]['status'] = 5
+        tickets_list.append(ticket)
+
+        
+    context = {
+       'event': current_event,
+       'tickets_list':tickets_list,
+
+        }
+    with open(json_file_path,'w') as jfp:
+        json.dump(hall_status,jfp)
+   
+
+
+    return render(request, 'boxoffice/ticket_printed.html', context)

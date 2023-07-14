@@ -11,4 +11,5 @@ urlpatterns = [
     path('boxoffice_plus_price/<int:item_id>/', views.boxoffice_plus_price, name='boxoffice_plus_price'),
     path('boxoffice_minus_price/<int:item_id>/', views.boxoffice_minus_price, name='boxoffice_minus_price'),
     path('boxoffice_remove_cart/<int:item_id>/', views.boxoffice_remove_cart, name='boxoffice_remove_cart'),
+    path('boxoffice_print/<int:event_id>/', views.boxoffice_print, name='boxoffice_print'),
 ] 

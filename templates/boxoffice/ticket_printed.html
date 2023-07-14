@@ -7,8 +7,8 @@
     <div class="container">
     
     <!-- ============================ COMPONENT 1 ================================= -->
-    {%if not cart_items%}
-        <H2 class="text-center">Il carrello è vuoto.</H2>
+    {%if not tickets_list%}
+        <H2 class="text-center">Non ci sono biglietti stampati da visualizzare.</H2>
          <br>
         <div class="text-center">
             <a href="{%url 'event' event.id%}" class="btn btn-outline-primary">Torna alla pagina principale</a>
@@ -27,7 +27,7 @@
     </tr>
     </thead>
     <tbody>
-        {%for item in cart_items %}
+        {%for item in tickets_list %}
     <tr>
         <td>
             <figure class="itemside align-items-center">

@@ -74,6 +74,7 @@ def show_detail(request, section_slug, show_slug):
     max_date_time = max_date_time.replace(tzinfo=pytz.utc)  
     events = Event.objects.filter(show=show,date_time__gte=max_date_time)
     events_number = events.count()
+    prices = ''
     if events_number > 0:
         for event in events:
             try: 

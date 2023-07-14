@@ -16,7 +16,6 @@ import pytz
 import os
 import locale
 
-
 # Create your views here.
 def tickets(request):
     show_list = Show.objects.filter(is_in_billboard=True, is_active=True)
@@ -82,6 +81,7 @@ def print_ticket(request):
                 ticket.price = price
                 ticket.payment = ordereventobj.payment
                 ticket.orderevent = ordereventobj
+                ticket.event = ordereventobj.event
                 ticket.seat = k
                 ticket.user = ordereventobj.user
 
@@ -93,7 +93,7 @@ def print_ticket(request):
                     serial=1
                 if sell_code is not None:
                     ticket.sell_mode = sell_code
-                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk}.{f'{serial:03d}'}"
+                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
                 ticket.save()
                 result, pdf_file = printer(ticket_number=ticket.number)
                 if result:
@@ -112,12 +112,12 @@ def print_ticket(request):
     return render(request, 'tickets/tickets_listing.html', context)
 
 def printer(ticket_number):
-    ingressi = ['Gratuito', 'Intero', 'Ridotto']
 
+    ingressi = ['Gratuito', 'Intero', 'Ridotto']
+    timezones=pytz.all_timezones
+    cambiano = pytz.timezone('Europe/Rome')
 
     status = None
-    location_logo_path = 'static/images/logos/logo_teatro.png'
-    company_logo_path = 'static/images/logos/logo_ltc.png'
     try:
         ticket = Ticket.objects.get(number=ticket_number)
         event_id = ticket.orderevent.event.pk
@@ -135,9 +135,6 @@ def printer(ticket_number):
 
         ticket_print = TicketPrinter(
             save_path = 'media/tickets',
-            location_text ='TEATRO COMUNALE DI CAMBIANO',
-            location_logo = location_logo_path,
-            company_logo = company_logo_path,                  
             numero=ticket.number,
             show= show.shw_title,
             evento_datetime=event.date_time, 
@@ -148,7 +145,6 @@ def printer(ticket_number):
         )
         filename = ticket_print.build_background()
         ticket_print.write_text()
-        ticket_print.draw_logos()
         img = ticket_print.make_qrcode(user=ticket.user, event=event.pk)
         ticket_print.draw_qrcode(img_path=img)
         status = True
@@ -171,4 +167,4 @@ def tickets_listing(request):
         'tickets_list': tickets_list
     }
     return render(request, 'tickets/tickets_listing.html', context)
-    
+

@@ -5,10 +5,10 @@
 <meta charset="UTF-8">
 <section class="section-content padding-y bg">
 <div class="container p-1 bg-primary text-white">
-    <div class="card">
-        <div class="row no-gutters">
-            <div class="col no-gutters"> <h5>GESTIONE CASSA </h5></div>
-            <div class="col no-gutters">
+
+        <div class="row">
+            <div class="col-md"> <h5>GESTIONE CASSA </h5></div>
+            <div class="col-md">
                 <table class="table table-sm">
                     <tbody>
                         <tr>
@@ -22,13 +22,12 @@
             </div>
         </div> <!-- row -->
 
-    </div> <!-- card -->
 
 <!-- ============================ COMPONENT 1 ================================= -->
+    <div class="row">
 
-<div class="card">
-    <div class="col-lg-8">  <!-- col for table -->
-        <table class="table table-hover table-sm">
+        <div class="col-lg-8">  <!-- col for table -->
+            <table class="table table-hover table-sm">
             <tr>
                 <td class="table-primary" colspan = "10"> </td>
             <td class="table-primary" colspan = "1"><p>STAGE</p> </td>
@@ -38,7 +37,7 @@
         {%for k, row in rows.items %}
         {%if row.data.name == 'I'%}
         <tr> <td class="table-primary" colspan="21"></td></tr>
-
+        
         {%endif%}
         
         <tr >
@@ -54,25 +53,28 @@
             {%if k != 'data' %}
             <td class="table-success" onclick="selectSeat('{{seat.name}}')" id="{{seat.name}}"> 
                 <small>{{seat.name}}</small>
-             </td>
+            </td>
             {%endif%}
             {%endfor%}
-
+            
             {%if row.data.off_end%}
             <td class="table-primary" colspan = "{{row.data.off_end}}"> </td>
             {%endif%}
-
+            
         </tr> <!-- row.// -->
         {%endfor%}
         
-        </table>
-    </div> <!-- col for table -->
+    </table>
+</div> <!-- col for table -->
+
     <div class="col-lg-4">  <!-- col for bookings list -->
         <table class="table table-hover table-sm">
+            <thead class="thead" aria-colspan="3"> Prenotazioni, prevendite</thead>
             
         </table>
     </div>
-</div> <!-- card.// -->
+
+</div> <!-- closing the main row-->
 <!-- ============================ COMPONENT 1 END .// ================================= -->
 <div class="row">
     <div class="col-sm">
@@ -93,8 +95,8 @@
         </div> 
         <div class="col-sm">
             <div class="card"> 
-                <a href="{% url 'home'%}">
-                    <button type="button" class="btn btn-info">Esci dalla selezione posti</button>
+                <a href="{% url 'boxoffice'%}">
+                    <button type="button" class="btn btn-info">Esci dalla gestione cassa</button>
                 </a>
         </div>
   </div>
