@@ -1,0 +1,83 @@
+{%extends 'boxoffice_base.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+    
+    <!-- ============================ COMPONENT 1 ================================= -->
+    {%if not eventlist%}
+        <H2 class="text-center">Non ci sono eventi da visualizzare / modificare.</H2>
+         <br>
+        <div class="text-center">
+            <a href="{%url 'boxoffice'%}" class="btn btn-outline-primary"> Torna alla Home in area riservata.</a>
+        </div>
+    {%else%}
+    <div class="row">
+        <aside class="col-lg-9">
+    <div class="card">
+    <table class="table table-border">
+    <thead class="text-muted">
+        <th class="header" scope="colgroup" colspan="3"> <h4> Eventi che puoi gestire. </h4> </th>
+    <tr class="small text-uppercase">
+      <th scope="col">Evento</th>
+      <th scope="col" width="200">Apri gestione cassa.</th>
+      <th scope="col" width="200">Modifica esistente.</th>
+      <th scope="col" class="text-right" width="200"> Aggiungi prenotazione.</th>
+    </tr>
+    </thead>
+    <tbody>
+        {%for event in eventlist%}
+    <tr>
+        <td>
+            <figure class="itemside align-items-center">
+                <div class="aside"><img src="{{event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
+                <figcaption class="info">
+                    <a href="#" class="title text-dark">Evento {{event.show.shw_title}}</a>
+                    <p>  del {{event.date_time|date:"D d m Y"}} alle ore {{event.date_time|date:"H : i"}}  </p>
+                </figcaption>
+            </figure>
+        </td>
+
+        <td> 
+            <div class="text-right"> 
+                <a href="{% url 'event' event.pk %}" class="btn btn-success"> Apri</a>
+            </div> <!-- price-wrap .// -->
+        </td>
+        <td> 
+            <div class="text-right"> 
+                <a href="{% url 'change_bookings' event.pk %}" class="btn btn-primary"> Modifica</a>
+            </div> <!-- price-wrap .// -->
+        </td>
+        <td class="text-right"> 
+        <a href="#" class="btn btn-primary"> Aggiungi</a>
+        </td>
+    </tr>
+    {%endfor%}
+    </tbody>
+    </table>
+    </div> <!-- card.// -->
+    
+        </aside> <!-- col.// -->
+        <aside class="col-lg-3">
+    
+            <div class="card">
+            <div class="card-body">
+                
+                <hr>
+
+                <a href="{%url 'boxoffice'%}" class="btn btn-light btn-block">Torna alla home</a>
+            </div> <!-- card-body.// -->
+            </div> <!-- card.// -->
+    
+    </aside> <!-- col.// -->
+    
+    
+    </div> <!-- row.// -->
+    <!-- ============================ COMPONENT 1 END .// ================================= -->
+    {%endif%}
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

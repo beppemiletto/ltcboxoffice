@@ -1,0 +1,19 @@
+{%extends 'boxoffice_base.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+    
+    <!-- ============================ COMPONENT 1 ================================= -->
+
+        <H2 class="text-center">Stampante USB non trovata. Controlla la connessione e la corretta accensione del dispositivo.</H2>
+         <br>
+        <div class="text-center">
+            <a href="{%url 'boxoffice'%}" class="btn btn-outline-primary">Torna alla pagina principale</a>
+        </div>
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

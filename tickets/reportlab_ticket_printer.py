@@ -30,7 +30,9 @@ class TicketPrinter():
         self.evento=evento
         self.numero=numero
         self.show=show
-        self.evento_datetime= evento_datetime
+
+        self.tzhere = pytz.timezone('Europe/Rome')
+        self.evento_datetime = evento_datetime.astimezone(self.tzhere)
         self.seat=seat
         self.ingresso=ingresso
         self.price=price

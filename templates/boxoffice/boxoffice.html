@@ -24,7 +24,9 @@
 		<a href="{%url 'event' next_close_event.pk%}">
 			<button type="button" class="btn btn-primary btn-lg btn-block">Apri sessione di cassa per spettacolo: '{{next_close_event.show.shw_title}} del {{next_close_event.date_time}}'</button>
 		</a>
-		<button type="button" class="btn btn-secondary btn-lg btn-block">Apri situazione sala per un evento</button>
+		<a href="{%url 'event_list'%}">
+			<button type="button" class="btn btn-secondary btn-lg btn-block">Apri per modifica prenotazioni / prevedite per altro evento</button>
+		</a>
 		
 	</div>
 

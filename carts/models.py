@@ -6,8 +6,8 @@ from accounts.models import Account
 # Generics
 ingressi_strings = [
     'Gratuito', # for index == 0
-    'Intero', # for index == 1
-    'Ridotto', # for index == 2
+    'Ridotto', # for index == 1
+    'Intero', # for index == 2
 ]
 
 
@@ -20,12 +20,12 @@ class Cart(models.Model):
         return self.cart_id
 
 class CartItem(models.Model):
-    INGRESSI = ((0,'Gratuito'), (1,'Intero'), (2,'Ridotto'),)
+    INGRESSI = ((0,'Gratuito'), (1,'Ridotto'), (2,'Intero'),)
     user            = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     event           = models.ForeignKey(Event, on_delete=models.CASCADE)
     cart            = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)
     seat            = models.CharField(max_length=3, default='C03')
-    ingresso        = models.IntegerField( choices=INGRESSI,default=1)
+    ingresso        = models.IntegerField( choices=INGRESSI,default=2)
     price           = models.FloatField(default = 0.0, blank=True)
     is_active       = models.BooleanField(default=True)
 

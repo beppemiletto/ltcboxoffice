@@ -55,7 +55,7 @@ def add_cart(request, event_id):
                     event = event,
                     cart = cart,
                     seat = seat,
-                    ingresso = 1,
+                    ingresso = 2,
                     price = event.price_full,
                     
                     
@@ -80,7 +80,7 @@ def remove_cart(request, item_id):
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
     try:
-        if hall_status[seat]['status'] == 3:
+        if hall_status[seat]['status'] == 3 or hall_status[seat]['status'] == 4:
             hall_status[seat]['status'] = 0 
             with open(json_file_path,'w') as jfp:
                 json.dump(hall_status,jfp)
@@ -100,9 +100,9 @@ def plus_ingresso(request, item_id = None):
     if ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
-        item.price = item.event.price_full
-    elif ingresso_new == 2:
         item.price = item.event.price_reduced
+    elif ingresso_new == 2:
+        item.price = item.event.price_full
 
     item.save()
 
@@ -121,9 +121,9 @@ def minus_ingresso(request, item_id = None):
     if ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
-        item.price = item.event.price_full
-    elif ingresso_new == 2:
         item.price = item.event.price_reduced
+    elif ingresso_new == 2:
+        item.price = item.event.price_full
     item.save()
 
     # return HttpResponse('<H1>CartItem number {} move ingresso from {} to {}</H1>'.format(item_id, ingresso_old, ingresso_new))
@@ -147,7 +147,7 @@ def cart(request, total=0, cart_items=None):
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         for item in cart_items:
             vat_rate = item.event.vat_rate
-            prices = [0.00, item.event.price_full, item.event.price_reduced]
+            prices = [0.00, item.event.price_reduced, item.event.price_full]
             total += (prices[item.ingresso])
         taxable = int(total / (1 + vat_rate / 100) *100)/100
         tax = int((total - taxable) *100)/100

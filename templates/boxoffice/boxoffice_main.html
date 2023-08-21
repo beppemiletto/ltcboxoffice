@@ -23,15 +23,15 @@
         </div> <!-- row -->
 
 
-<!-- ============================ COMPONENT 1 ================================= -->
+<!-- ============================ HALL and bookings tables ================================= -->
     <div class="row">
 
         <div class="col-lg-8">  <!-- col for table -->
             <table class="table table-hover table-sm">
             <tr>
-                <td class="table-primary" colspan = "10"> </td>
-            <td class="table-primary" colspan = "1"><p>STAGE</p> </td>
-            <td class="table-primary" colspan = "10"> </td>
+                <td class="table-primary" colspan = "9"> </td>
+            <td class="table-primary" colspan = "3"><p>LATO PALCO</p> </td>
+            <td class="table-primary" colspan = "9"> </td>
         </tr>
         
         {%for k, row in rows.items %}
@@ -65,23 +65,41 @@
         {%endfor%}
         
     </table>
-</div> <!-- col for table -->
+    </div> <!-- col for table -->
 
     <div class="col-lg-4">  <!-- col for bookings list -->
-        <table class="table table-hover table-sm">
-            <thead class="thead" aria-colspan="3"> Prenotazioni, prevendite</thead>
-            
-        </table>
+        
+        <div class="card example-1 scrollbar-ripe-malinka">
+            <table class="table table-hover table-sm">
+                <thead class="thead" aria-colspan="3"> Prenotazioni.</thead>
+                <th>Nome prenotazione</th>
+                <th>Apri per vendita</th>
+                <th>Apri per modifica</th>
+                <tbody>
+                    {%for user_event in users_event%}
+                        <tr>
+                            
+                            <td>{{user_event.user}}</td>
+                            <td><button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button></td>
+                            <td><button type="button" class="btn btn-warning btn-sm"><i class='far fa-edit'></i></button></td>
+                        </tr>
+                    {%endfor%}
+                    
+                </tbody>
+                
+            </table>
+
+        </div>
+          
     </div>
 
-</div> <!-- closing the main row-->
-<!-- ============================ COMPONENT 1 END .// ================================= -->
-<div class="row">
-    <div class="col-sm">
-        <div class="card">
-            <form method="POST" action="{% url 'event' current_event.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">VENDITA.</button>
+    <!-- ============================ Actions menu  ================================= -->
+    <div class="row">
+        <div class="col-sm">
+            <div class="card">
+                <form method="POST" action="{% url 'event' current_event.id %}">
+                    {% csrf_token %}
+                <button type="submit" class="btn btn-success">VENDITA.</button>
                 <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
             </form>
         </div>
@@ -89,18 +107,29 @@
     <div class="col-sm">
         <div class="card">
             <a href="{% url 'event' current_event.id %}">
-                    <button type="button" class="btn btn-warning">Azzera i posti (reset)</button>
+                    <button type="button" class="btn btn-warning">Azzera selezione posti (reset)</button>
                 </a>
             </div>
         </div> 
         <div class="col-sm">
             <div class="card"> 
                 <a href="{% url 'boxoffice'%}">
-                    <button type="button" class="btn btn-info">Esci dalla gestione cassa</button>
+                    <button type="button" class="btn btn-primary">Esci dalla gestione cassa</button>
                 </a>
+            </div>
         </div>
-  </div>
-</div>
+        <div class="col-sm">
+            <div class="card"> 
+                {% if printer_ready %}
+                <button type="button" class="btn btn-success">Printer OK</button>
+                {% else %}
+                <button type="button" class="btn btn-danger">Printer NOT FOUND</button>
+                
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
 </div> <!-- container .//  -->
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->

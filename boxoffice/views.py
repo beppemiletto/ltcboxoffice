@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
-from .models import SellingSeats
-from .forms import SellingForm
+from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from .models import SellingSeats, BoxOfficeTransaction
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
+from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
 from orders.models import OrderEvent, UserEvent
 from tickets.models import Ticket
@@ -63,7 +66,10 @@ def event(request, event_id):
     # se manca il record specifico lo crea
     boxoffice_orderevent = None
     if event_orders.count() > 0:
-        boxoffice_orderevent = event_orders.get(user__last_name = 'Laboratorio')
+        for item in event_orders:
+            if item.user.first_name == "Cassa" and item.user.last_name == "Laboratorio":
+                boxoffice_orderevent = item
+
     if boxoffice_orderevent is None:
         boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
         boxoffice_orderevent = OrderEvent()
@@ -143,6 +149,8 @@ def event(request, event_id):
 
     print(f"Found {event_orders.count()} ordini aggregati su {users_event.count()} utenti che hanno prenotato")
 
+    printer_status: bool = printer_ready()
+
     context = {
         'hall_status': hall_status,
         'rows': rows,
@@ -150,6 +158,7 @@ def event(request, event_id):
         'current_event' : current_event,
         'event_orders' : event_orders,
         'users_event' : users_event,
+        'printer_ready': printer_status,
     }
 
     # return HttpResponse(f"Apriamo allegramente la pagina di gestione della cassa per evento numero {event_id}.")
@@ -230,9 +239,20 @@ def boxoffice_minus_price(request, item_id = None):
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
 
 def boxoffice_print(request, event_id):
-    printer = EscPosDummy()
+    printer_dummy = Dummy()
     # printer_net = EscPosNetwork(host='localhost', port= 9100)
-    printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
+    try:
+        printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
+        recovery: bool = False
+        # printer_usb = Usb(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
+    except USBNotFoundError:
+        print('Manca la stampnate USB')
+        printer_usb = printer_dummy
+        recovery = True
+        # with open('templates/boxoffice/usbnotfound.html', 'r') as html_fp:
+        #     html = html_fp.read()
+        # html = render_to_string('boxoffice/usbnotfound.html')
+        # return HttpResponse(html)
 
 
     current_event = Event.objects.get(id = event_id)
@@ -274,7 +294,21 @@ def boxoffice_print(request, event_id):
 
         ticket.save()
 
-        ticket_print = TicketPrinter(
+        # aggiorna il OrderEvent della Cassa per questo Evento
+        #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
+        boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
+
+        if boxoffice_orderevent is not None:
+            seats_price_str:str = boxoffice_orderevent.seats_price
+            if len(seats_price_str) > 3:
+                seats_price_str += f",{sold_seat.seat}${str(sold_seat.price)}"
+            else:
+                seats_price_str = f"{sold_seat.seat}${str(sold_seat.price)}"
+            boxoffice_orderevent.seats_price = seats_price_str
+            boxoffice_orderevent.save()
+
+
+        ticket_printer = TicketPrinter(
             save_path = 'media/tickets',
             numero=ticket.number,
             show= show.shw_title,
@@ -285,10 +319,10 @@ def boxoffice_print(request, event_id):
             price= costs[ticket.price]
         )
 
-        filename = ticket_print.build_background()
-        ticket_print.write_text()
-        img = ticket_print.make_qrcode(user=ticket.user, event=current_event.pk)
-        ticket_print.draw_qrcode(img_path=img)
+        filename = ticket_printer.build_background()
+        ticket_printer.write_text()
+        img = ticket_printer.make_qrcode(user=ticket.user, event=current_event.pk)
+        ticket_printer.draw_qrcode(img_path=img)
         images = convert_from_path(filename)
         images[-1].save('the_ticket.png', 'PNG')
 
@@ -299,10 +333,18 @@ def boxoffice_print(request, event_id):
         # threshold = 127
         # ticket_image_l_rotated = ticket_image_l_rotated.point(lambda x: 255 if x > threshold else 0)
         # ticket_image_l_rotated = ticket_image_l_rotated.filter(ImageFilter.CONTOUR)
-        ticket_image_l_rotated.save('the_ticket.png', 'PNG')
-        time.sleep(0.5)
+        if not recovery:
+            ticket_image_l_rotated.save('the_ticket.png', 'PNG')
+            time.sleep(0.25)
 
-        printer_usb.print_ticket_image('the_ticket.png')        
+            printer_usb.print_ticket_image('the_ticket.png')  
+        else:
+            if os.name == 'posix':
+                cmd_str = f'cp {filename} media/tickets/recovery/.'
+            else:
+                cmd_str = f'copy {filename} media/tickets/recovery/.'
+            
+            os.system(cmd_str)
 
     
         hall_status[ticket.seat]['status'] = 5
@@ -320,3 +362,238 @@ def boxoffice_print(request, event_id):
 
 
     return render(request, 'boxoffice/ticket_printed.html', context)
+
+def close_transaction(request, event_id):
+    current_event = Event.objects.get(id = event_id)
+    costs = [0, current_event.price_reduced, current_event.price_full]
+    ingressi = ['Gratuito','Ridotto', 'Intero']
+    show= current_event.show
+    boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+    try:
+        payments = BoxOfficeTransaction.objects.filter(event=current_event)
+        serial_number:int = payments.count() + 1
+    except:
+        serial_number:int = 1 
+    payment = BoxOfficeTransaction(
+        user = boxoffice_user,
+        event = current_event,
+        seats_sold = '',
+        payment_id = f'{current_event.pk:05d}.{serial_number:03d}',
+        payment_method = '',
+        amount_paid = '0,0',
+        status = 'Paid'
+    )
+
+    sold_seats = SellingSeats.objects.all()
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    
+
+    seats_list:list = []
+    totale:float = 0
+    for sold_seat in sold_seats:
+        ticket = Ticket.objects.get(event=current_event, seat = sold_seat.seat)
+        ticket.status = 'Printed'
+        totale += costs[ticket.price]
+        ticket.save()
+        seats_list.append(f'{sold_seat.seat}${ticket.price}')
+        sold_seat.delete()
+    
+    payment.seats_sold = ','.join(seats_list)
+    payment.amount_paid = "{:5.2f}".format(totale)
+    payment.save()
+    
+    return  redirect(reverse('event', kwargs={"event_id": current_event.pk}))
+
+@login_required(login_url='login')
+def event_list(request):
+    if request.user.is_staff:
+        now = datetime.now(pytz.timezone('Europe/Rome'))
+        events = Event.objects.filter(show__is_in_billboard=True).order_by('date_time')
+        eventlist:list = []
+        for event in events:
+            td = event.date_time - now
+            # print(event.pk, td)
+            if td.days >= 0:
+                eventlist.append(event)
+        
+        context = {
+
+            'eventlist' : eventlist,
+        }
+        return render(request, 'boxoffice/event_list.html', context)
+    else:
+        return redirect ('user_not_allowed')
+    
+
+    return
+
+def change_bookings(request, event_id):
+    current_event = Event.objects.get(id=event_id)
+    event_orders = OrderEvent.objects.filter(event__id=current_event.pk)
+    users_event = UserEvent.objects.filter(event__id=current_event.pk)
+    # aggiorna il OrderEvent della Cassa per questo Evento
+    #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
+    try:
+        boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
+    except:
+        boxoffice_orderevent = None
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    
+    
+    if request.method == 'POST':
+        go = False
+        selected_seats=[]
+        selected_seats_str = request.POST['selected_seats']
+        cart_items = []
+        costs = [0.0,  current_event.price_reduced, current_event.price_full]
+        ingressi  = ['Gratuito','Ridotto' , 'Intero']
+        total = 0.0
+        try:
+            sellingseats = SellingSeats.objects.all()
+            for sellingseat in sellingseats:
+                cart_items.append(sellingseat)
+                go = True
+        except:
+            pass
+        if len(selected_seats_str):
+            selected_seats = selected_seats_str.strip().split(',')
+            try:
+                for seat in selected_seats:
+                    hall_status[seat]['status'] = 4
+                    sellingseat = SellingSeats()
+                    sellingseat.seat = seat
+                    sellingseat.event = current_event
+                    if current_event.price_full > 0:
+                        sellingseat.price = 2
+                    else:
+                        sellingseat.price = 0
+                    sellingseat.cost=costs[sellingseat.price]
+                    sellingseat.ingresso=ingressi[sellingseat.price]
+                    total += sellingseat.cost
+                    sellingseat.save()
+                    cart_items.append(sellingseat)
+                    go=True
+
+                with open(json_file_path,'w') as jfp:
+                    json.dump(hall_status,jfp)
+
+            except:
+                print('Something wrong!')
+
+        context = {
+            'hall_status': hall_status,
+            'event' : current_event,
+            'cart_items' : cart_items,
+            'total': total,
+        }
+        if go:
+            return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
+        else:
+            return redirect(reverse('event', kwargs={"event_id": current_event.pk}))
+        
+    else:
+        paginator = Paginator(users_event, 5)
+        page = request.GET.get('page')
+        paged_users_event = paginator.get_page(page)
+        bookings = {}
+
+        for single_user in paged_users_event:
+            cognome = single_user.user.last_name.strip()
+            email = single_user.user.email
+            userevent_id = single_user.pk
+            orders_str = single_user.ordersevents
+            orders_event = orders_str.split(',')
+            orders_dict = {}
+            for order_str in orders_event:
+                print(order_str, type(order_str))
+                orderevent = OrderEvent.objects.get(id = int(order_str))
+                orders_dict[orderevent.pk] =  (orderevent.seats_price, orderevent.created_at)
+            
+
+            bookings[f'{cognome}-{email}'] = (userevent_id , orders_dict)      
+
+        context = {
+            'hall_status': hall_status,
+            'json_file' : json_file_path,
+            'current_event' : current_event,
+            'event_orders' : event_orders,
+            'bookings' : bookings,
+            'paged_users_event': paged_users_event,
+        }
+
+
+        return render(request, 'boxoffice/change_bookings.html', context)
+
+def edit_order(requeste, order_id):
+    return HttpResponse(f'<H1>The page of change order {order_id}.</H1>')
+
+def erase_order(request, userorder_id, order_id):
+    userevent = UserEvent.objects.get(id = userorder_id)
+    orderevent = OrderEvent.objects.get(id = order_id)
+    current_event = Event.objects.get(id = orderevent.event.id)
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    orders_str = userevent.ordersevents
+    seats_user_event_str = userevent.seats_price
+    seats_order_event_str = orderevent.seats_price
+    orders_event = orders_str.split(',')
+    seats_user_event = seats_user_event_str.split(',')
+    seats_order_event = seats_order_event_str.split(',')
+    seats_changed = []
+
+    for seat in seats_order_event:
+        seats_user_event.remove(seat)
+        seats_changed.append(seat)
+    if len(seats_user_event) > 0:
+        seats_user_event_str = ','.join(seats_user_event)
+        userevent.seats_price = seats_user_event_str
+    else:
+        seats_user_event_str = ''
+
+    orders_event.remove(str(order_id))
+    if len(orders_event) > 0:
+        orders_str = ','.join(orders_event)
+        userevent.ordersevents = orders_str
+        userevent.save()
+    else:
+        orders_str = ''
+        userevent.delete()
+
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    for seat in seats_changed:
+        key = seat.split('$')[0]
+        hall_status[key]['status'] = 0
+
+        # cancella eventuali biglietti associati ai posti
+        try: 
+            tickets_all = Ticket.objects.filter(event = current_event)
+            ticket = get_object_or_404(tickets_all, seat = key)
+            ticket.delete()
+        except:
+            print('Ticket not found')
+
+
+    with open(json_file_path,'w') as jfp:
+        json.dump(hall_status,jfp)
+
+    orderevent.delete()
+
+    return HttpResponse(f'<H1>The page of erase order {order_id} as part of {userorder_id} user order.</H1>')
+
+def printer_ready():
+    try:
+        printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
+        printer_ready: bool = True
+        del printer_usb
+    except USBNotFoundError:
+        print('Manca la stampnate USB')
+        printer_ready: bool = False
+
+    return printer_ready

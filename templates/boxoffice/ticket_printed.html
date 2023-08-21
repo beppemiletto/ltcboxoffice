@@ -21,9 +21,7 @@
     <thead class="text-muted">
     <tr class="small text-uppercase">
       <th scope="col">Posto</th>
-      <th scope="col" width="120">Tipo Ingresso</th>
       <th scope="col" width="120">Prezzo</th>
-      <th scope="col" class="text-right" width="200"> </th>
     </tr>
     </thead>
     <tbody>
@@ -37,28 +35,13 @@
                 </figcaption>
             </figure>
         </td>
-        <td> 
-            <!-- col.// -->
-                            <div class="input-group-sm input-spinner">
-                                <div class="input-group-prepend">
-                                <a href="{%url 'boxoffice_minus_price' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                                </div>
-                                <input type="text" class="form-control"  value="{{item.price}}">
-                                <div class="input-group-append">
-                                <a href="{%url 'boxoffice_plus_price' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                                </div>
-                            </div> <!-- input-group.// -->
-                        </div> <!-- col.// -->
-        </td>
+
         <td> 
             <div class="price-wrap"> 
                 {{item.ingresso}}
                 <br>
                 <var class="price">{{item.cost}}</var> 
             </div> <!-- price-wrap .// -->
-        </td>
-        <td class="text-right"> 
-        <a href="{%url 'boxoffice_remove_cart' item.id%}" class="btn btn-danger"> Elimina</a>
         </td>
     </tr>
     {%endfor%}
@@ -71,19 +54,7 @@
     
             <div class="card">
             <div class="card-body">
-                <dl class="dlist-align">
-                  <dt>Totale:</dt>
-                  <dd class="text-right">€ {{total|stringformat:".2f"}}</dd>
-                </dl>
-                <dl class="dlist-align">
-                  <dt>IVA ({{vat_rate}} %):</dt>
-                  <dd class="text-right"> {{tax|stringformat:".0f"}}</dd>
-                </dl>
-                <dl class="dlist-align">
-                  <dt>Imponibile:</dt>
-                  <dd class="text-right text-dark b"><strong>€ {{taxable|stringformat:".2f"}}</strong></dd>
-                </dl>
-                <a href="{%url 'boxoffice_print' event.id%}" class="btn btn-primary btn-block"> Stampa biglietti </a>
+                <a href="{%url 'close_transaction' event.id%}" class="btn btn-primary btn-block"> Biglietti Stampati </a>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
     
