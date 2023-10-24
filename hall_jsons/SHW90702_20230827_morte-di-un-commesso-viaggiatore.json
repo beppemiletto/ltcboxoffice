@@ -796,7 +796,7 @@
         "num_in_row": "15",
         "number": 109,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G16": {
@@ -806,7 +806,7 @@
         "num_in_row": "16",
         "number": 110,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G17": {
@@ -816,7 +816,7 @@
         "num_in_row": "17",
         "number": 111,
         "row": "G",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "G18": {

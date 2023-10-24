@@ -64,7 +64,7 @@ def print_ticket(request):
         if event.price_full == 0.0 and event.price_reduced == 0.00:
             sell_code = 'Prenotazione'
 
-        event_tickets = Ticket.objects.filter(orderevent__event=event)
+        # event_tickets = Ticket.objects.filter(orderevent__event=event)
         
 
 
@@ -72,10 +72,27 @@ def print_ticket(request):
         for k, seat in seats_dict.items():
             try:
                 tickets_all = Ticket.objects.filter(orderevent__event=event)
-                ticket = get_object_or_404(tickets_all, seat= k)
+                total_tickets_x_event = tickets_all.count()
+                tickets_x_seat = tickets_all.filter(seat = k)
+                how_many = tickets_x_seat.count()
+                if how_many == 0:
+                    action_ticket = "make_new"
+                elif how_many == 1:
+                    ticket = tickets_x_seat.first()
+                    action_ticket = "change_it"
+                elif how_many > 1:
+                    count = 0
+                    for single_ticket in tickets_x_seat:
+                        if count == 0:
+                            ticket = single_ticket
+                        else:
+                            single_ticket.delete()
+                        count += 1
+                    action_ticket = "change_it"
             except:
-                print('va stampato')
+                print('Errore sulla query per generazione dei biglietti')
 
+            if action_ticket == "make_new":
                 price = int(seat[-1])
                 ticket = Ticket()
                 ticket.price = price
@@ -84,22 +101,25 @@ def print_ticket(request):
                 ticket.event = ordereventobj.event
                 ticket.seat = k
                 ticket.user = ordereventobj.user
-
-                # definisce il numero seriale del biglietto su base serata
-                try:
-                    event_tickets = Ticket.objects.filter(orderevent__event=event)
-                    serial = event_tickets.count()+1
-                except:
-                    serial=1
-                if sell_code is not None:
-                    ticket.sell_mode = sell_code
+                serial = total_tickets_x_event + 1
                 ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+            elif action_ticket == "change_it":
+                price = int(seat[-1])
+                ticket.price = price
+                ticket.payment = ordereventobj.payment
+                ticket.orderevent = ordereventobj
+                ticket.event = ordereventobj.event
+                ticket.user = ordereventobj.user
+                serial = int(ticket.number.split('.')[-1])
+
+            if sell_code is not None:
+                ticket.sell_mode = sell_code
+            ticket.save()
+            result, pdf_file = printer(ticket_number=ticket.number)
+            if result:
+                ticket.status= 'Printed'
+                ticket.pdf_path = pdf_file.split('/')[-1]
                 ticket.save()
-                result, pdf_file = printer(ticket_number=ticket.number)
-                if result:
-                    ticket.status= 'Printed'
-                    ticket.pdf_path = pdf_file.split('/')[-1]
-                    ticket.save()
             tickets_list.append(ticket)
     context = {
         'ticket_user': ordereventobj.user,
@@ -113,23 +133,22 @@ def print_ticket(request):
 
 def printer(ticket_number):
 
-    ingressi = ['Gratuito', 'Intero', 'Ridotto']
-    timezones=pytz.all_timezones
-    cambiano = pytz.timezone('Europe/Rome')
+    ingressi = ['Gratuito', 'Ridotto', 'Intero']
 
     status = None
     try:
         ticket = Ticket.objects.get(number=ticket_number)
+
+    except Ticket.MultipleObjectsReturned:
+        ticket = Ticket.objects.filter(number=ticket_number).first()
+
+    except Ticket.DoesNotExist:
+        print(f'The Ticket with number {ticket_number} does not exist')
+
+    try:    
         event_id = ticket.orderevent.event.pk
         event = Event.objects.get(id=event_id)
-        prices = []
-        for idx in range(3):
-            if idx == 0:
-                prices.append(0.0)
-            elif idx==1:
-                prices.append(event.price_full)
-            else:
-                prices.append(event.price_reduced)
+        prices = [0.0, event.price_reduced, event.price_full]
 
         show = Show.objects.get(id=event.show.pk)
 
@@ -147,11 +166,12 @@ def printer(ticket_number):
         ticket_print.write_text()
         img = ticket_print.make_qrcode(user=ticket.user, event=event.pk)
         ticket_print.draw_qrcode(img_path=img)
+        ticket.status = 'Printed'
+        ticket.save()
         status = True
 
-    except:
-        print('Something wrong happen')
-        status = False
+    except Ticket.MultipleObjectsReturned:
+        tickets_many = Ticket.objects.filter(number=ticket_number)
 
     return status , filename
 

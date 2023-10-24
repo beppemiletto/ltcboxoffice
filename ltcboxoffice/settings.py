@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'orders',
     'tickets',
     'boxoffice',
+    'fiscalmgm',
 ]
 
 MIDDLEWARE = [

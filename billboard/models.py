@@ -20,6 +20,9 @@ class Section(models.Model):
     
 class Show(models.Model):
     shw_title           = models.CharField(max_length=100, blank=False, default='My Title')
+    shw_theater_company = models.CharField(max_length=100, blank=False, default='Laboratorio Teatrale di Cambiano')
+    shw_author          = models.CharField(max_length=100, blank=False, default='My Author')
+    shw_director        = models.CharField(max_length=100, blank=False, default='My Director')
     slug                = models.SlugField(max_length=200, unique=True)
     description         = models.TextField(max_length=2048, blank=True)
     shw_code            = models.CharField(max_length=8, unique=True, blank=True)

@@ -12,6 +12,7 @@ from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
 from orders.models import OrderEvent, UserEvent
 from tickets.models import Ticket
+from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
 from accounts.models import Account
 from hall.models import Row
@@ -571,21 +572,34 @@ def erase_order(request, userorder_id, order_id):
         key = seat.split('$')[0]
         hall_status[key]['status'] = 0
 
-        # cancella eventuali biglietti associati ai posti
-        try: 
-            tickets_all = Ticket.objects.filter(event = current_event)
-            ticket = get_object_or_404(tickets_all, seat = key)
-            ticket.delete()
-        except:
-            print('Ticket not found')
 
+        tickets_all = Ticket.objects.filter(event = current_event)
+        tickets = tickets_all.filter( seat = key)
+        how_many = tickets.count()
+        if how_many == 0:
+                action_ticket = "none"
+        elif how_many == 1:
+            ticket = tickets[0]
+            action_ticket = "change_it"
+        elif how_many > 1:
+            count = 0
+            for single_ticket in tickets:
+                if count == 0:
+                    ticket = single_ticket
+                else:
+                    single_ticket.delete()
+                count += 1
+            action_ticket = "change_it"
+        if action_ticket == "change_it":
+            ticket.status = 'Cancelled'
+            ticket.save()
 
     with open(json_file_path,'w') as jfp:
         json.dump(hall_status,jfp)
 
     orderevent.delete()
 
-    return HttpResponse(f'<H1>The page of erase order {order_id} as part of {userorder_id} user order.</H1>')
+    return redirect(event_list)
 
 def printer_ready():
     try:
@@ -597,3 +611,61 @@ def printer_ready():
         printer_ready: bool = False
 
     return printer_ready
+
+
+def obliterate(request, ticket_number):
+    try:
+        ticket = Ticket.objects.get(number = ticket_number)
+        print(ticket.status)
+    except ObjectDoesNotExist:
+        context = {
+            'ticket_number' : ticket_number,
+        }
+        return HttpResponse('Ticket {} NOT FOUND / mispelled or not exist'.format(ticket_number))
+    event = ticket.event
+
+    #for test
+    event_date_time = event.date_time + timedelta(hours=2)
+    now = event_date_time + timedelta(hours= -1)    
+
+    # now = datetime.now(pytz.timezone('Europe/Rome'))
+    time_diff = timedelta(hours = 6)
+
+    td = event.date_time - now
+    
+    ticket_valid: bool = (abs(td) <= time_diff)
+
+    print(f'Ticket valid = {ticket_valid}')
+
+    ingresso = None
+
+    if ticket.status == "Printed" or ticket.status == "New" :
+        ticket.status= 'Obliterated'
+        ticket.save()
+        prices = (0.0, ticket.event.price_reduced, ticket.event.price_full)
+        sell_mode_code = ticket_number[0]
+        sell_modes = { 'W':'Web','C':'Cassa','P': 'Prenotazione' }
+        ingresso = Ingresso(
+                ticket_number = ticket.number,
+                seat = ticket.seat,
+                event = ticket.event,
+                price = prices[ticket.price],
+                sell_mode = sell_modes[sell_mode_code],
+        )
+        ingresso.save()
+        result = True
+    elif ticket.status == "Obliterated":
+        result = False
+        messages.error(request,"Il biglietto numero {} è già stato obliterato!".format(ticket_number))
+    elif ticket.status == "Cancelled":
+        result = False
+        messages.warning(request,"Il biglietto numero {} è stato cancellato! Contatta la cassa per verificare!".format(ticket_number))
+
+    context = {
+    'ticket_number' : ticket_number,
+    'result': result,
+    'ticket' : ticket,
+    'ingresso' : ingresso,
+    }
+ 
+    return render(request, 'boxoffice/obliterate_result.html', context)

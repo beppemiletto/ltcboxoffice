@@ -1,0 +1,45 @@
+{%extends 'boxoffice_basescan.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+        <div id="qr-reader" style="width: 600px"></div>
+    </div>
+    <div class="container">
+        {% include 'includes/alerts.html' %}
+        {%if result %}
+
+        <button type="button" class="btn btn-success btn-lg btn-block">INGRESSO CONSENTITO</button>
+        <br>
+        <H2 class="text-center">Ingresso consentito con biglietto {{ticket_number}.}</H2>
+        <br>
+        <H2 class="text-center">Posto: {{ingresso.seat}}</H2>
+
+        {%else%}
+
+
+        <button type="button" class="btn btn-danger btn-lg btn-block">INGRESSO NON AMMESSO</button>
+        <br>
+        <H2 class="text-center">Ingresso non consentito con biglietto</H2>
+        <br>
+        <H2 class="text-center">{{ticket_number}}</H2>
+
+
+         {%endif%}
+        <div class="text-center">
+            <a href="{%url 'boxoffice'%}" class="btn btn-outline-primary">Torna alla pagina principale</a>
+        </div>
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+    <script type="text/javascript">
+        /** Initialisation code comes here */
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`Code scanned = ${decodedText}`, decodedResult);
+                        }
+            var html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+            html5QrcodeScanner.render(onScanSuccess);
+    </script>
+{%endblock%}

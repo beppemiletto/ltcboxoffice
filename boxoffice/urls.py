@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.urls import path
 from . import views
 
-
 urlpatterns = [
     path('', views.boxoffice, name='boxoffice'),
     path('user_not_allowed/', views.user_not_allowed, name='user_not_allowed'),
@@ -15,6 +14,7 @@ urlpatterns = [
     path('close_transaction/<int:event_id>/', views.close_transaction, name='close_transaction'),
     path('change_bookings/<int:event_id>/', views.change_bookings, name='change_bookings'),
     path('edit_order/<int:order_id>/', views.edit_order, name='edit_order'),
+    path('obliterate/<str:ticket_number>/', views.obliterate, name='obliterate'),
     path('erase_order/<int:userorder_id>/<int:order_id>/', views.erase_order, name='erase_order'),
     path('event_list/', views.event_list, name='event_list'),
 ] 

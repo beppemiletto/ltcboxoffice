@@ -20,16 +20,21 @@
 		<h1>Menu iniziale <span class="badge alert-success"> Scegli </span></h1>
 	</div>
 	<div class="row">
-
+		
 		<a href="{%url 'event' next_close_event.pk%}">
 			<button type="button" class="btn btn-primary btn-lg btn-block">Apri sessione di cassa per spettacolo: '{{next_close_event.show.shw_title}} del {{next_close_event.date_time}}'</button>
 		</a>
 		<a href="{%url 'event_list'%}">
 			<button type="button" class="btn btn-secondary btn-lg btn-block">Apri per modifica prenotazioni / prevedite per altro evento</button>
 		</a>
-		
+		<br>
 	</div>
-
+	<div class="row">
+		
+		<a href="{%url 'fiscalmgm:fiscalmgm_main' %}">
+			<button type="button" class="btn btn-primary btn-lg btn-block">Apri gestione fiscale (SIAE) evento</button>
+		</a>		
+	</div>
 </div><!-- container // -->
 </section>
 <!-- ========================= SECTION  END// ========================= -->

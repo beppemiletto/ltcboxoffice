@@ -72,16 +72,16 @@
             <div class="card">
             <div class="card-body">
                 <dl class="dlist-align">
-                  <dt>Totale:</dt>
-                  <dd class="text-right">€ {{total|stringformat:".2f"}}</dd>
+                  <dt>Imponibile:</dt>
+                  <dd class="text-right">€ {{taxable|stringformat:".2f"}}</dd>
                 </dl>
                 <dl class="dlist-align">
                   <dt>IVA ({{vat_rate}} %):</dt>
                   <dd class="text-right"> {{tax|stringformat:".0f"}}</dd>
                 </dl>
                 <dl class="dlist-align">
-                  <dt>Imponibile:</dt>
-                  <dd class="text-right text-dark b"><strong>€ {{taxable|stringformat:".2f"}}</strong></dd>
+                  <dt>Totale:</dt>
+                  <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
                 <a href="{%url 'boxoffice_print' event.id%}" class="btn btn-primary btn-block"> Stampa biglietti </a>
             </div> <!-- card-body.// -->

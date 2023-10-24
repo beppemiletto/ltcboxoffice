@@ -3,5 +3,8 @@
     "bootstrap": "^5.2.3",
     "jquery": "^3.6.4",
     "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "html5-qrcode": "^2.3.8"
   }
 }
