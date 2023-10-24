@@ -16,11 +16,13 @@ Django==4.2
 django-adaptors==0.2.5
 django-appconf==1.0.5
 django-cookie-consent==0.3.1
+et-xmlfile==1.1.0
 freetype-py==2.3.0
 idna==3.4
 kombu==5.3.1
 numpy==1.24.3
 opencv-python==4.7.0.72
+openpyxl==3.1.2
 pdf2image==1.16.3
 Pillow==9.5.0
 prompt-toolkit==3.0.38
