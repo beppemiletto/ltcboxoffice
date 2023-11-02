@@ -28,6 +28,9 @@ class EscPosPrinter(Usb):
     def print_ticket_image(self, image = None):
         self.image(image)
         self.cut(mode=u'FULL')
+        self.cashdraw(pin=2)
+        self.cashdraw(pin=5)
+        return
 
 
 class EscPosDummy(Dummy):

@@ -357,6 +357,11 @@ def boxoffice_print(request, event_id):
        'tickets_list':tickets_list,
 
         }
+    
+    for tckt in tickets_list:
+        auto_obliterate(tckt.number)
+
+
     with open(json_file_path,'w') as jfp:
         json.dump(hall_status,jfp)
    
@@ -669,3 +674,53 @@ def obliterate(request, ticket_number):
     }
  
     return render(request, 'boxoffice/obliterate_result.html', context)
+
+def auto_obliterate(ticket_number):
+    try:
+        ticket = Ticket.objects.get(number = ticket_number)
+        print(ticket.status)
+    except ObjectDoesNotExist:
+        context = {
+            'ticket_number' : ticket_number,
+        }
+        return HttpResponse('Ticket {} NOT FOUND / mispelled or not exist'.format(ticket_number))
+    event = ticket.event
+
+    #for test
+    event_date_time = event.date_time + timedelta(hours=2)
+    now = event_date_time + timedelta(hours= -1)    
+
+    # now = datetime.now(pytz.timezone('Europe/Rome'))
+    time_diff = timedelta(hours = 6)
+
+    td = event.date_time - now
+    
+    ticket_valid: bool = (abs(td) <= time_diff)
+
+    print(f'Ticket valid = {ticket_valid}')
+
+    ingresso = None
+
+    if ticket.status == "Printed" or ticket.status == "New" :
+        ticket.status= 'Obliterated'
+        ticket.save()
+        prices = (0.0, ticket.event.price_reduced, ticket.event.price_full)
+        sell_mode_code = ticket_number[0]
+        sell_modes = { 'W':'Web','C':'Cassa','P': 'Prenotazione' }
+        ingresso = Ingresso(
+                ticket_number = ticket.number,
+                seat = ticket.seat,
+                event = ticket.event,
+                price = prices[ticket.price],
+                sell_mode = sell_modes[sell_mode_code],
+        )
+        ingresso.save()
+        result = True
+    elif ticket.status == "Obliterated":
+        result = False
+        messages.error(request,"Il biglietto numero {} è già stato obliterato!".format(ticket_number))
+    elif ticket.status == "Cancelled":
+        result = False
+        messages.warning(request,"Il biglietto numero {} è stato cancellato! Contatta la cassa per verificare!".format(ticket_number))
+ 
+    return 

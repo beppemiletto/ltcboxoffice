@@ -17,7 +17,19 @@ class Section(models.Model):
     
     def get_url(self):
         return reverse('shows_by_section', args=[self.slug])
-    
+
+class SiaeType(models.Model):
+    code = models.CharField(max_length=2, unique=True, editable=True )
+    description = models.CharField(max_length=120, editable=True)
+    iva = models.PositiveSmallIntegerField(default=10)
+
+    def __str__(self):
+        return f"{self.code} - {self.description}"
+
+    def get_full(self):
+        return f"codice SIAE {self.code} - Descrizione: {self.description} - IVA {self.iva} %"
+
+
 class Show(models.Model):
     shw_title           = models.CharField(max_length=100, blank=False, default='My Title')
     shw_theater_company = models.CharField(max_length=100, blank=False, default='Laboratorio Teatrale di Cambiano')
@@ -29,6 +41,7 @@ class Show(models.Model):
     section             = models.ForeignKey(Section, on_delete= models.CASCADE, default=1, blank=True )
     responsible_mail    = models.EmailField(max_length=100, blank=True, default='')
     shw_image           = models.ImageField(upload_to='photos/billboard', blank=True)
+    siaetype            = models.ForeignKey(SiaeType, on_delete=models.CASCADE, default=2, blank=True)
     is_in_billboard     = models.BooleanField(default=True, blank=True)
     is_active           = models.BooleanField(default=True, blank=True)
 
@@ -38,3 +51,4 @@ class Show(models.Model):
     def get_url(self):
         return reverse('show_detail', args=[self.section.slug, self.slug])
     
+
