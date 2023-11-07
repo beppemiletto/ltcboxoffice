@@ -1,0 +1,331 @@
+{%extends 'boxoffice_base.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+        <form action="{% url 'fiscalmgm:siae' event.pk %}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                Event description {{event.show}}
+            </div>
+            <div class="row">
+                {{ form.non_field_errors }}
+                <div class="col-6 col-md-6">
+                        <div class="fieldWrapper">
+                            {{ form.casher_01.errors }}
+                            <label for="{{ form.casher_01.id_for_label }}">Casher 01:</label> {{ form.casher_01 }}
+                        </div>
+                </div>
+                <div class="col-6 col-md-6">
+                        <div class="fieldWrapper">
+                            {{ form.casher_02.errors }}
+                            <label for="{{ form.casher_02.id_for_label }}">Casher 02:</label> {{ form.casher_02 }}
+                        </div>
+                </div>
+            </div>
+            <!-- INIZIO Ingressi serie e numeri - Serie _1 -->
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_serie_1.errors }}
+                        <label for="{{ form.intero_ticket_serie_1.id_for_label }}">Intero serie_1:</label> {{ form.intero_ticket_serie_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_start_number_1.errors }}
+                        <label for="{{ form.intero_ticket_start_number_1.id_for_label }}">Intero Num. Inizio:</label> {{ form.intero_ticket_start_number_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_end_number_1.errors }}
+                        <label for="{{ form.intero_ticket_end_number_1.id_for_label }}">Intero Num. Fine:</label> {{ form.intero_ticket_end_number_1 }}
+                    </div>
+                </div>
+               
+            </div>
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_serie_1.errors }}
+                        <label for="{{ form.ridotto_ticket_serie_1.id_for_label }}">Ridotto serie_1:</label> {{ form.ridotto_ticket_serie_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_start_number_1.errors }}
+                        <label for="{{ form.ridotto_ticket_start_number_1.id_for_label }}">Ridotto Num. Inizio:</label> {{ form.ridotto_ticket_start_number_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_end_number_1.errors }}
+                        <label for="{{ form.ridotto_ticket_end_number_1.id_for_label }}">Ridotto Num. Fine:</label> {{ form.ridotto_ticket_end_number_1 }}
+                    </div>
+                </div>
+                
+            </div>
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_serie_1.errors }}
+                        <label for="{{ form.gratuito_ticket_serie_1.id_for_label }}">Gratuito serie_1:</label> {{ form.gratuito_ticket_serie_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_start_number_1.errors }}
+                        <label for="{{ form.gratuito_ticket_start_number_1.id_for_label }}">Gratuito Num. Inizio:</label> {{ form.gratuito_ticket_start_number_1 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_end_number_1.errors }}
+                        <label for="{{ form.gratuito_ticket_end_number_1.id_for_label }}">Gratuito Num. Fine:</label> {{ form.gratuito_ticket_end_number_1 }}
+                    </div>
+                </div>
+                              
+            </div>
+            <!--  FINE Ingressi serie e numeri - Serie _1 -->
+
+            <!-- INIZIO Ingressi serie e numeri - Serie _2 -->
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_serie_2.errors }}
+                        <label for="{{ form.intero_ticket_serie_2.id_for_label }}">Intero serie_2:</label> {{ form.intero_ticket_serie_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_start_number_2.errors }}
+                        <label for="{{ form.intero_ticket_start_number_2.id_for_label }}">Intero Num. Inizio:</label> {{ form.intero_ticket_start_number_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.intero_ticket_end_number_2.errors }}
+                        <label for="{{ form.intero_ticket_end_number_2.id_for_label }}">Intero Num. Fine:</label> {{ form.intero_ticket_end_number_2 }}
+                    </div>
+                </div>
+               
+            </div>
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_serie_2.errors }}
+                        <label for="{{ form.ridotto_ticket_serie_2.id_for_label }}">Ridotto serie_2:</label> {{ form.ridotto_ticket_serie_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_start_number_2.errors }}
+                        <label for="{{ form.ridotto_ticket_start_number_2.id_for_label }}">Ridotto Num. Inizio:</label> {{ form.ridotto_ticket_start_number_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.ridotto_ticket_end_number_2.errors }}
+                        <label for="{{ form.ridotto_ticket_end_number_2.id_for_label }}">Ridotto Num. Fine:</label> {{ form.ridotto_ticket_end_number_2 }}
+                    </div>
+                </div>
+                
+            </div>
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_serie_2.errors }}
+                        <label for="{{ form.gratuito_ticket_serie_2.id_for_label }}">Gratuito serie_2:</label> {{ form.gratuito_ticket_serie_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_start_number_2.errors }}
+                        <label for="{{ form.gratuito_ticket_start_number_2.id_for_label }}">Gratuito Num. Inizio:</label> {{ form.gratuito_ticket_start_number_2 }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.gratuito_ticket_end_number_2.errors }}
+                        <label for="{{ form.gratuito_ticket_end_number_2.id_for_label }}">Gratuito Num. Fine:</label> {{ form.gratuito_ticket_end_number_2 }}
+                    </div>
+                </div>
+                              
+            </div>
+            <!--  FINE Ingressi serie e numeri - Serie _2 -->
+
+            <!--  INIZIO conteggio cash -->
+            <div class="row">
+                <div class="col-6 col-md-6">
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_200euro.errors }}
+                            <label for="{{ form.cash_begin_200euro.id_for_label }}">Banconote 200 Euro Inizio:</label> {{ form.cash_begin_200euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_100euro.errors }}
+                            <label for="{{ form.cash_begin_100euro.id_for_label }}">Banconote 100 Euro Inizio:</label> {{ form.cash_begin_100euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_50euro.errors }}
+                            <label for="{{ form.cash_begin_50euro.id_for_label }}">Banconote 50 Euro Inizio:</label> {{ form.cash_begin_50euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_20euro.errors }}
+                            <label for="{{ form.cash_begin_20euro.id_for_label }}">Banconote 20 Euro Inizio:</label> {{ form.cash_begin_20euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_10euro.errors }}
+                            <label for="{{ form.cash_begin_10euro.id_for_label }}">Banconote 10 Euro Inizio:</label> {{ form.cash_begin_10euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_5euro.errors }}
+                            <label for="{{ form.cash_begin_5euro.id_for_label }}">Banconote 5 Euro Inizio:</label> {{ form.cash_begin_5euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_2euro.errors }}
+                            <label for="{{ form.cash_begin_2euro.id_for_label }}">Monete 2 Euro Inizio:</label> {{ form.cash_begin_2euro }}
+                        </div>
+                    </div>                    
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_1euro.errors }}
+                            <label for="{{ form.cash_begin_1euro.id_for_label }}">Monete 1 Euro Inizio:</label> {{ form.cash_begin_1euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_50cent.errors }}
+                            <label for="{{ form.cash_begin_50cent.id_for_label }}">Monete 50 Cent Inizio:</label> {{ form.cash_begin_50cent }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_20cent.errors }}
+                            <label for="{{ form.cash_begin_20cent.id_for_label }}">Monete 20 Cent Inizio:</label> {{ form.cash_begin_20cent }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_begin_10cent.errors }}
+                            <label for="{{ form.cash_begin_10cent.id_for_label }}">Monete 10 Cent Inizio:</label> {{ form.cash_begin_10cent }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-6">
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_200euro.errors }}
+                            <label for="{{ form.cash_end_200euro.id_for_label }}">Banconote 200 Euro Fine:</label> {{ form.cash_end_200euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_100euro.errors }}
+                            <label for="{{ form.cash_end_100euro.id_for_label }}">Banconote 100 Euro Fine:</label> {{ form.cash_end_100euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_50euro.errors }}
+                            <label for="{{ form.cash_end_50euro.id_for_label }}">Banconote 50 Euro Fine:</label> {{ form.cash_end_50euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_20euro.errors }}
+                            <label for="{{ form.cash_end_20euro.id_for_label }}">Banconote 20 Euro Fine:</label> {{ form.cash_end_20euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_10euro.errors }}
+                            <label for="{{ form.cash_end_10euro.id_for_label }}">Banconote 10 Euro Fine:</label> {{ form.cash_end_10euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_5euro.errors }}
+                            <label for="{{ form.cash_end_5euro.id_for_label }}">Banconote 5 Euro Fine:</label> {{ form.cash_end_5euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_2euro.errors }}
+                            <label for="{{ form.cash_end_2euro.id_for_label }}">Monete 2 Euro Fine:</label> {{ form.cash_end_2euro }}
+                        </div>
+                    </div>                    
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_1euro.errors }}
+                            <label for="{{ form.cash_end_1euro.id_for_label }}">Monete 1 Euro Fine:</label> {{ form.cash_end_1euro }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_50cent.errors }}
+                            <label for="{{ form.cash_end_50cent.id_for_label }}">Monete 50 Cent Fine:</label> {{ form.cash_end_50cent }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_20cent.errors }}
+                            <label for="{{ form.cash_end_20cent.id_for_label }}">Monete 20 Cent Fine:</label> {{ form.cash_end_20cent }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fieldWrapper">
+                            {{ form.cash_end_10cent.errors }}
+                            <label for="{{ form.cash_end_10cent.id_for_label }}">Monete 10 Cent Fine:</label> {{ form.cash_end_10cent }}
+                        </div>
+                    </div>
+                </div>
+               
+            </div>
+
+            <div class="row">
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.collection_satispay.errors }}
+                        <label for="{{ form.collection_satispay.id_for_label }}">Incasso Satispy Euro:</label> {{ form.collection_satispay }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.collection_sumup.errors }}
+                        <label for="{{ form.collection_sumup.id_for_label }}">Incasso Sumup Euro:</label> {{ form.collection_sumup }}
+                    </div>
+                </div>
+                <div class="col-4 col-md-4">
+                    <div class="fieldWrapper">
+                        {{ form.collection_others.errors }}
+                        <label for="{{ form.collection_others.id_for_label }}">Altri incassi Euro:</label> {{ form.collection_others }}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="row">
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ingresso, Report
+from .models import Ingresso, Report, EventFiscalData
 
 
 class IngressoAdmin(admin.ModelAdmin):
@@ -16,5 +16,6 @@ class ReportAdmin(admin.ModelAdmin):
 
 
 # Register your models here.
+admin.site.register(EventFiscalData)
 admin.site.register(Ingresso, IngressoAdmin)
 admin.site.register(Report, ReportAdmin)
