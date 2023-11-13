@@ -1,15 +1,62 @@
 {%extends 'boxoffice_base.html'%}
 {%load static%}
-{%load index%}
 
 {% block content%}
 <section class="section-content padding-y bg">
     <div class="container">
+        {%if reports%}
+        <div class="row">
+            <div class="col-4 col-sm-4">
+
+                <h5 class="card-title mb-4">Attenzione!</h5>
+                {%include 'includes/alerts.html'%}
+                <p class="card-text">Qui a destra l'elenco dei report già presenti   - <i class="fa fa-arrow-right" aria-hidden="true" style="font-size:24px;"></i></p>
+                
+
+
+            </div>
+            <div class="col-8 col-sm-8">
+                <table class="table table-warning table-striped table-hover">
+                    <thead>
+                        <th> Tipo </th>
+                        <th>Progr.N</th>
+                        <th>Creato</th>
+                        <th>Aggiornato</th>
+                        <th> Download</th>
+                      </thead>
+                      <tbody>
+                            {% for report in reports%}
+                        <tr>
+                            <td> {{report.type}}</td>
+                            <td> {{report.progress_number}}</td>
+                            <td> {{report.created_at}}</td>
+                            <td> {{report.updated_at}}</td>
+                            <td><a href="/media/siae_reports/{{report.doc_path}}" download> <i class="fa fa-download" style="font-size:24px;" id="ticket_item"></i></a></td>
+                        </tr>
+                            {% endfor %}
+                      </tbody> 
+
+                </table>
+            </div>
+        </div>
+        {%endif%}
+        <div class="row">
+            <div class="card" style="width: 72rem;">
+                <div class="card-body">
+                  <h5 class="card-title">Dati fiscali per evento {{event.show}}</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">del {{event.date_time}}</h6>
+                  <p class="card-text">Verranno generati i report modello SIAE 2DA, SIAE modello 566 e il foglio Excel del resoconto di cassa.
+            Inserire o aggiornare i dati nel modulo qui sotto. 
+            Premere il tasto verde per registrare/aggiornare i dati e generare/aggiornare i report.
+        Premere il tasto 'Cancella operazione' per annullare.</p>
+                </div>
+              </div>
+                <div class="card">
+                    
+                </div>
+        </div>
         <form action="{% url 'fiscalmgm:siae' event.pk %}" method="post">
             {% csrf_token %}
-            <div class="row">
-                Event description {{event.show}}
-            </div>
             <div class="row">
                 {{ form.non_field_errors }}
                 <div class="col-6 col-md-6">
@@ -321,7 +368,18 @@
             </div>
 
             <div class="row">
-                <input type="submit" value="Submit">
+                {%if reports%}
+                <div class="col-6 col-md-4">
+                    <button name="submit" id="submit" class="btn btn-success" value="Aggiorna">Registra/aggiorna i dati e aggiorna i report</button>
+                </div>
+                {%else%}
+                <div class="col-6 col-md-4">
+                    <button name="submit" id="submit" class="btn btn-success" value="Registra">Registra i dati e genera i report</button>
+                </div>
+                {%endif%}
+                <div class="col-6 col-md-4">
+                    <a href="{% url 'fiscalmgm:fiscalmgm_main' %}" id="cancel" name="cancel" class="btn btn-secondary">Cancella operazione</a>
+                </div>
             </div>
         </form>
     

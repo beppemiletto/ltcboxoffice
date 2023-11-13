@@ -5,4 +5,4 @@ from .models import EventFiscalData
 class FiscalDataForm(ModelForm):
     class Meta:
         model = EventFiscalData
-        exclude = ["event", "printed"]
+        exclude = ["event", "printed","collection_presell"]

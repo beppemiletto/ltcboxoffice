@@ -86,6 +86,7 @@ class EventFiscalData(models.Model):
     collection_satispay           = models.FloatField(verbose_name='Incasso Satispay Euro', default=0.0, null=True)
     collection_sumup           = models.FloatField(verbose_name='Incasso Sumup Euro', default=0.0, null=True)
     collection_others           = models.FloatField(verbose_name='Incasso Altri Euro', default=0.0, null=True)
+    collection_presell          = models.FloatField(verbose_name='Prevendita Euro', default=0.0, null=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True)
     updated_at = models.DateTimeField(auto_now= True , blank=True)
     printed = models.BooleanField(default= False)

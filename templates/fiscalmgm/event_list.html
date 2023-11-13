@@ -22,8 +22,8 @@
         <th class="header" scope="colgroup" colspan="3"> <h4> SIAE e Resoconti: Eventi che puoi gestire. </h4> </th>
     <tr class="small text-uppercase">
       <th scope="col">Evento</th>
-      <th scope="col" width="200">Genera modelli SIAE.</th>
-      <th scope="col" width="200">Genera report cassa.</th>
+      <th scope="col" width="200">Genera Report SIAE e cassa.</th>
+      <th scope="col" width="200">Verifica presenza report.</th>
     </tr>
     </thead>
     <tbody>
@@ -41,11 +41,11 @@
 
         <td> 
             <div class="text-right"> 
-                <a href="{% url 'fiscalmgm:siae' event.pk %}"> <i class="far fa-file"> SIAE</i> </a>
+                <a href="{% url 'fiscalmgm:siae' event.pk %}"> <i class="far fa-file"> SIAE & Cassa</i> </a>
             </div> <!-- price-wrap .// -->
         </td>
         <td class="text-right"> 
-        <a href="{% url 'fiscalmgm:casher' event.pk %}"> <i class="far fa-file-excel"></i> Report Cassa </a>
+        <a href="{% url 'fiscalmgm:ver_repo' event.pk %}"> <i class="fa fa-search-plus" style="font-size:24px"></i> Cerca i report </a>
         </td>
     </tr>
     {%endfor%}

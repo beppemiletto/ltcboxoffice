@@ -8,11 +8,15 @@ from django.utils.formats import date_format
 from datetime import datetime, timedelta
 import pytz
 from store.models import Event
+from tickets.models import Ticket
 from .models import Ingresso, Report, EventFiscalData
 from .forms import FiscalDataForm
+
+from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
 from openpyxl.drawing.image import Image
+
 import os
 import re
 
@@ -25,7 +29,7 @@ def user_not_allowed(request):
 def fiscalmgm_main(request):
     if request.user.is_staff:
         now = datetime.now(pytz.timezone('Europe/Rome')) + timedelta(hours=6)
-        time_diff = timedelta(days= 365)
+        # time_diff = timedelta(days= 365)
         past_events = Event.objects.filter(date_time__lte=now).filter(show__is_active=True).order_by('-date_time')
         
         paginator_past = Paginator(past_events, 10)
@@ -35,36 +39,80 @@ def fiscalmgm_main(request):
         context = {
             'past_events' : paged_events,
         }
-                
-
-
-
-        # messages.success(request,"Sei entrato con utente di staff! Sei abilitato ad operare.")
         return render(request, 'fiscalmgm/event_list.html', context)
     
 @login_required(login_url='login')
 def siae(request, event_id):
     if request.user.is_staff:
-        now = datetime.now(pytz.timezone('Europe/Rome')) + timedelta(hours=6)
-        time_diff = timedelta(days= 365)
-        past_events = Event.objects.filter(date_time__lte=now).filter(show__is_active=True).order_by('-date_time')
-
         curr_event =  Event.objects.get(id = event_id)
-
-        print("{} - number {} will be the one for SIAE reports".format(curr_event,event_id))
-
+        now = datetime.now(pytz.timezone('Europe/Rome')) + timedelta(hours=6)
+        past_events = Event.objects.filter(date_time__lte=now).filter(show__is_active=True).order_by('-date_time')
+        del now
+        # print("{} - number {} will be the one for SIAE reports".format(curr_event,event_id))
         save_path = 'media/siae_reports'
         evnt_date_code = curr_event.date_time.strftime('%Y%m%d')
         evnt_show_slug = curr_event.show.slug
+        evnt_show_code = curr_event.show.shw_code
 
+
+        # Retrieve if exist the record of fiscl data - UNIQUE for Event
+        # Otherwise create it taking most updated values as default.
         try:
             fiscal_data = EventFiscalData.objects.get(event_id = curr_event.pk)
         except:
+            fiscal_data_old = EventFiscalData.objects.last()
             fiscal_data = EventFiscalData()
             fiscal_data.event = curr_event
+
+
+            # calcola l'incasso da prevendita
+            full_price:float = curr_event.price_full
+            redu_price:float = curr_event.price_reduced
+            prices = [0.0 , redu_price, full_price] 
+            all_tickets = Ticket.objects.filter(event_id = curr_event.pk)
+            presold_tickets = all_tickets.filter(sell_mode = "W")
+            presold_income: float = 0.0 
+            for presold_ticket in presold_tickets:
+                presold_income += prices[presold_ticket.price]
+
+            fiscal_data.collection_presell = presold_income
+            if fiscal_data_old is not None:
+                fiscal_data.cash_begin_200euro = fiscal_data_old.cash_end_200euro
+                fiscal_data.cash_begin_100euro = fiscal_data_old.cash_end_100euro
+                fiscal_data.cash_begin_50euro = fiscal_data_old.cash_end_50euro
+                fiscal_data.cash_begin_20euro = fiscal_data_old.cash_end_20euro
+                fiscal_data.cash_begin_10euro = fiscal_data_old.cash_end_10euro
+                fiscal_data.cash_begin_5euro = fiscal_data_old.cash_end_5euro
+                fiscal_data.cash_begin_2euro = fiscal_data_old.cash_end_2euro
+                fiscal_data.cash_begin_1euro = fiscal_data_old.cash_end_1euro
+                fiscal_data.cash_begin_50cent = fiscal_data_old.cash_end_50cent
+                fiscal_data.cash_begin_20cent = fiscal_data_old.cash_end_20cent
+                fiscal_data.cash_begin_10cent = fiscal_data_old.cash_end_10cent
+                if fiscal_data_old.intero_ticket_serie_2 != 'nd':
+                    fiscal_data.intero_ticket_serie_1 = fiscal_data_old.intero_ticket_serie_2
+                    fiscal_data.intero_ticket_start_number_1 = fiscal_data_old.intero_ticket_end_number_2 + 1
+                else:
+                    fiscal_data.intero_ticket_serie_1 = fiscal_data_old.intero_ticket_serie_1
+                    fiscal_data.intero_ticket_start_number_1 = fiscal_data_old.intero_ticket_end_number_1 + 1
+                if fiscal_data_old.ridotto_ticket_serie_2 != 'nd':
+                    fiscal_data.ridotto_ticket_serie_1 = fiscal_data_old.ridotto_ticket_serie_2
+                    fiscal_data.ridotto_ticket_start_number_1 = fiscal_data_old.ridotto_ticket_end_number_2 + 1
+                else:
+                    fiscal_data.ridotto_ticket_serie_1 = fiscal_data_old.ridotto_ticket_serie_1
+                    fiscal_data.ridotto_ticket_start_number_1 = fiscal_data_old.ridotto_ticket_end_number_1 + 1
+                if fiscal_data_old.gratuito_ticket_serie_2 != 'nd':
+                    fiscal_data.gratuito_ticket_serie_1 = fiscal_data_old.gratuito_ticket_serie_2
+                    fiscal_data.gratuito_ticket_start_number_1 = fiscal_data_old.gratuito_ticket_end_number_2 + 1
+                else:
+                    fiscal_data.gratuito_ticket_serie_1 = fiscal_data_old.gratuito_ticket_serie_1
+                    fiscal_data.gratuito_ticket_start_number_1 = fiscal_data_old.gratuito_ticket_end_number_1 + 1
             fiscal_data.save()
+        report_done: bool = fiscal_data.printed
+
 
         if request.method == 'POST':
+
+            
 
             form = FiscalDataForm(request.POST, instance= fiscal_data)
             if form.is_valid():
@@ -90,11 +138,6 @@ def siae(request, event_id):
             'bold11' : Font(name='Arial', size=11,bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
             'bold13' : Font(name='Arial', size=13,bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
             }
-            brd_double = Border(left=Side(border_style='double', color='FF000000'),right=Side(border_style='double',color='FF000000'),
-                                    top=Side(border_style='double',color='FF000000'),bottom=Side(border_style='double',color='FF000000'),
-                                    diagonal=Side(border_style=None,color='FF000000'),diagonal_direction=0,outline=Side(border_style=None,color='FF000000'),
-                                    vertical=Side(border_style=None,color='FF000000'),horizontal=Side(border_style=None,color='FF000000')
-                                    )
             alignment = {            
                 'l_b' : Alignment(horizontal='left', vertical='bottom', text_rotation=0, wrap_text=False, shrink_to_fit=False, indent=0),
                 'l_c' : Alignment(horizontal='left', vertical='center', text_rotation=0, wrap_text=False, shrink_to_fit=False, indent=0),
@@ -249,6 +292,7 @@ def siae(request, event_id):
             
             generate_mod2A: bool = True
             generate_mod566: bool = True
+            generate_casher: bool = True
 
             if generate_mod2A: # MOD 2A Excel Generator Procedure
                 mod2da_xls_filename = f'{evnt_date_code}_mod2DA_{evnt_show_slug}.xls'
@@ -779,8 +823,10 @@ def siae(request, event_id):
                 ws.row_dimensions[26].height = 2
                 ws.row_dimensions[36].height = 30
 
-                wb.save(filename=filename)
 
+                wb.save(filename=filename)
+                report.updated_at = datetime.now()
+                report.save()
 
             if generate_mod566: # MOD 566 Excel Generator Procedure
                 mod566_xls_filename = f'{evnt_date_code}_mod566_{evnt_show_slug}.xls'
@@ -801,7 +847,7 @@ def siae(request, event_id):
                             if report.progress_number > progress_number_old:
                                 progress_number_old = report.progress_number
                     except:
-                        print('No previus SIAE_2DA') 
+                        print('No previus SIAE_566') 
                     progress_number = progress_number_old + 1
                 
                     report.progress_number = progress_number
@@ -1716,8 +1762,893 @@ def siae(request, event_id):
                     print("Riquadro Titoli Ingressi - Possibili dati mancanti") 
 
                 wb.save(filename=filename)
+                report.updated_at = datetime.now()
+                report.save()
+
+            if generate_casher: # Foglio Excel per resoconto cassa
+
+                casher_xlsx_filename = f'{evnt_show_code}.xlsx'
+                filename = os.path.join(os.getcwd(), save_path,casher_xlsx_filename)   
+                try: 
+                    report = Report.objects.get(event_id = curr_event.pk, type ='CASSA')
+                    progress_number = report.progress_number
+                except:
+                    report = Report()
+                    report.type = 'CASSA'
+                    report.event = curr_event
+                    report.doc_path = casher_xlsx_filename
+                    report.save()
+                    try:
+                        all_reports = Report.objects.filter(type = 'CASSA')
+                        progress_number_old = 0
+                        for report in all_reports:
+                            if report.progress_number > progress_number_old:
+                                progress_number_old = report.progress_number
+                    except:
+                        print('No previus CASSA REPORT') 
+                    progress_number = progress_number_old + 1
+                
+                    report.progress_number = progress_number
+                    report.save()
+
+                casher_xls_sheetname = f'{evnt_show_code}-{progress_number:03d}'
+
+                try:
+                    wb = load_workbook(filename, read_only=False)
+                    wss = wb.sheetnames
+                    if casher_xls_sheetname in wss:
+                        ws = wb[casher_xls_sheetname]
+                    else:
+                        ws = wb.create_sheet(casher_xls_sheetname)
+                        ws.title = casher_xls_sheetname
+                except:
+                    wb = Workbook()
+                    ws = wb.active
+                    ws.title = casher_xls_sheetname
+                    wb.save(filename)
+                
+                ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+                ws.page_setup.paperSize = ws.PAPERSIZE_A4
+                ws.page_margins.left = 0.25
+                ws.page_margins.right = 0.25
+                ws.page_margins.top = 0.25
+                ws.page_margins.bottom = 0.25
+                
+                ws.HeaderFooter.differentFirst = True
+                ws.firstHeader.left.text = "Page &P of &N"
+                ws.firstHeader.center.text = casher_xls_sheetname
+
+                # setting the column size
+                colnames = ('A','B','C','D','E','F','G')
+                for col in colnames:
+                    ws.column_dimensions[col].width = 11
+
+                try: # Dati dello spettacolo INIZIO
+                    begin_row = 1
+                    row = begin_row + 0
+
+                    ws[f'A{row}'].value = "Data del report:"
+                    ws[f'A{row}'].font = font['normal09']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+                    ws[f'B{row}'].value = fiscal_data.created_at.strftime('%d/%m/%Y')
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+
+                    ws[f'C{row}'].value = fiscal_data.created_at.strftime('%H:%M')
+                    ws[f'C{row}'].font = font['bold']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_border(ws[f'C{row}'], 'thin')
 
 
+                    ws[f'D{row}'].value = "Spettacolo:"
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+
+                    ws.merge_cells(start_row=row, start_column=colnum('e'), end_row=row , end_column=colnum('g'))
+
+                    ws[f'E{row}'].value = curr_event.show.shw_title
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+                    
+                    row = begin_row + 1
+
+                    ws[f'A{row}'].value = "Data spettacolo:"
+                    ws[f'A{row}'].font = font['normal09']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+                    date_time_show = curr_event.date_time.astimezone(localtz) 
+                    ws[f'B{row}'].value = date_time_show.strftime('%d/%m/%Y')
+                    
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+
+                    ws[f'C{row}'].value = date_time_show.strftime('%H:%M')
+                    ws[f'C{row}'].font = font['bold']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_border(ws[f'C{row}'], 'thin')
+
+
+                    ws[f'D{row}'].value = "Codice:"
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+
+                    ws.merge_cells(start_row=row, start_column=colnum('e'), end_row=row , end_column=colnum('g'))
+
+                    ws[f'E{row}'].value = curr_event.show.shw_code
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+                except:
+                    print("Errore nella sezione Dati delo spettacolo")
+                
+
+                try: # CORRISPETTIVI INIZIO
+                    begin_row = 4
+
+                    row = begin_row -1
+                    ws.row_dimensions[row].height = 5
+
+                    row = begin_row + 0
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row , end_column=colnum('g'))
+
+                    ws[f'A{row}'].value = "CORRISPETTIVI e INCASSO DA CORRISPETTIVI"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+                    make_rightline(ws[f'G{row}'], 'thin')
+                    
+                    begin_row = 5
+                    row = begin_row + 0
+                    ws[f'A{row}'].value = 'TIPO'
+                    ws[f'A{row}'].font = font['normal']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+
+                    ws[f'B{row}'].value = 'SERIE'
+                    ws[f'B{row}'].font = font['normal']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+
+                    ws[f'C{row}'].value = 'importo'
+                    ws[f'C{row}'].font = font['normal09']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+
+                    ws[f'D{row}'].value = 'importo'
+                    ws[f'D{row}'].font = font['normal09']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+
+                    ws[f'E{row}'].value = 'Dal'
+                    ws[f'E{row}'].font = font['normal09']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+
+                    ws[f'F{row}'].value = 'Al'
+                    ws[f'F{row}'].font = font['normal09']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+
+
+                    ws[f'G{row}'].value = 'Quantità'
+                    ws[f'G{row}'].font = font['normal09']
+                    ws[f'G{row}'].alignment = alignment['c_c']
+
+                    make_leftline(ws[f'A{row}'],'thin')
+                    make_leftline(ws[f'B{row}'],'thin')
+                    make_leftline(ws[f'C{row}'],'thin')
+                    make_leftline(ws[f'D{row}'],'thin')
+                    make_leftline(ws[f'E{row}'],'thin')
+                    make_leftline(ws[f'F{row}'],'thin')
+                    make_leftline(ws[f'G{row}'],'thin')
+                    make_rightline(ws[f'G{row}'],'thin')
+
+                    row = begin_row + 1
+
+                    ws[f'A{row}'].value = ''
+                    ws[f'A{row}'].font = font['normal']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+                    ws[f'B{row}'].value = 'let. & num.'
+                    ws[f'B{row}'].font = font['normal09']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+
+
+                    ws[f'C{row}'].value = 'unitario'
+                    ws[f'C{row}'].font = font['normal09']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+
+                    ws[f'D{row}'].value = 'totale'
+                    ws[f'D{row}'].font = font['normal07']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+
+                    ws[f'E{row}'].value = 'numero'
+                    ws[f'E{row}'].font = font['normal09']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+
+                    ws[f'F{row}'].value = 'numero'
+                    ws[f'F{row}'].font = font['normal09']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+
+
+                    ws[f'G{row}'].value = '(col.6-col.5+1)'
+                    ws[f'G{row}'].font = font['normal07']
+                    ws[f'G{row}'].alignment = alignment['c_c']
+
+                    make_leftline(ws[f'A{row}'],'thin')
+                    make_leftline(ws[f'B{row}'],'thin')
+                    make_leftline(ws[f'C{row}'],'thin')
+                    make_leftline(ws[f'D{row}'],'thin')
+                    make_leftline(ws[f'E{row}'],'thin')
+                    make_leftline(ws[f'F{row}'],'thin')
+                    make_leftline(ws[f'G{row}'],'thin')
+                    make_rightline(ws[f'G{row}'],'thin')
+
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 2
+
+                    ws[f'A{row}'].value = '1'
+                    ws[f'A{row}'].font = font['normal']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+                    ws[f'B{row}'].value = '2'
+                    ws[f'B{row}'].font = font['normal']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+
+                    ws[f'C{row}'].value = '3'
+                    ws[f'C{row}'].font = font['normal']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+
+                    ws[f'D{row}'].value = '4'
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+
+                    ws[f'E{row}'].value = '5'
+                    ws[f'E{row}'].font = font['normal']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+
+                    ws[f'F{row}'].value = '6'
+                    ws[f'F{row}'].font = font['normal']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+
+
+                    ws[f'G{row}'].value = '7'
+                    ws[f'G{row}'].font = font['normal']
+                    ws[f'G{row}'].alignment = alignment['c_c']
+
+                    make_leftline(ws[f'A{row}'],'thin')
+                    make_leftline(ws[f'B{row}'],'thin')
+                    make_leftline(ws[f'C{row}'],'thin')
+                    make_leftline(ws[f'D{row}'],'thin')
+                    make_leftline(ws[f'E{row}'],'thin')
+                    make_leftline(ws[f'F{row}'],'thin')
+                    make_leftline(ws[f'G{row}'],'thin')
+                    make_rightline(ws[f'G{row}'],'thin')
+
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    
+                    numero_righe_titoli = 0
+                    totalizzatore: int =  0
+                    incasso_lordo: float = 0.0 
+                    for titolo in titoli:
+                        numero_righe_titoli += 1 
+                        row = begin_row + 2 + numero_righe_titoli
+
+                        ws[f'A{row}'].value = titolo['tipo']
+                        ws[f'A{row}'].font = font['bold']
+                        ws[f'A{row}'].alignment = alignment['l_c']
+
+                        try:
+                            lettera = titolo['serie_lettera'][0]
+                        except:
+                            lettera = 'n.d.'
+
+                        try:
+                            numero = titolo['serie_numero'][0]
+                        except:
+                            numero = 'n.d.'
+
+
+                        ws[f'B{row}'].value = f'{lettera}{numero}'
+                        ws[f'B{row}'].font = font['bold']
+                        ws[f'B{row}'].alignment = alignment['c_c']
+ 
+                        ws[f'C{row}'].value = titolo['importo']
+                        ws[f'C{row}'].font = font['bold']
+                        ws[f'C{row}'].alignment = alignment['c_c']
+                        ws[f'C{row}'].number_format  = '€ 0.00'
+
+                        ws[f'D{row}'].value = titolo['importo'] * titolo['num']
+                        ws[f'D{row}'].font = font['normal']
+                        ws[f'D{row}'].alignment = alignment['r_c']
+                        ws[f'D{row}'].number_format  = '€ 0.00'
+
+                        ws[f'E{row}'].value = titolo['da']
+                        ws[f'E{row}'].font = font['normal']
+                        ws[f'E{row}'].alignment = alignment['r_c']
+
+                        ws[f'F{row}'].value = titolo['a']
+                        ws[f'F{row}'].font = font['normal']
+                        ws[f'F{row}'].alignment = alignment['r_c']
+
+                        ws[f'G{row}'].value = titolo['num']
+                        ws[f'G{row}'].font = font['normal']
+                        ws[f'G{row}'].alignment = alignment['r_c']
+
+                        totalizzatore += titolo['num']
+                        incasso_lordo += titolo['num'] * titolo['importo'] 
+
+
+                        make_leftline(ws[f'A{row}'],'thin')
+                        make_leftline(ws[f'B{row}'],'thin')
+                        make_leftline(ws[f'C{row}'],'thin')
+                        make_leftline(ws[f'D{row}'],'thin')
+                        make_leftline(ws[f'E{row}'],'thin')
+                        make_leftline(ws[f'F{row}'],'thin')
+                        make_leftline(ws[f'G{row}'],'thin')
+                        make_rightline(ws[f'G{row}'],'thin')
+
+                        for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                            make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    begin_row = row + 1
+                    for idx in range(6 - numero_righe_titoli):
+                        row = begin_row + idx
+
+                        make_leftline(ws[f'A{row}'],'thin')
+                        make_leftline(ws[f'B{row}'],'thin')
+                        make_leftline(ws[f'C{row}'],'thin')
+                        make_leftline(ws[f'D{row}'],'thin')
+                        make_leftline(ws[f'E{row}'],'thin')
+                        make_leftline(ws[f'F{row}'],'thin')
+                        make_leftline(ws[f'G{row}'],'thin')
+                        make_rightline(ws[f'G{row}'],'thin')
+
+                        for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                            make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    begin_row = row+1
+                    row = begin_row + 0
+                    ws[f'A{row}'].value = 'TOTALI'
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['r_c']
+
+                    ws[f'D{row}'].value = incasso_lordo
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+
+
+                    ws[f'G{row}'].value = totalizzatore
+                    ws[f'G{row}'].font = font['normal']
+                    ws[f'G{row}'].alignment = alignment['r_c']
+
+
+                    make_leftline(ws[f'A{row}'],'thin')
+                    make_rightline(ws[f'A{row}'],'thin')
+                    make_leftline(ws[f'D{row}'],'thin')
+                    make_rightline(ws[f'D{row}'],'thin')
+                    make_leftline(ws[f'G{row}'],'thin')
+                    make_rightline(ws[f'G{row}'],'thin')
+
+                    for letter in ('A', 'D',  'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 1
+                    ws.row_dimensions[row].height = 5
+                except Exception as e:
+                    print(f"Errore nella sezione CORRISPETTIVI: {e}")
+
+                try: # CASSA CONTANTI INIZIO
+                    statuses = ['begin', 'end']
+                    tagli = ['200euro', '100euro', '50euro', '20euro', '10euro', '5euro',
+                             '2euro', '1euro', '50cent', '20cent', '10cent']
+
+                    begin_row = row 
+                    row = begin_row + 0
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 1
+
+                    ws[f'A{row}'].value = "CONTANTI"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "CASSA INIZIO"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('d'), end_row=row , end_column=colnum('e'))
+
+                    ws[f'D{row}'].value = "CASSA FINE"
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'D{row}'], 'thin')
+                    make_rightline(ws[f'E{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('f'), end_row=row , end_column=colnum('g'))
+                    ws[f'F{row}'].value = "DIFF."
+                    ws[f'F{row}'].font = font['bold']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'F{row}'], 'thin')
+                    make_rightline(ws[f'G{row}'], 'thin')
+
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 2
+
+
+                    ws[f'A{row}'].value = "Taglio"
+                    ws[f'A{row}'].font = font['normal']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws[f'B{row}'].value = "Quantità"
+                    ws[f'B{row}'].font = font['normal']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+
+                    ws[f'C{row}'].value = "Importo"
+                    ws[f'C{row}'].font = font['normal']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = "Quantità"
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "Importo"
+                    ws[f'E{row}'].font = font['normal']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'E{row}'], 'thin')
+
+                    ws[f'F{row}'].value = "Quantità"
+                    ws[f'F{row}'].font = font['normal']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'F{row}'], 'thin')
+
+                    ws[f'G{row}'].value = "Euro"
+                    ws[f'G{row}'].font = font['normal']
+                    ws[f'G{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'G{row}'], 'thin')
+
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    begin_row = row +1
+                    numero_tagli_begin = {}
+                    importi_tagli_begin = {}
+                    diff_tagli = {}
+                    totale_begin = 0
+                    totale_end = 0
+                    differenza_totale = 0
+                    for status in statuses:
+                        row = begin_row
+                        for idx, taglio in enumerate(tagli):
+                            row = begin_row + idx 
+                            eval_string = f'fiscal_data.cash_{status}_{taglio}'
+                            num_pezzi = eval(eval_string)
+                            numero_valore_taglio = int(re.findall('[0-9]+',taglio)[0])
+                            peso_taglio = re.findall('[a-zA-Z]+',taglio)[0]
+                            if peso_taglio == 'euro':
+                                valore_taglio = float(numero_valore_taglio)
+                            else:
+                                valore_taglio = float(numero_valore_taglio / 100)
+                            importo_taglio = num_pezzi * valore_taglio
+                            if status == 'begin':
+                                numero_tagli_begin[taglio] = num_pezzi
+                                importi_tagli_begin[taglio] = importo_taglio
+                                ws[f'A{row}'].value = f"{numero_valore_taglio} {peso_taglio}"
+                                ws[f'A{row}'].font = font['normal']
+                                ws[f'A{row}'].alignment = alignment['c_c']
+                                make_border(ws[f'A{row}'], 'thin')
+
+                                ws[f'B{row}'].value = num_pezzi
+                                ws[f'B{row}'].font = font['normal']
+                                ws[f'B{row}'].alignment = alignment['c_c']
+                                make_border(ws[f'B{row}'], 'thin')
+
+                                ws[f'C{row}'].value = importo_taglio
+                                ws[f'C{row}'].font = font['normal']
+                                ws[f'C{row}'].alignment = alignment['r_c']
+                                ws[f'C{row}'].number_format  = '€ 0.00'
+                                make_border(ws[f'C{row}'], 'thin')
+
+                                totale_begin += importo_taglio
+
+                            else:
+
+
+                                ws[f'D{row}'].value = num_pezzi
+                                ws[f'D{row}'].font = font['normal']
+                                ws[f'D{row}'].alignment = alignment['c_c']
+                                make_border(ws[f'D{row}'], 'thin')
+
+                                ws[f'E{row}'].value = importo_taglio
+                                ws[f'E{row}'].font = font['normal']
+                                ws[f'E{row}'].alignment = alignment['r_c']
+                                ws[f'E{row}'].number_format  = '€ 0.00'
+                                make_border(ws[f'E{row}'], 'thin')
+
+                                diff_numero = num_pezzi - numero_tagli_begin[taglio]
+                                diff_euro = importo_taglio - importi_tagli_begin[taglio]
+                                differenza_totale += diff_euro
+                                diff_tagli[taglio] = diff_euro
+
+
+                                ws[f'F{row}'].value = diff_numero
+                                ws[f'F{row}'].font = font['normal']
+                                ws[f'F{row}'].alignment = alignment['c_c']
+                                make_border(ws[f'F{row}'], 'thin')
+
+                                ws[f'G{row}'].value = diff_euro
+                                ws[f'G{row}'].font = font['normal']
+                                ws[f'G{row}'].alignment = alignment['r_c']
+                                ws[f'G{row}'].number_format  = '€ 0.00'
+                                make_border(ws[f'G{row}'], 'thin')
+
+                                totale_end += importo_taglio
+
+                                del diff_numero, diff_euro
+
+                    begin_row = row + 1
+                    row = begin_row + 0
+
+                    ws[f'A{row}'].value = "TOTALI"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+
+                    ws[f'B{row}'].value = "INIZIO"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+
+                    ws[f'C{row}'].value = totale_begin
+                    ws[f'C{row}'].font = font['normal']
+                    ws[f'C{row}'].alignment = alignment['r_c']
+                    ws[f'C{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = "FINE"
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = totale_end
+                    ws[f'E{row}'].font = font['normal']
+                    ws[f'E{row}'].alignment = alignment['r_c']
+                    ws[f'E{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'E{row}'], 'thin')
+
+                    ws[f'F{row}'].value = "DIFF."
+                    ws[f'F{row}'].font = font['bold']
+                    ws[f'F{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'F{row}'], 'thin')
+
+                    ws[f'G{row}'].value = differenza_totale
+                    ws[f'G{row}'].font = font['normal']
+                    ws[f'G{row}'].alignment = alignment['r_c']
+                    ws[f'G{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'G{row}'], 'thin')
+
+                    row += 1
+                    ws.row_dimensions[row].height = 5
+                except Exception as e:
+                    print(f"Errore nella sezione CASSA CONTANTI: {e}")
+
+
+                try: # ALTRI INCASSI INIZIO
+
+                    begin_row = row 
+                    row = begin_row + 0
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 1
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row , end_column=colnum('d'))
+                    ws[f'A{row}'].value = "ALTRI INCASSI / METODI di PAGAMENTO"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+                    make_rightline(ws[f'D{row}'], 'thin')
+
+                    row = begin_row + 2
+
+                    ws[f'A{row}'].value = "SATISPAY"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws[f'B{row}'].value = "SUMUP"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+
+                    ws[f'C{row}'].value = "CASSA FINE"
+                    ws[f'C{row}'].font = font['bold']
+                    ws[f'C{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = "PREVENDITA"
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    row = begin_row + 3
+
+                    ws[f'A{row}'].value = fiscal_data.collection_satispay
+                    ws[f'A{row}'].font = font['normal']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    ws[f'A{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws[f'B{row}'].value = fiscal_data.collection_sumup
+                    ws[f'B{row}'].font = font['normal']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    ws[f'B{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'B{row}'], 'thin')
+
+                    ws[f'C{row}'].value = fiscal_data.collection_others
+                    ws[f'C{row}'].font = font['normal']
+                    ws[f'C{row}'].alignment = alignment['r_c']
+                    ws[f'C{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = fiscal_data.collection_presell
+                    ws[f'D{row}'].font = font['normal']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+                except Exception as e:
+                    print(f"Errore nella sezione ALTRI INCASSI: {e}")
+
+
+                try: # VERIFICHE CONTABILI INIZIO
+
+                    begin_row = row + 2
+                    row = begin_row + 0
+                    for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+                        make_underline(ws[f'{letter}{row}'], 'thin')
+
+                    row = begin_row + 1
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row , end_column=colnum('e'))
+                    ws[f'A{row}'].value = "VERIFICHE CONTABILI"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+                    make_rightline(ws[f'E{row}'], 'thin')
+
+                    row = begin_row + 2
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row + 3 , end_column=colnum('a'))
+                    ws[f'A{row}'].value = "INCASSI"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "CONTANTI"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = differenza_totale
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "+"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+                    row = begin_row + 3
+
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "ELETTRONICI IN CASSA"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = fiscal_data.collection_satispay + fiscal_data.collection_sumup
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "+"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+
+                    row = begin_row + 4
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "ALTRI"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = fiscal_data.collection_others
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "+"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+                    row = begin_row + 5
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "Prevendita"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = fiscal_data.collection_presell
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "+"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+                    row = begin_row + 6
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "Incasso Totale"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    incasso_lordo_totale_pagamenti = fiscal_data.collection_presell + fiscal_data.collection_sumup + fiscal_data.collection_others + fiscal_data.collection_satispay + differenza_totale
+
+                    ws[f'D{row}'].value = incasso_lordo_totale_pagamenti
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "="
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+
+                    row = begin_row + 8
+
+                    ws[f'A{row}'].value = ""
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "DA CORRISPETTIVI"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    ws[f'D{row}'].value = incasso_lordo
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    ws[f'E{row}'].value = "-"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+
+                    row = begin_row + 10
+
+                    ws[f'A{row}'].value = "VERIFICA"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row  , end_column=colnum('c'))
+
+                    ws[f'B{row}'].value = "PAGAMENTI - CORRISPETTIVI"
+                    ws[f'B{row}'].font = font['bold']
+                    ws[f'B{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'B{row}'], 'thin')
+                    make_rightline(ws[f'C{row}'], 'thin')
+
+                    verifica_incassi = incasso_lordo_totale_pagamenti - incasso_lordo
+
+                    ws[f'D{row}'].value = verifica_incassi
+                    ws[f'D{row}'].font = font['bold']
+                    ws[f'D{row}'].alignment = alignment['r_c']
+                    ws[f'D{row}'].number_format  = '€ 0.00'
+                    make_border(ws[f'D{row}'], 'thin')
+
+                    if verifica_incassi == 0.0:
+                        ws[f'E{row}'].value = "OK!"
+                    else:
+                        ws[f'E{row}'].value = "!! KO!"
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['l_c']
+                except Exception as e:
+                    print(f"Errore nella sezione VERIFICHE CONTABILI: {e}")
+
+
+                try: # Cassieri INIZIO
+
+                    begin_row = row + 2
+                    row = begin_row + 0
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row , end_column=colnum('g'))
+                    ws[f'A{row}'].value = "OPERATORI IN CASSA"
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+                    make_border(ws[f'A{row}'], 'thin')
+                    make_rightline(ws[f'G{row}'], 'thin')
+
+                    row = begin_row + 3
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row , end_column=colnum('c'))
+                    ws[f'A{row}'].value = fiscal_data.casher_01
+                    ws[f'A{row}'].font = font['bold']
+                    ws[f'A{row}'].alignment = alignment['c_c']
+
+                    ws.merge_cells(start_row=row, start_column=colnum('e'), end_row=row  , end_column=colnum('g'))
+
+                    ws[f'E{row}'].value = fiscal_data.casher_02
+                    ws[f'E{row}'].font = font['bold']
+                    ws[f'E{row}'].alignment = alignment['c_c']
+
+                    row = begin_row + 4
+
+                    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row +1 , end_column=colnum('c'))
+                    make_underline( ws[f'A{row+1}'], 'thin')
+                    make_underline( ws[f'B{row+1}'], 'thin')
+                    make_underline( ws[f'C{row+1}'], 'thin')
+
+                    ws.merge_cells(start_row=row, start_column=colnum('e'), end_row=row +1  , end_column=colnum('g'))
+                    make_underline( ws[f'E{row+1}'], 'thin')
+                    make_underline( ws[f'F{row+1}'], 'thin')
+                    make_underline( ws[f'G{row+1}'], 'thin')
+
+
+                except Exception as e:
+                    print(f"Errore nella sezione Cassieri: {e}")
+
+
+
+                wb.save(filename)
+                
+
+            fiscal_data.printed = True
+            fiscal_data.save()
 
             paginator_past = Paginator(past_events, 10)
             page = request.GET.get('page')
@@ -1747,38 +2678,28 @@ def siae(request, event_id):
                 'form' : form,
 
             }
-
+            if report_done:
+                reports = Report.objects.filter(event_id = curr_event.pk)
+                context['reports'] = reports
+                messages.warning(request,"I report dell'evento scelto esistono! Potrebbero essere stati già utilizzati.")
             return render(request, 'fiscalmgm/event_reportdata.html', context)
 
     
 @login_required(login_url='login')
-def casher(request, event_id):
+def ver_repo(request, event_id):
     if request.user.is_staff:
-        now = datetime.now(pytz.timezone('Europe/Rome')) + timedelta(hours=6)
-        time_diff = timedelta(days= 365)
-        past_events = Event.objects.filter(date_time__lte=now).filter(show__is_active=True).order_by('-date_time')
 
         curr_event =  Event.objects.get(id = event_id)
-
-        print("{} - number {} will be the one for Cash reports".format(curr_event,event_id))
-        
-        paginator_past = Paginator(past_events, 10)
-        page = request.GET.get('page')
-        paged_events = paginator_past.get_page(page)
-
-
-
-            
-        
         context = {
-            'past_events' : paged_events,
+        'event' : curr_event,            
         }
-                
+        try:
+            reports = Report.objects.filter(event_id = curr_event.pk)
+            context['reports'] = reports
+        except:
+            messages.warning(request,'Non ci sono report per questo evento')
 
-
-
-        # messages.success(request,"Sei entrato con utente di staff! Sei abilitato ad operare.")
-        return render(request, 'fiscalmgm/event_list.html', context)
+        return render(request, 'fiscalmgm/event_reportverify.html', context)
     
 def make_border(cells_range, style):
     try:
@@ -1847,6 +2768,7 @@ def make_border(cells_range, style):
                                 vertical=Side(border_style=None,color='FF000000'),horizontal=Side(border_style=None,color='FF000000'))
 
     return
+
 
 def make_underline(element,style=None):
     try:
