@@ -330,12 +330,17 @@ def boxoffice_print(request, event_id):
         with Image.open('the_ticket.png') as ticket_image_rgba:
             ticket_image_rgba.load()
         ticket_image_l = ticket_image_rgba.convert('L')
-        ticket_image_l_rotated= ticket_image_l.transpose(Image.ROTATE_90)
+        w, h = ticket_image_l.size
+        k = 0.53
+    
+        final_size = (int(w *k),int( h*k))
+        ticket_image_l_scaled= ticket_image_l.resize(final_size)
+        # ticket_image_l_rotated= ticket_image_l.transpose(Image.ROTATE_90)
         # threshold = 127
         # ticket_image_l_rotated = ticket_image_l_rotated.point(lambda x: 255 if x > threshold else 0)
         # ticket_image_l_rotated = ticket_image_l_rotated.filter(ImageFilter.CONTOUR)
         if not recovery:
-            ticket_image_l_rotated.save('the_ticket.png', 'PNG')
+            ticket_image_l_scaled.save('the_ticket.png', 'PNG')
             time.sleep(0.25)
 
             printer_usb.print_ticket_image('the_ticket.png')  

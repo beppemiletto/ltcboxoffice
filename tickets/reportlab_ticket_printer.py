@@ -127,7 +127,7 @@ class TicketPrinter():
              "'user': '{}','seat': '{}','event':{},'number':{}".format(
              user,self.seat, self.evento, self.numero)
              )
-        ticket_qrcode.make(fit=True)
+        # ticket_qrcode.make(fit=True)
         img = ticket_qrcode.make_image(fill_color='black',back_color='white')
         img.save(img_path)
 
@@ -145,9 +145,9 @@ class TicketPrinter():
         w = self.w
         h = self.h
         if img_path is not None:
-            x= 0.77 * w
-            y = 0.25 * h
-            self.win.drawImage(img_path,x,y,width=90, height=90, mask=None , preserveAspectRatio=True)
+            x= 0.73 * w
+            y = 0.22 * h
+            self.win.drawImage(img_path,x,y,width=100, height=100, mask=None , preserveAspectRatio=True)
         
         self.win.showPage()
         self.win.save()
