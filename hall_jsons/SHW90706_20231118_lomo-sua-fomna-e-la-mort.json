@@ -246,7 +246,7 @@
         "num_in_row": "11",
         "number": 54,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D12": {
@@ -256,7 +256,7 @@
         "num_in_row": "12",
         "number": 55,
         "row": "D",
-        "status": 0,
+        "status": 5,
         "order": null
     },
     "D13": {
