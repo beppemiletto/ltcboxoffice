@@ -140,11 +140,14 @@ def activate(request, uidb64, token):
 def dashboard(request):
     orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
     orders_count = orders.count()
-    userprofile = UserProfile.objects.get(user = request.user) 
-    context ={
-        'orders_count': orders_count,
-        'userprofile': userprofile,
-    }
+    try:
+        userprofile = UserProfile.objects.get(user = request.user) 
+        context ={
+            'orders_count': orders_count,
+            'userprofile': userprofile,
+        }
+    except UserProfile.DoesNotExist :
+        return redirect('edit_profile')
     return render(request, 'accounts/dashboard.html', context)
 
 

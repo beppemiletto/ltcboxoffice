@@ -42,7 +42,18 @@
 		<tbody>
 			<tr>
 			  {%for event in events%}
+			  {% if event.sold_out %}
 			  
+			  <td>
+					  <a href="#" class="btn btn-outline-warning" value="SOLD OUT">
+						<span class="text-center">
+							{{event.date_time|date:"D d m Y"}}
+							<br>
+							{{event.date_time|date:"H : i"}}
+						</span> <i class="fas fa-ban"> SOLD OUT</i>
+					</a>
+				</td>
+			  {%else%}
 			  <td>
 					  <a href="{{event.event_slug}}" class="btn btn-outline-primary">
 						<span class="text-center">
@@ -52,6 +63,7 @@
 						</span> <i class="fas fa-shopping-cart"></i>
 					</a>
 				</td>
+				{%endif%}
 				{%endfor%}
 			  </tr>
 			</tbody>

@@ -1,0 +1,27 @@
+[
+{
+    "model": "sessions.session",
+    "pk": "umfxfnofnd9p49ygfon5k25npayh30bs",
+    "fields": {
+        "session_data": ".eJxVjEEOwiAQRe_C2hCgUMCle89AZhhGqoYmpV0Z765NutDtf-_9l0iwrTVtvSxpInEWWpx-N4T8KG0HdId2m2We27pMKHdFHrTL60zleTncv4MKvX5rS87qMdLoPekQjBoUKkMRmY2ONhTCgsCcs3IwZIucFZAvaBxoZi3eH-RmOOA:1r3H9Z:8FDLcKaJgXdESBCTR3iuMMvLDPoACSa9fJc0VYmgn8Q",
+        "expire_date": "2023-11-29T14:46:05.805Z"
+    }
+},
+{
+    "model": "accounts.account",
+    "fields": {
+        "password": "pbkdf2_sha256$600000$h8f9rGH2wNtYs75mbJbHBj$rRouhL3wC96NXw+cu6v5XkerHTdaHHSwUKt6FBrqh5s=",
+        "first_name": "Giuseppe",
+        "last_name": "Miletto",
+        "username": "beppe.miletto",
+        "email": "beppe.miletto@gmail.com",
+        "phone_number": "",
+        "date_joined": "2023-11-15T14:45:50.856Z",
+        "last_login": "2023-11-15T14:46:05.802Z",
+        "is_admin": true,
+        "is_staff": true,
+        "is_active": true,
+        "is_superadmin": true
+    }
+}
+]
