@@ -230,6 +230,7 @@ def order_complete(request):
     try:
         order = Order.objects.get(order_number=order_number, is_ordered=True)
         order_events = OrderEvent.objects.filter(order_id=order.id)
+        #set the order status to completed
         order.status = Order.STATUS[2][-1]
         order.save()
         payment = Payment.objects.get(payment_id=transID)

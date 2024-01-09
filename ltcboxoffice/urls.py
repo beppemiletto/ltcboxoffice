@@ -31,5 +31,6 @@ urlpatterns = [
     path('tickets/', include('tickets.urls')),
     path('boxoffice/', include('boxoffice.urls')),
     path('fiscalmgm/', include('fiscalmgm.urls', namespace='fiscalmgm')),
+    path('booking/', include('booking.urls')),
     # path('cookie_consent/', include('cookie_consent.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -130,6 +130,9 @@ def minus_ingresso(request, item_id = None):
     return redirect('cart')
 
 def cart(request, total=0, cart_items=None):
+    ##############################################################################################################################
+    # booking only change cart not running #######################################################################################
+    return redirect('bookings')
     prices=[]
     vat_rate = 0.0
     try: 

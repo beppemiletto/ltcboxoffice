@@ -81,7 +81,10 @@
 <div class="row">
     <div class="col-sm">
         <div class="card">
-            <form method="POST" action="{% url 'add_cart' event.id %}">
+            <!-- RIGA PER SOLA PRENOTAZIONE PRIMA DI INSERIRE POSSIBILE VENDITA    -->
+            <form method="POST" action="{% url 'add_booking' event.id %}">
+            <!-- RIGA PER SOLA VENDITA NATIVA DA RPRISTANARE QUANDO SI INTRODUCE VENDITA  -->
+            <!-- <form method="POST" action="{% url 'add_cart' event.id %}"> -->
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary">Inserisci nel carrello.</button>
                 <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
@@ -148,9 +151,9 @@
                 alert('Posto non disponibile! Venduto');
                 console.log("Choice=",choice);
             }
-            // seat status =1 Non ancora definito
+            // seat status =1 - BOOKED
             if (seatStatus == '1') {
-            alert('Posto non disponibile!');
+            alert('Posto non disponibile! Prenotato da altro spettatore!');
                 console.log("Choice=",choice);
             }
 
