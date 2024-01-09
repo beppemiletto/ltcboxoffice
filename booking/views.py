@@ -370,6 +370,7 @@ def booking_payments(request):
     # Move the cart items to the Order Product table and modifiy the Hall Status Json file of event
 
     cart_items = CartItem.objects.filter(user=request.user).order_by('event')
+    booked_seats = {}
     for item in cart_items:
         seat= item.seat
         event = item.event
@@ -399,6 +400,7 @@ def booking_payments(request):
             items = '{}${}'.format(seat, item.ingresso)
             orderevent.seats_price = items
             orderevent.save()
+        booked_seats[seat] = item.price
 
         # Manage the UserEvent record (cross table connecting all orders of one user to one event
         # collecting all setas and prices of User for One event)
@@ -436,8 +438,13 @@ def booking_payments(request):
     email_context = {
         'user': request.user,
         'order': order,
+        'userevent': userevent,
+         'orderevent': orderevent,
+         'event' : event,
+         'show': event.show,
+         'seats': booked_seats,
     }
-    message = render_to_string('orders/order_received_email.html', email_context, request)
+    message = render_to_string('booking/booking_received_email.html', email_context, request)
     to_email = current_user.email
     send_email = EmailMessage(mail_subject, message, to=[to_email])
     send_email.send()

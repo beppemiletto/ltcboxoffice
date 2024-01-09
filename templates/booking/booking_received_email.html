@@ -1,0 +1,22 @@
+{% autoescape off %}
+
+Salve {{user.first_name}},
+
+Il tuo ordine {{ order.order_number }} è staro ricevuto e processato.
+Hai prenotato i posti a teatro per lo spettacolo: {{ show.shw_title }} 
+
+Data dell'evento: {{ event.date_time|date:'d-m-Y'}} alle {{ event.date_time|time:'H:i' }}
+
+Ti abbiamo destinato:
+
+{% for seat, price in seats.items %}
+posto prenotato: {{seat}} al prezzo di {{price}} Euro
+{%endfor%}
+
+Arrivederci al botteghino del Teatro Comunale di Cambiano,
+in via Lame 4 a Cambiano.
+
+
+Lo staff di LTCBoxOffice.
+
+{% endautoescape %}

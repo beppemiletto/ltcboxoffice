@@ -1166,7 +1166,7 @@
         "num_in_row": "16",
         "number": 146,
         "row": "I",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "I17": {
@@ -1176,7 +1176,7 @@
         "num_in_row": "17",
         "number": 147,
         "row": "I",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "I18": {
@@ -1186,7 +1186,7 @@
         "num_in_row": "18",
         "number": 148,
         "row": "I",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "I19": {
@@ -1196,7 +1196,7 @@
         "num_in_row": "19",
         "number": 149,
         "row": "I",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "L02": {
