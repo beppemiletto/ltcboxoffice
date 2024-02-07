@@ -8,9 +8,7 @@ from .forms import TicketListForm
 from billboard.models import Show
 from store.models import Event
 from orders.models import OrderEvent
-
-
-from .reportlab_ticket_printer import TicketPrinter
+from .reportlab_ticket_printer import TicketPrinter, BookingPrinter
 from datetime import datetime
 import pytz
 import os
@@ -115,7 +113,7 @@ def print_ticket(request):
             if sell_code is not None:
                 ticket.sell_mode = sell_code
             ticket.save()
-            result, pdf_file = printer(ticket_number=ticket.number)
+            result, pdf_file = printer_tckts(ticket_number=ticket.number)
             if result:
                 ticket.status= 'Printed'
                 ticket.pdf_path = pdf_file.split('/')[-1]
@@ -131,7 +129,7 @@ def print_ticket(request):
 
     return render(request, 'tickets/tickets_listing.html', context)
 
-def printer(ticket_number):
+def printer_tckts(ticket_number):
 
     ingressi = ['Gratuito', 'Ridotto', 'Intero']
 
@@ -186,92 +184,4 @@ def tickets_listing(request):
     context = {
         'tickets_list': tickets_list
     }
-    return render(request, 'tickets/tickets_listing.html', context)
-
-@login_required(login_url= 'login')
-def print_booking(request):
-    order = int(request.GET['order'])
-    orderevents = OrderEvent.objects.filter(order=order)
-
-    tickets_list = []
-    for ordereventobj in orderevents:
-        event = Event.objects.get(id=ordereventobj.event.pk)
-        show = Show.objects.get(id=event.show.pk)
-
-        seats_dict = ordereventobj.seats_dict()
-        # verifica utente per contesto di vendita
-        # se utente Staff allora assume vendita in cassa
-        if request.user.is_staff:
-            if request.user.first_name == 'Cassa':
-                sell_code = 'Cassa'
-            else:
-                sell_code = None
-        else:
-            sell_code = None
-        
-        if event.price_full == 0.0 and event.price_reduced == 0.00:
-            sell_code = 'Prenotazione'
-
-        # event_tickets = Ticket.objects.filter(orderevent__event=event)
-        
-
-
-
-        for k, seat in seats_dict.items():
-            try:
-                tickets_all = Ticket.objects.filter(orderevent__event=event)
-                total_tickets_x_event = tickets_all.count()
-                tickets_x_seat = tickets_all.filter(seat = k)
-                how_many = tickets_x_seat.count()
-                if how_many == 0:
-                    action_ticket = "make_new"
-                elif how_many == 1:
-                    ticket = tickets_x_seat.first()
-                    action_ticket = "change_it"
-                elif how_many > 1:
-                    count = 0
-                    for single_ticket in tickets_x_seat:
-                        if count == 0:
-                            ticket = single_ticket
-                        else:
-                            single_ticket.delete()
-                        count += 1
-                    action_ticket = "change_it"
-            except:
-                print('Errore sulla query per generazione dei biglietti')
-
-            if action_ticket == "make_new":
-                price = int(seat[-1])
-                ticket = Ticket()
-                ticket.price = price
-                ticket.payment = ordereventobj.payment
-                ticket.orderevent = ordereventobj
-                ticket.event = ordereventobj.event
-                ticket.seat = k
-                ticket.user = ordereventobj.user
-                serial = total_tickets_x_event + 1
-                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
-            elif action_ticket == "change_it":
-                price = int(seat[-1])
-                ticket.price = price
-                ticket.payment = ordereventobj.payment
-                ticket.orderevent = ordereventobj
-                ticket.event = ordereventobj.event
-                ticket.user = ordereventobj.user
-                serial = int(ticket.number.split('.')[-1])
-
-            if sell_code is not None:
-                ticket.sell_mode = sell_code
-            ticket.save()
-            result, pdf_file = printer(ticket_number=ticket.number)
-            if result:
-                ticket.status= 'Printed'
-                ticket.pdf_path = pdf_file.split('/')[-1]
-                ticket.save()
-            tickets_list.append(ticket)
-    context = {
-        'ticket_user': ordereventobj.user,
-        'tickets_list':tickets_list,
-    }
-
     return render(request, 'tickets/tickets_listing.html', context)

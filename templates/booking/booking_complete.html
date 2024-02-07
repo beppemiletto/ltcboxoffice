@@ -2,12 +2,16 @@
 {% load static %}
 
 {% block content %}
+
     <div class="container" style="margin-top: 50px;">
-        <center><i class="fas fa-check-circle" style="font-size: 72px;margin-bottom: 20px;color: #28A745;"></i></center>
+        <i class="fas fa-check-circle" style="font-size: 72px;margin-bottom: 20px;color: #28A745;"></i>
         <h2 class="text-center">Prenotazione avvenuta con successo</h2>
         <br>
+        <p>Abbiamo inviato una mail all'indirizzo {{order.email}} con gli estremi della tua prenotazione.</p>
+        <p>Questa pagina riassume il contenuto della mail.</p>
+        <br>
         <div class="text-center">
-            <a href="{% url 'print_booking'%}?order={{order.id}}" class="btn btn-success">Scarica - stampa la tua prenotazione</a>
+                <a href="{% url 'home'%}" class="btn btn-primary">Torna alla home</a>
         </div>
     </div>
 
@@ -30,7 +34,7 @@
                                 <!-- col-lg-6 start here -->
                                 <div class="invoice-from">
                                     <ul class="list-unstyled text-right">
-                                        <li><strong>Ricevuta di</strong></li>
+                                        <li><strong>Conferma di prenotazione posti per</strong></li>
                                         <li>{{ order.full_name }}</li>
                                         <li>{{ order.full_address }}</li>
                                         <li>{{ order.city }}, {{ order.state }}</li>
@@ -45,7 +49,7 @@
                                     <div class="well">
                                         <ul class="list-unstyled mb0">
                                             <li><strong>Ordine</strong> # {{ order.order_number }}</li>
-                                            <li><strong>Transazione</strong> # {{ order.payment.payment_id }}</li>
+                                            <li><strong>Transazione</strong> # pagamento al botteghino</li>
                                             <li><strong>Date Ordine:</strong> {{ order.created_at }}</li>
                                             <li><strong>Stato del pagamento:</strong> {{ order.payment.status }}</li>
                                         </ul>
@@ -58,44 +62,51 @@
                                             <thead>
                                             <tr>
                                                 <th class="per35 text-center">Evento </th>
-                                                <th class="per45 text-center">Posti <br>(numero posto $ <br>codice prezzo 0-gratuito, 1-intero, 2-ridotto)</th>
+                                                <th class="per45 text-center">Posti e prezzi</th>
+                                                <th class="per45 text-center">Barcode </th>
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            {% for order_event in order_events  %}
-
+                                            {% for number,orderevent in emaildata.items  %}
 
                                             <tr>
-                                                <td>{{ order_event.event.show.shw_title }}
+                                                <td>{{ orderevent.show }}
                                                 <p class="text-muted small">
-                                                        {{ order_event.event.date_time }}
+                                                        {{ orderevent.datetime }}
                                                     </p>
                                                 </td>
                                                 <td class="text-left">
-                                                    <p class="text-black-75">
-                                                        {{ order_event.seats_price }}
+                                                    {% for seat,price in orderevent.seats.items %}
+                                                    <p class="text-black-50">
+                                                        Posto {{seat}} al prezzo di Euro {{price}}
                                                     </p> 
+                                                    {% endfor %}
+                                                </td>
+
+                                                <td >
+                                                    {% autoescape off %}
+                                                    <img src="{% static 'images/'%}{{orderevent.barcode}}" alt="Tickets booking barcode" style="max-height: 100px;" class="center">
+                                                    {% endautoescape %}
                                                 </td>
                                             </tr>
 
                                             {% endfor %}
                                             </tbody>
                                             <tfoot>
+                                                <tr>
+                                                    <th colspan="1" class="text-right">Totale da pagare:</th>
+                                                    <td class="text-center"> {{ payment.amount_paid }} Euro</td>
+                                                </tr>
                                             <tr>
-                                                <th colspan="1" class="text-right">Metodo pagamento:</th>
-                                                <td class="text-center">{{ payment.payment_method }} </td>
-                                            </tr>
-                                            <tfoot>
-                                            <tr>
-                                                <th colspan="1" class="text-right">Totale pagamento:</th>
-                                                <td class="text-center"> {{ payment.amount_paid }} Euro</td>
+                                                <th colspan="1" class="text-right">Metodi pagamento:</th>
+                                                <td class="text-center">Contanti - Bancomat - Carte di credito - Satispay </td>
                                             </tr>
                                             </tfoot>
                                         </table>
                                     </div>
                                 </div>
                                 <div class="invoice-footer mt25">
-                                    <p class="text-center">Grazie per aver acquistato al nostro botteghino!</p>
+                                    <p class="text-center">Grazie per aver prenotato, ti auguriamo una buona visione!</p>
                                 </div>
                             </div>
                             <!-- col-lg-12 end here -->

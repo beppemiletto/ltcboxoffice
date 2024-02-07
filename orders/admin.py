@@ -15,10 +15,14 @@ class UserEventAdmin(admin.ModelAdmin):
     list_display = ['pk','event','user','ordersevents']
     list_filter = ['user', 'event']
 
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ['pk','payment_id','user','status']
+    list_filter = ['user', 'status']
+
 
 
 # Register your models here.
 admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderEvent,OrderEventAdmin)
 admin.site.register(UserEvent,UserEventAdmin)
-admin.site.register(Payment)
+admin.site.register(Payment, PaymentAdmin)

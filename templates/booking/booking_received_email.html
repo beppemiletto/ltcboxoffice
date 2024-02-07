@@ -10,7 +10,9 @@
         
         Il tuo ordine {{ order.order_number }} è staro ricevuto e processato.
         <br>
-        <img src="cid:barcode_img.png" />
+        <br>
+        <img src="cid:{{barcode}}" />
+        <br>
         <br>
         
         Hai prenotato i posti a teatro per lo spettacolo: {{ show.shw_title }} 
@@ -34,10 +36,15 @@ posto prenotato: {{seat}} al prezzo di {{price}} Euro
         <br>
         nome: {{ order.first_name }}, cognome: {{ order.last_name }}  
         <br>
-        telefono: {{ order.phone }}, email: {{ order.email }}
+        telefono: {{ order.phone }}, email: {{ order.email }} ,
         <br>
-        note all'ordine: {{ order.order_note }}
+        {%if order.order_note %}
+        note all'ordine: "{{ order.order_note }}".
         <br>
+        {%else%}
+        nessuna nota all'ordine.
+        <br>
+        {%endif%}
 
         <br>
 Arrivederci al botteghino del Teatro Comunale di Cambiano,
@@ -54,6 +61,15 @@ A presto.
 <br>
 Lo staff di LTCBoxOffice.
 
+<small>
+        <p><b>Laboratorio Teatrale di Cambiano APS</b></p>
+        <p><i>Sede legale:</i> Via Lame, 4 - 10020 Cambiano (TO)</p>
+        <p><i>P.I. e C.F.:</i> 09762270016</p> 
+        <p><i>CODICE DESTINATARIO:</i> G4AI1U8</p> 
+        <p><i>MAIL:</i> info@teatrocambiano.com</p>
+
+
+</small>
 </body>
 </html>
 {% endautoescape %}

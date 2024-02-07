@@ -1,19 +1,29 @@
 from django.db import models
 from accounts.models import Account
 from store.models import Event
+from django.conf import settings
+import os
 
-
+def barcode_image_path():
+    return os.path.join(settings.STATIC_ROOT,'images')
 
 class Payment(models.Model):
+
+    STATUS = (
+    ('NEW', 'NEW'),
+    ('BOOKED', 'BOOKED'),
+    ('COMPLETED', 'COMPLETED'),
+    ('CANCELED', 'CANCELED'),
+)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
-    payer_mail = models.CharField(max_length=100, default="")
-    payer_id = models.CharField(max_length=100, default="")
-    payer_given_name = models.CharField(max_length=100, default="")
-    payer_surname = models.CharField(max_length=100, default="")
+    payer_mail = models.CharField(max_length=100, default="", null=True, blank=True)
+    payer_id = models.CharField(max_length=100, default="", null=True, blank=True)
+    payer_given_name = models.CharField(max_length=100, default="", null=True, blank=True)
+    payer_surname = models.CharField(max_length=100, default="", null=True, blank=True)
     payment_id = models.CharField(max_length=100)
     payment_method = models.CharField(max_length=100)
     amount_paid = models.CharField(max_length=100)
-    status = models.CharField(max_length=100)
+    status = models.CharField(max_length=100,choices=STATUS, default='NEW')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -77,6 +87,8 @@ class OrderEvent(models.Model):
     seats_price = models.CharField(max_length=512, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    barcode_path = models.FilePathField(path=barcode_image_path, max_length=512,null=True, blank=True)
+    orderevent_number = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         if self.event != None:

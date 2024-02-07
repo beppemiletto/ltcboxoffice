@@ -6,7 +6,7 @@
         "num_in_row": "3",
         "number": 30,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C04": {
@@ -16,7 +16,7 @@
         "num_in_row": "4",
         "number": 31,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C05": {
@@ -26,7 +26,7 @@
         "num_in_row": "5",
         "number": 32,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C06": {
@@ -36,7 +36,7 @@
         "num_in_row": "6",
         "number": 33,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C07": {
@@ -46,7 +46,7 @@
         "num_in_row": "7",
         "number": 34,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C08": {
@@ -56,7 +56,7 @@
         "num_in_row": "8",
         "number": 35,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C09": {
@@ -66,7 +66,7 @@
         "num_in_row": "9",
         "number": 36,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C10": {
@@ -76,7 +76,7 @@
         "num_in_row": "10",
         "number": 37,
         "row": "C",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "C11": {
@@ -166,7 +166,7 @@
         "num_in_row": "3",
         "number": 46,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D04": {
@@ -176,7 +176,7 @@
         "num_in_row": "4",
         "number": 47,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D05": {
@@ -186,7 +186,7 @@
         "num_in_row": "5",
         "number": 48,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D06": {
@@ -196,7 +196,7 @@
         "num_in_row": "6",
         "number": 49,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D07": {
@@ -206,7 +206,7 @@
         "num_in_row": "7",
         "number": 50,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D08": {
@@ -216,7 +216,7 @@
         "num_in_row": "8",
         "number": 51,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D09": {
@@ -226,7 +226,7 @@
         "num_in_row": "9",
         "number": 52,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D10": {
@@ -236,7 +236,7 @@
         "num_in_row": "10",
         "number": 53,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D11": {
@@ -246,7 +246,7 @@
         "num_in_row": "11",
         "number": 54,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D12": {
@@ -256,7 +256,7 @@
         "num_in_row": "12",
         "number": 55,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D13": {
@@ -266,7 +266,7 @@
         "num_in_row": "13",
         "number": 56,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D14": {
@@ -276,7 +276,7 @@
         "num_in_row": "14",
         "number": 57,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D15": {
@@ -286,7 +286,7 @@
         "num_in_row": "15",
         "number": 58,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D16": {
@@ -296,7 +296,7 @@
         "num_in_row": "16",
         "number": 59,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D17": {
@@ -306,7 +306,7 @@
         "num_in_row": "17",
         "number": 60,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "D18": {
@@ -316,7 +316,7 @@
         "num_in_row": "18",
         "number": 61,
         "row": "D",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E03": {
@@ -406,7 +406,7 @@
         "num_in_row": "11",
         "number": 70,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E12": {
@@ -416,7 +416,7 @@
         "num_in_row": "12",
         "number": 71,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E13": {
@@ -426,7 +426,7 @@
         "num_in_row": "13",
         "number": 72,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E14": {
@@ -436,7 +436,7 @@
         "num_in_row": "14",
         "number": 73,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E15": {
@@ -446,7 +446,7 @@
         "num_in_row": "15",
         "number": 74,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E16": {
@@ -456,7 +456,7 @@
         "num_in_row": "16",
         "number": 75,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E17": {
@@ -466,7 +466,7 @@
         "num_in_row": "17",
         "number": 76,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "E18": {
@@ -476,7 +476,7 @@
         "num_in_row": "18",
         "number": 77,
         "row": "E",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F02": {
@@ -576,7 +576,7 @@
         "num_in_row": "11",
         "number": 87,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F12": {
@@ -586,7 +586,7 @@
         "num_in_row": "12",
         "number": 88,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F13": {
@@ -596,7 +596,7 @@
         "num_in_row": "13",
         "number": 89,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F14": {
@@ -606,7 +606,7 @@
         "num_in_row": "14",
         "number": 90,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F15": {
@@ -616,7 +616,7 @@
         "num_in_row": "15",
         "number": 91,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F16": {
@@ -626,7 +626,7 @@
         "num_in_row": "16",
         "number": 92,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F17": {
@@ -636,7 +636,7 @@
         "num_in_row": "17",
         "number": 93,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F18": {
@@ -646,7 +646,7 @@
         "num_in_row": "18",
         "number": 94,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "F19": {
@@ -656,7 +656,7 @@
         "num_in_row": "19",
         "number": 95,
         "row": "F",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G02": {
@@ -756,7 +756,7 @@
         "num_in_row": "11",
         "number": 105,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G12": {
@@ -766,7 +766,7 @@
         "num_in_row": "12",
         "number": 106,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G13": {
@@ -776,7 +776,7 @@
         "num_in_row": "13",
         "number": 107,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G14": {
@@ -786,7 +786,7 @@
         "num_in_row": "14",
         "number": 108,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G15": {
@@ -796,7 +796,7 @@
         "num_in_row": "15",
         "number": 109,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G16": {
@@ -806,7 +806,7 @@
         "num_in_row": "16",
         "number": 110,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G17": {
@@ -816,7 +816,7 @@
         "num_in_row": "17",
         "number": 111,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G18": {
@@ -826,7 +826,7 @@
         "num_in_row": "18",
         "number": 112,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "G19": {
@@ -836,7 +836,7 @@
         "num_in_row": "19",
         "number": 113,
         "row": "G",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H02": {
@@ -936,7 +936,7 @@
         "num_in_row": "11",
         "number": 123,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H12": {
@@ -946,7 +946,7 @@
         "num_in_row": "12",
         "number": 124,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H13": {
@@ -956,7 +956,7 @@
         "num_in_row": "13",
         "number": 125,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H14": {
@@ -966,7 +966,7 @@
         "num_in_row": "14",
         "number": 126,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H15": {
@@ -976,7 +976,7 @@
         "num_in_row": "15",
         "number": 127,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H16": {
@@ -986,7 +986,7 @@
         "num_in_row": "16",
         "number": 128,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H17": {
@@ -996,7 +996,7 @@
         "num_in_row": "17",
         "number": 129,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H18": {
@@ -1006,7 +1006,7 @@
         "num_in_row": "18",
         "number": 130,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "H19": {
@@ -1016,7 +1016,7 @@
         "num_in_row": "19",
         "number": 131,
         "row": "H",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I02": {
@@ -1046,7 +1046,7 @@
         "num_in_row": "4",
         "number": 134,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I05": {
@@ -1056,7 +1056,7 @@
         "num_in_row": "5",
         "number": 135,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I06": {
@@ -1066,7 +1066,7 @@
         "num_in_row": "6",
         "number": 136,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I07": {
@@ -1076,7 +1076,7 @@
         "num_in_row": "7",
         "number": 137,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I08": {
@@ -1086,7 +1086,7 @@
         "num_in_row": "8",
         "number": 138,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I09": {
@@ -1096,7 +1096,7 @@
         "num_in_row": "9",
         "number": 139,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I10": {
@@ -1106,7 +1106,7 @@
         "num_in_row": "10",
         "number": 140,
         "row": "I",
-        "status": 1,
+        "status": 0,
         "order": null
     },
     "I11": {
@@ -1116,7 +1116,7 @@
         "num_in_row": "11",
         "number": 141,
         "row": "I",
-        "status": 4,
+        "status": 1,
         "order": null
     },
     "I12": {
@@ -1126,7 +1126,7 @@
         "num_in_row": "12",
         "number": 142,
         "row": "I",
-        "status": 4,
+        "status": 1,
         "order": null
     },
     "I13": {
@@ -1136,7 +1136,7 @@
         "num_in_row": "13",
         "number": 143,
         "row": "I",
-        "status": 4,
+        "status": 1,
         "order": null
     },
     "I14": {
@@ -1146,7 +1146,7 @@
         "num_in_row": "14",
         "number": 144,
         "row": "I",
-        "status": 5,
+        "status": 1,
         "order": null
     },
     "I15": {
@@ -1156,7 +1156,7 @@
         "num_in_row": "15",
         "number": 145,
         "row": "I",
-        "status": 5,
+        "status": 1,
         "order": null
     },
     "I16": {
@@ -1346,7 +1346,7 @@
         "num_in_row": "16",
         "number": 164,
         "row": "L",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "L17": {
@@ -1356,7 +1356,7 @@
         "num_in_row": "17",
         "number": 165,
         "row": "L",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "L18": {
@@ -1366,7 +1366,7 @@
         "num_in_row": "18",
         "number": 166,
         "row": "L",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "L19": {
@@ -1376,7 +1376,7 @@
         "num_in_row": "19",
         "number": 167,
         "row": "L",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "M02": {
@@ -1506,7 +1506,7 @@
         "num_in_row": "14",
         "number": 180,
         "row": "M",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "M15": {
@@ -1656,7 +1656,7 @@
         "num_in_row": "11",
         "number": 195,
         "row": "N",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "N12": {
@@ -1666,7 +1666,7 @@
         "num_in_row": "12",
         "number": 196,
         "row": "N",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "N13": {
@@ -1676,7 +1676,7 @@
         "num_in_row": "13",
         "number": 197,
         "row": "N",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "N14": {
@@ -1686,7 +1686,7 @@
         "num_in_row": "14",
         "number": 198,
         "row": "N",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "N15": {
@@ -1846,7 +1846,7 @@
         "num_in_row": "11",
         "number": 214,
         "row": "O",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "O12": {
@@ -1856,7 +1856,7 @@
         "num_in_row": "12",
         "number": 215,
         "row": "O",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "O13": {
@@ -1866,7 +1866,7 @@
         "num_in_row": "13",
         "number": 216,
         "row": "O",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "O14": {
@@ -1876,7 +1876,7 @@
         "num_in_row": "14",
         "number": 217,
         "row": "O",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "O15": {
@@ -2046,7 +2046,7 @@
         "num_in_row": "11",
         "number": 234,
         "row": "P",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "P12": {
@@ -2056,7 +2056,7 @@
         "num_in_row": "12",
         "number": 235,
         "row": "P",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "P13": {
@@ -2066,7 +2066,7 @@
         "num_in_row": "13",
         "number": 236,
         "row": "P",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "P14": {
@@ -2076,7 +2076,7 @@
         "num_in_row": "14",
         "number": 237,
         "row": "P",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "P15": {
@@ -2246,7 +2246,7 @@
         "num_in_row": "11",
         "number": 254,
         "row": "Q",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "Q12": {
@@ -2256,7 +2256,7 @@
         "num_in_row": "12",
         "number": 255,
         "row": "Q",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "Q13": {
@@ -2266,7 +2266,7 @@
         "num_in_row": "13",
         "number": 256,
         "row": "Q",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "Q14": {
@@ -2276,7 +2276,7 @@
         "num_in_row": "14",
         "number": 257,
         "row": "Q",
-        "status": 0,
+        "status": 1,
         "order": null
     },
     "Q15": {

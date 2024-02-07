@@ -189,28 +189,58 @@
     }
     else
     { console.log("No pagamento!") 
-    sendData();
-                    function sendData(){
-                        fetch(url,{
-                            method : "POST",
-                            headers: {
-                                "Content-type": "application/json",
-                                "X-CSRFToken": csrftoken,
-                            },
-                            body: JSON.stringify({
-                                orderID: orderID,
-                                transID: "00000000",
-                                payment_method: "NO",
-                                status: "NOPay",
+    paypal.Buttons({
 
-                            }),
-                            
-                        })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            window.location.href = redirect_url + '?order_number='+data.order_number+'&payment_id='+data.transID;
-                        });
-                    }
+style: {
+    layout: 'vertical',
+    color: 'blue',
+    shape: 'pill',
+    label: 'pay',
+    height: 40
+},
+
+// Set up the transaction
+createOrder: function(data, actions) {
+    return actions.order.create({
+        purchase_units: [{
+            amount: {
+                value: amount,
+            }
+        }]
+    });
+},
+
+// Finalize the transaction
+onApprove: function(data, actions) {
+    return actions.order.capture().then(function(details) {
+        //Shows a success message to the buyer
+        console.log(details);
+        sendData();
+        function sendData(){
+            fetch(url,{
+                method : "POST",
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": csrftoken,
+                },
+                body: JSON.stringify({
+                    orderID: orderID,
+                    transID: details.id,
+                    payment_method: payment_method,
+                    status: details.status,
+
+                }),
+                
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                window.location.href = redirect_url + '?order_number='+data.order_number+'&payment_id='+data.transID;
+            });
+        }
+    });
+}
+
+}).render('#paypal-button-container');
     }
 </script>
 

@@ -311,23 +311,24 @@ def record_booking(request):
             data.save() 
 
             # Generate order number
-            yr = int(datetime.date.today().strftime('%Y'))
-            dt = int(datetime.date.today().strftime('%d'))
-            mt = int(datetime.date.today().strftime('%m'))
-            d = datetime.date(yr,mt, dt)
-            current_date = d.strftime("%Y%m%d")
-            order_number = current_date + '-' +str(data.id)
+            order_number = f"{data.id:06d}"
             data.order_number = order_number
             data.save()
 
+            del data
+
             order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
-            
+            del order_number
             # change for booking only - the payment_required is always FALSE
             payment_required: int = 0
-            # if grand_total != 0:
-            #     payment_required: int = 1
-            # else: 
-            #     payment_required: int = 0
+
+            body = {
+                    'orderID': order.order_number,
+                    'transID': order.order_number,
+                    'payment_method': 'none',
+                    'status': 'BOOKED'
+                    }
+
 
             context = {
                 'payment_required': payment_required,
@@ -338,19 +339,22 @@ def record_booking(request):
                 'tax': tax,
                 'cart_count': cart_count,
                 'grouped_cart_items' : grouped_cart_items,
+                'body': body,
+
             }
 
-            # return HttpResponse('Ok the form is valid and I saved the Order Record')
-            return render(request, 'booking/payments.html', context)
+            # for booking only no payment page is shown, direct to record the void payments data
+            response = booking_payments(request, context)
+            return response
         else:
             return HttpResponse("<H1>Entered the POST clause</H1><br>Got the following form that is NOT VALID <br> {}".format(form))
 
     else:
         return redirect('bookings')
     
-def booking_payments(request):
+def booking_payments(request, newContext={}):
     current_user = request.user
-    body = json.loads(request.body)
+    body = newContext['body']
     #print(body)
     order = Order.objects.get(user=current_user, is_ordered=False, order_number= body['orderID'])
     payment = Payment(
@@ -372,7 +376,12 @@ def booking_payments(request):
     # Move the cart items to the Order Product table and modifiy the Hall Status Json file of event
 
     cart_items = CartItem.objects.filter(user=request.user).order_by('event')
-    booked_seats = {}
+
+
+    # prepare a dictionary for email data
+    email_data = {}
+
+
     for item in cart_items:
         seat= item.seat
         event = item.event
@@ -392,6 +401,9 @@ def booking_payments(request):
             items = orderevent.seats_price
             items += ',{}${}'.format(seat, item.ingresso)
             orderevent.seats_price = items
+            # update email data
+            booked_seats[seat] = item.price            
+            email_data[orderevent.orderevent_number]['seats'] = booked_seats
             orderevent.save()
         except:
             orderevent = OrderEvent()
@@ -402,7 +414,28 @@ def booking_payments(request):
             items = '{}${}'.format(seat, item.ingresso)
             orderevent.seats_price = items
             orderevent.save()
-        booked_seats[seat] = item.price
+            orderevent.orderevent_number = f'{orderevent.event.pk:05d}_{order.order_number}_{orderevent.pk:06d}'
+            orderevent.save()
+        
+            barcode_printer = OrderBarCodePrinter(
+                save_path = 'images',
+                numero=orderevent.orderevent_number ,
+                )
+            barcode_image_path: os.path = barcode_printer.make_barcode()
+            orderevent.barcode_path = barcode_image_path
+            orderevent.save()
+            booked_seats = {}
+            booked_seats[seat] = item.price
+
+            email_data[orderevent.orderevent_number] = {
+            'show':orderevent.event.show.shw_title,
+            'datetime': orderevent.event.date_time,
+            'seats': booked_seats,
+            'barcode': orderevent.barcode_path.split('/')[-1],
+            'barcode_path': orderevent.barcode_path 
+            }
+
+
 
         # Manage the UserEvent record (cross table connecting all orders of one user to one event
         # collecting all setas and prices of User for One event)
@@ -433,30 +466,22 @@ def booking_payments(request):
 
     CartItem.objects.filter(user=current_user).delete()
 
-    # Send order received email to customer
+    # Count the order events included in the single order
+    orderevents_count = len(email_data)
+
+    # Send order received email to customer 
 
     current_site = get_current_site(request)
-    barcode_printer = OrderBarCodePrinter(
-                save_path = 'static/images/',
-                evento = event,
-                numero=order.order_number ,
-                show= event.show.shw_title,
-                evento_datetime=event.date_time, 
-                total = order.order_total,
-        )
-    barcode_image_path: os.path = barcode_printer.make_barcode()
+
     mail_subject = 'LTC BoxOffice. Grazie per la tua prenotazione!'
     email_context = {
+        'count': orderevents_count,
         'user': request.user,
         'order': order,
         'userevent': userevent,
-         'orderevent': orderevent,
-         'event' : event,
-         'show': event.show,
-         'seats': booked_seats,
-         'barcode' : barcode_image_path,
+        'email_data' : email_data,
     }
-    message = render_to_string('booking/booking_received_email.html', email_context).strip()
+    message = render_to_string('booking/multibooking_received_email.html', email_context).strip()
     if current_user.email == order.email:
         to_email = [current_user.email,]
     else:
@@ -479,13 +504,16 @@ def booking_payments(request):
         # img.add_header('Content-Disposition', 'inline', filename=image)
     send_email.attach(img)
 
-    barcode = 'barcode_img.png'
-    file_path = os.path.join(img_dir, barcode)
-    with open(file_path,'rb') as fip:
-        brc = MIMEImage(fip.read(),_subtype='png')
-        brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
-        # img.add_header('Content-Disposition', 'inline', filename=image)
-    send_email.attach(brc)
+    for orderevent_number, orderevent_data in email_data.items():
+        file_path:os.path = orderevent_data['barcode_path']
+    #this name must be same as in the htmltemplate being only a placeholder
+        barcode:str = orderevent_data['barcode']
+
+        with open(file_path,'rb') as fip:
+            brc = MIMEImage(fip.read(),_subtype='png')
+            brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
+            # img.add_header('Content-Disposition', 'inline', filename=image)
+        send_email.attach(brc)
 
     send_email.send()
 
@@ -493,33 +521,44 @@ def booking_payments(request):
 
     order.status = None
 
-    data = {
+    newContext['data'] = {
         'order_number': order.order_number,
         'transID': payment.payment_id,
-
+        'barcode': barcode_image_path,
+        'email_data': email_data,
     }
 
-    return JsonResponse(data)
+    response = booking_complete(request, newContext)
 
-def booking_complete(request):
-    order_number = request.GET.get('order_number')
-    transID = request.GET.get('payment_id')
+    return response
+
+def booking_complete(request, newContext={}):
+    order_number = newContext['data']['order_number']
+    transID = newContext['data']['transID']
+    email_data = newContext['data']['email_data']
+    for number, orderevent in email_data.items():
+        newtarget:os.path = os.path.join(os.getcwd(),os.getcwd().split('/')[-1],'static/images',orderevent['barcode'])
+        os.rename(orderevent['barcode_path'],newtarget)
+
+    del number, orderevent, newtarget
+    
+
     try:
         order = Order.objects.get(order_number=order_number, is_ordered=True)
-        order_events = OrderEvent.objects.filter(order_id=order.id)
+        orderevents = OrderEvent.objects.filter(order_id=order.id)
         #set the order status to completed
         order.status = Order.STATUS[2][-1]
         order.save()
         payment = Payment.objects.get(payment_id=transID)
         context = {
             'order': order,
-            'order_events': order_events,
+            'orderevents': orderevents,
             'payment': payment,
+            'emaildata': email_data,
         }
         return render(request, 'booking/booking_complete.html', context)
     except (Order.DoesNotExist, Payment.DoesNotExist):
         return redirect('home')
-
 
 def round_euro(the_float):
     return int(the_float * 100 + 0.5) / 100
