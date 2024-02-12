@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from .models import SellingSeats, BoxOfficeTransaction
+from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
@@ -175,12 +175,14 @@ def boxoffice_cart(request, event_id):
         total += sellingseat.cost
     tax = current_event.vat_rate
     taxable =int( (total / (100 + tax) )* 10000) / 100
+    payment_methods = PaymentMethod.objects.all()
     context = {
         'event' : current_event,
         'cart_items' : cart_items,
         'total' : total,
         'taxable': taxable,
         'tax': tax,
+        'payments_methods': payment_methods,
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
@@ -239,7 +241,7 @@ def boxoffice_minus_price(request, item_id = None):
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
 
-def boxoffice_print(request, event_id):
+def boxoffice_print(request, event_id, method_id=None):
     printer_dummy = Dummy()
     # printer_net = EscPosNetwork(host='localhost', port= 9100)
     try:
@@ -257,6 +259,7 @@ def boxoffice_print(request, event_id):
 
 
     current_event = Event.objects.get(id = event_id)
+    payment_method = PaymentMethod.objects.get(id = method_id)
     costs = [0, current_event.price_reduced, current_event.price_full]
     ingressi = ['Gratuito','Ridotto', 'Intero']
     show= current_event.show
@@ -360,6 +363,7 @@ def boxoffice_print(request, event_id):
     context = {
        'event': current_event,
        'tickets_list':tickets_list,
+       'payment_method': payment_method,
 
         }
     
@@ -371,15 +375,18 @@ def boxoffice_print(request, event_id):
         json.dump(hall_status,jfp)
    
 
+    response = close_transaction(request, context)
+    return response
+    # return render(request, 'boxoffice/ticket_printed.html', context)
 
-    return render(request, 'boxoffice/ticket_printed.html', context)
+def close_transaction(request, context={}):
 
-def close_transaction(request, event_id):
-    current_event = Event.objects.get(id = event_id)
+    current_event = context['event']
     costs = [0, current_event.price_reduced, current_event.price_full]
     ingressi = ['Gratuito','Ridotto', 'Intero']
     show= current_event.show
     boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+
     try:
         payments = BoxOfficeTransaction.objects.filter(event=current_event)
         serial_number:int = payments.count() + 1
@@ -390,17 +397,15 @@ def close_transaction(request, event_id):
         event = current_event,
         seats_sold = '',
         payment_id = f'{current_event.pk:05d}.{serial_number:03d}',
-        payment_method = '',
-        amount_paid = '0,0',
-        status = 'Paid'
+        payment_method = context['payment_method'],
+        amount_paid = "total",
+        status = 'Completed'
     )
 
     sold_seats = SellingSeats.objects.all()
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
-
-    
 
     seats_list:list = []
     totale:float = 0
@@ -540,6 +545,44 @@ def change_bookings(request, event_id):
 
 
         return render(request, 'boxoffice/change_bookings.html', context)
+
+def sell_booking(request, userevent_id = None):
+
+    userevent =  UserEvent.objects.get(id=userevent_id)
+    ingressi= ['Gratuito', 'Ridotto', 'Intero']
+    costs = [0.0,  userevent.event.price_reduced, userevent.event.price_full]
+    booked_seats_price = userevent.seats_price
+    for seat_price in booked_seats_price.split(','):
+        ordered_seat, ordered_price  = seat_price.split('$')
+        ordered_sellingseat = SellingSeats(
+            event = userevent.event,
+            seat = ordered_seat,
+            price = int(ordered_price),
+            cost = costs[int(ordered_price)],
+            ingresso = costs[int(ordered_price)]
+        )
+        ordered_sellingseat.save()
+    sellingseats = SellingSeats.objects.all()
+
+    cart_items = []
+    current_event = userevent.event
+    total = 0.0
+    for sellingseat in sellingseats:
+        cart_items.append(sellingseat)
+        total += sellingseat.cost
+    tax = current_event.vat_rate
+    taxable =int( (total / (100 + tax) )* 10000) / 100
+    payment_methods = PaymentMethod.objects.all()
+    context = {
+        'event' : current_event,
+        'cart_items' : cart_items,
+        'total' : total,
+        'taxable': taxable,
+        'tax': tax,
+        'payments_methods': payment_methods,
+    }
+    return render(request,'boxoffice/boxoffice_cart.html', context)
+
 
 def edit_order(requeste, order_id):
     return HttpResponse(f'<H1>The page of change order {order_id}.</H1>')

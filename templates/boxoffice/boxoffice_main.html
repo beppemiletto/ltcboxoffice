@@ -73,14 +73,21 @@
             <table class="table table-hover table-sm">
                 <thead class="thead" aria-colspan="3"> Prenotazioni.</thead>
                 <th>Nome prenotazione</th>
-                <th>Apri per vendita</th>
-                <th>Apri per modifica</th>
+                <th>Posti</th>
+                <th>Vendita</th>
+                <th>Modifica</th>
+
                 <tbody>
                     {%for user_event in users_event%}
                         <tr>
                             
-                            <td>{{user_event.user}}</td>
-                            <td><button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button></td>
+                            <td>{{user_event.user.last_name}} {{user_event.user.first_name}}</td>
+                            <td>{{user_event.seats_price}}</td>
+                            <td>
+                                <a href="{%url 'sell_booking' user_event.pk%}" >
+                                    <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
+                                </a>
+                            </td>
                             <td><button type="button" class="btn btn-warning btn-sm"><i class='far fa-edit'></i></button></td>
                         </tr>
                     {%endfor%}

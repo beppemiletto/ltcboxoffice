@@ -2,6 +2,7 @@ from django.db import models
 from store.models import Event
 from accounts.models import Account
 
+# Create your models here.
 class SellingSeats(models.Model):
     PRICES = (
         (0,'Gratuito'),
@@ -33,6 +34,7 @@ class PaymentMethod(models.Model):
     commission_model =  models.IntegerField(choices=COMMISSION_MODELS, default=0)
 
 
+
 class BoxOfficeTransaction(models.Model):
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
@@ -45,3 +47,7 @@ class BoxOfficeTransaction(models.Model):
 
     def __str__(self):
         return self.payment_id
+    
+
+
+

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SellingSeats, PaymentMethod, BoxOfficeTransaction
+from .models import SellingSeats, BoxOfficeTransaction, PaymentMethod
 
 class SellingSeatsAdmin(admin.ModelAdmin):
     list_display = ('event', 'seat') 
