@@ -23,6 +23,7 @@ import pytz
 import json , os
 from pdf2image import convert_from_path
 from PIL import Image, ImageFilter
+from collections import OrderedDict
 
 # Create your views here.
 @login_required(login_url='login')
@@ -62,7 +63,7 @@ def event(request, event_id):
     # print(event_id)
     current_event = Event.objects.get(id=event_id)
     event_orders = OrderEvent.objects.filter(event__id=current_event.pk)
-    users_event = UserEvent.objects.filter(event__id=current_event.pk)
+    users_event = UserEvent.objects.filter(event__id=current_event.pk).order_by('user__last_name')
     # verifica esistenza dell'OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
     # se manca il record specifico lo crea
     boxoffice_orderevent = None
@@ -150,6 +151,15 @@ def event(request, event_id):
 
     print(f"Found {event_orders.count()} ordini aggregati su {users_event.count()} utenti che hanno prenotato")
 
+    orders =  OrderedDict()
+
+    for user_event in users_event:
+        orders[user_event.user.email]={
+            'id':user_event.pk, 'orders':[] }
+        for order_event in user_event.ordersevents.split(','):
+            orders[user_event.user.email]['orders'].append(order_event)
+
+
     printer_status: bool = printer_ready()
 
     context = {
@@ -157,8 +167,7 @@ def event(request, event_id):
         'rows': rows,
         'json_file' : json_file_path,
         'current_event' : current_event,
-        'event_orders' : event_orders,
-        'users_event' : users_event,
+        'orders' : orders,
         'printer_ready': printer_status,
     }
 
@@ -546,16 +555,16 @@ def change_bookings(request, event_id):
 
         return render(request, 'boxoffice/change_bookings.html', context)
 
-def sell_booking(request, userevent_id = None):
+def sell_booking(request, order = None):
 
-    userevent =  UserEvent.objects.get(id=userevent_id)
+    ordererevent =  OrderEvent.objects.get(id=order)
     ingressi= ['Gratuito', 'Ridotto', 'Intero']
-    costs = [0.0,  userevent.event.price_reduced, userevent.event.price_full]
-    booked_seats_price = userevent.seats_price
+    costs = [0.0,  ordererevent.event.price_reduced, ordererevent.event.price_full]
+    booked_seats_price = ordererevent.seats_price
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
         ordered_sellingseat = SellingSeats(
-            event = userevent.event,
+            event = ordererevent.event,
             seat = ordered_seat,
             price = int(ordered_price),
             cost = costs[int(ordered_price)],
@@ -565,7 +574,7 @@ def sell_booking(request, userevent_id = None):
     sellingseats = SellingSeats.objects.all()
 
     cart_items = []
-    current_event = userevent.event
+    current_event = ordererevent.event
     total = 0.0
     for sellingseat in sellingseats:
         cart_items.append(sellingseat)
