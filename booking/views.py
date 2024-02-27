@@ -385,15 +385,6 @@ def booking_payments(request, newContext={}):
     for item in cart_items:
         seat= item.seat
         event = item.event
-        json_filename_fullpath = event.get_json_path()
-        if os.path.exists(json_filename_fullpath):
-            with open(json_filename_fullpath,'r') as fp:
-                event_hall = json.load(fp)
-            event_hall[seat]['status'] = 1  # set status to BOOKED 
-            with open(json_filename_fullpath,'w') as fp:
-                json.dump(event_hall,fp,indent=4, separators=(',', ': '))
-        else:
-            print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
 
         #Manage the OrderEvent record 
         try:
@@ -406,17 +397,19 @@ def booking_payments(request, newContext={}):
             email_data[orderevent.orderevent_number]['seats'] = booked_seats
             orderevent.save()
         except:
-            orderevent = OrderEvent()
-            orderevent.order = order
-            orderevent.payment = payment
-            orderevent.event = event
-            orderevent.user = current_user
             items = '{}${}'.format(seat, item.ingresso)
-            orderevent.seats_price = items
+            orderevent = OrderEvent(
+            order = order,
+            payment = payment,
+            event = event,
+            user = current_user,
+            seats_price = items
+            )
             orderevent.save()
             orderevent.orderevent_number = f'{orderevent.event.pk:05d}_{order.order_number}_{orderevent.pk:06d}'
             orderevent.save()
-        
+
+
             barcode_printer = OrderBarCodePrinter(
                 save_path = 'images',
                 numero=orderevent.orderevent_number ,
@@ -436,6 +429,17 @@ def booking_payments(request, newContext={}):
             }
 
 
+        # Update the Json file of event 
+        json_filename_fullpath = event.get_json_path()
+        if os.path.exists(json_filename_fullpath):
+            with open(json_filename_fullpath,'r') as fp:
+                event_hall = json.load(fp)
+            event_hall[seat]['status'] = 1  # set status to BOOKED 
+            event_hall[seat]['order'] = orderevent.orderevent_number  # set order to orderevent_number 
+            with open(json_filename_fullpath,'w') as fp:
+                json.dump(event_hall,fp,indent=4, separators=(',', ': '))
+        else:
+            print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
 
         # Manage the UserEvent record (cross table connecting all orders of one user to one event
         # collecting all setas and prices of User for One event)

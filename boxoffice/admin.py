@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import SellingSeats, PaymentMethod, BoxOfficeTransaction
 
 class SellingSeatsAdmin(admin.ModelAdmin):
-    list_display = ('event', 'seat') 
+    list_display = ('event', 'seat', 'orderevent') 
 
 class PaymentMethodAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}

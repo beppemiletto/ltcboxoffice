@@ -8,7 +8,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_per_page = 40
 
 class OrderEventAdmin(admin.ModelAdmin):
-    list_display = ['pk','event','event_id','seats_price', 'user','order']
+    list_display = ['pk','event','event_id','seats_price', 'user','order', 'expired']
     list_filter = ['user', 'order', 'event']
 
 class UserEventAdmin(admin.ModelAdmin):

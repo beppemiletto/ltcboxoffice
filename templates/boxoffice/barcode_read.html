@@ -1,0 +1,45 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+{% block content %}
+<!-- ========================= SECTION MAIN ========================= -->
+<section class="section-intro padding-y-sm">
+<div class="container">
+
+<div class="intro-banner-wrap">
+	<img src="{% static 'images/banners/banner-CassaBoxOffice_1200x300.png' %}" class="img-fluid rounded">
+</div>
+
+</div> <!-- container //  -->
+</section>
+<!-- ========================= SECTION MAIN END// ========================= -->
+
+<!-- ========================= SECTION  ========================= -->
+<section class="section-name padding-y-sm">
+
+<form class="row g-3 needs-validation" novalidate action="{% url 'barcode_read' event %}" method="post">
+    {% csrf_token %}
+  <div class="col-md-4">
+    <label for="validationCustom01" class="form-label">Barcode</label>
+    <input type="text" class="form-control" id="barcode" name="barcode" value="" required>
+    <div class="valid-feedback">
+      Looks good!
+    </div>
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Submit form</button>
+  </div>
+</form>
+		
+		<a href="{%url 'event' event %}">
+			<button type="button" class="btn btn-primary btn-lg btn-block">Cancel</button>
+		</a>		
+	</div>
+</div><!-- container // -->
+</section>
+<!-- ========================= SECTION  END// ========================= -->
+
+</body>
+</html>
+
+{% endblock %}

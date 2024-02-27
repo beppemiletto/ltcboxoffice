@@ -74,23 +74,27 @@
                 <thead class="thead" aria-colspan="3"> Prenotazioni.</thead>
                 <th>Email</th>
                 <th>Ordine</th>
-                <th>Vendita</th>
-                <th>Modifica</th>
-
                 <tbody>
                     {%for email, event_orders in orders.items%}
                         <tr>
                             
-                            <td>{{email}} </td>
                             <td>
-                                <table>
-                                        {%for order in event_orders%}
+                                <p><small>{{email}}</small></p>
+                                <p><small>{{event_orders.last_name}} {{event_orders.first_name}} </small></p>
+                             </td>
+                            <td>
+                                <table class="table table-hover table-sm">
+                                        {%for id, order in event_orders.orders.items%}
                                         <tr>
                                             <td>
-                                                {{order}}
+                                                <p><small>{{id}} -
+                                                    {%for seat in order%}
+                                                        {{seat}}
+                                                    {%endfor%}
+                                                </small></p>
                                             </td>
                                             <td>
-                                                <a href="{%url 'sell_booking' order%}" >
+                                                <a href="{%url 'sell_booking' id%}" >
                                                     <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
                                                 </a>
                                             </td>
@@ -113,38 +117,37 @@
     <!-- ============================ Actions menu  ================================= -->
     <div class="row">
         <div class="col-sm">
-            <div class="card">
                 <form method="POST" action="{% url 'event' current_event.id %}">
                     {% csrf_token %}
-                <button type="submit" class="btn btn-success">VENDITA.</button>
+                <button type="submit" class="btn btn-success btn-lg btn-block">VENDITA.</button>
                 <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
             </form>
-        </div>
     </div>
     <div class="col-sm">
-        <div class="card">
-            <a href="{% url 'event' current_event.id %}">
-                    <button type="button" class="btn btn-warning">Azzera selezione posti (reset)</button>
-                </a>
-            </div>
-        </div> 
-        <div class="col-sm">
-            <div class="card"> 
-                <a href="{% url 'boxoffice'%}">
-                    <button type="button" class="btn btn-primary">Esci dalla gestione cassa</button>
-                </a>
-            </div>
-        </div>
-        <div class="col-sm">
-            <div class="card"> 
-                {% if printer_ready %}
-                <button type="button" class="btn btn-success">Printer OK</button>
-                {% else %}
-                <button type="button" class="btn btn-danger">Printer NOT FOUND</button>
-                
-                {% endif %}
-            </div>
-        </div>
+    <a href="{% url 'event' current_event.id %}">
+            <button type="button" class="btn btn-warning btn-lg btn-block">Reset sel. posti</button>
+        </a>
+    </div> 
+    <div class="col-sm">
+        <a href="{% url 'boxoffice'%}">
+            <button type="button" class="btn btn-secondary  btn-lg btn-block">Esci dalla gestione cassa</button>
+        </a>
+    </div>
+    <div class="col-sm">
+        {% if printer_ready %}
+            <button type="button" class="btn btn-success btn-lg btn-block">Printer OK</button>
+        {% else %}
+            <button type="button" class="btn btn-danger btn-lg btn-block">Printer NOT FOUND</button>
+        {% endif %}
+    </div>
+    <div class="col-sm">
+        {% if orders %}
+            <a href="{% url 'barcode_read' current_event.pk %}">
+                <button type="button" class="btn btn-info btn-lg btn-block">Read Barcode</button>
+            </a>
+        {% endif %}
+    </div>
+
     </div>
     
 </div> <!-- container .//  -->
@@ -245,7 +248,9 @@
         }
     
     function readStatus() {
-        seatsStatus = [{% for k, seat in  hall_status.items %} '{{seat.status}}', {%endfor%}];
+        seatsStatus = [{% for k, seat in  hall_status.items %}
+         '{{seat.status}}', 
+         {%endfor%}];
         var statusLen = seatsStatus.length;
         var i;
         var text = "";

@@ -72,12 +72,6 @@ def event(request, event_id):
             if item.user.first_name == "Cassa" and item.user.last_name == "Laboratorio":
                 boxoffice_orderevent = item
 
-    if boxoffice_orderevent is None:
-        boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
-        boxoffice_orderevent = OrderEvent()
-        boxoffice_orderevent.user = boxoffice_user
-        boxoffice_orderevent.event = current_event
-        boxoffice_orderevent.save()
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
@@ -153,12 +147,59 @@ def event(request, event_id):
 
     orders =  OrderedDict()
 
-    for user_event in users_event:
-        orders[user_event.user.email]={
-            'id':user_event.pk, 'orders':[] }
-        for order_event in user_event.ordersevents.split(','):
-            orders[user_event.user.email]['orders'].append(order_event)
+    if users_event.count() > 0:
 
+        for user_event in users_event:
+            orders[user_event.user.email]={
+                'id':user_event.pk, 
+                'last_name':user_event.user.last_name, 
+                'first_name':user_event.user.first_name,
+                'orders':{} 
+                }
+            
+            # The user_event can be emptied by users changes. The control variable 
+            # empty_user_event is set to True - If no valid (NOT EXPIRED) ORDER EVENT
+            # are found, the user event will be removed from the Dictionary
+            empty_user_event = True
+            for order_event in user_event.ordersevents.split(','):
+                seats = []
+                try:
+                    orderevent = OrderEvent.objects.get(id=order_event)
+                except OrderEvent.DoesNotExist:
+                    order_events_NEW = ''
+                    order_events_OLD = user_event.ordersevents
+                    for orderevent_id in order_events_OLD.split(','):
+                        if orderevent_id == order_event:
+                            continue
+                        else:
+                            if len(order_events_NEW):
+                                order_events_NEW += f',{orderevent_id}'
+                            else:
+                                order_events_NEW += f'{orderevent_id}'
+                    continue
+
+                if orderevent.expired:
+                    continue
+                else:
+                    empty_user_event = False
+                    for seat_price in orderevent.seats_price.split(','):
+                        seat = f"{seat_price.split('$')[0]},"
+                        seats.append(seat)
+                    
+                    del seat_price, seat
+
+                    orders[user_event.user.email]['orders'][orderevent.pk] = seats
+            del order_event, orderevent, seats
+
+            # The user event remained empty since the ordeevents have been expired or removed
+            # so the item in the dictionary is removed
+            if empty_user_event:
+                del orders[user_event.user.email]
+                
+
+
+
+        del user_event, event_orders,item, event_id, jfp, boxoffice_orderevent, r_data, k
 
     printer_status: bool = printer_ready()
 
@@ -195,18 +236,65 @@ def boxoffice_cart(request, event_id):
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
+def boxoffice_cart_cancel(request, event_id):
+    event = Event.objects.get(id = event_id)
+    sellingseats = SellingSeats.objects.all()
+    json_file_path= os.path.abspath(event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+    for sellingseat in sellingseats:
+        if sellingseat.orderevent is not None:
+            orderevent = OrderEvent.objects.get(id=sellingseat.orderevent.pk)
+            if orderevent.expired:
+                orderevent.expired = False
+            orderevent.save()
+        seat = sellingseat.seat
+        # Verify if status is :
+        #   1 - booked
+        #   3 - preassigned
+        #   4 - under transition 
+        if hall_status[seat]['status'] in [3,4]:
+            hall_status[seat]['status'] = 0 
+        sellingseat.delete()
+    with open(json_file_path,'w') as jfp:
+        json.dump(hall_status,jfp)
+
+    del sellingseats
+    return redirect(reverse('event', kwargs={"event_id": event.pk}))
+
 def boxoffice_remove_cart(request, item_id):
 
     item = get_object_or_404(SellingSeats, id=item_id)
     seat = item.seat
     event = item.event
+    if item.orderevent is not None:
+        seats_old = item.orderevent.seats_price.split(',')
+        seats_NEW = ''
+        for seat_single in seats_old:
+            if seat in seat_single :
+                continue
+            else:
+                if len(seats_NEW):
+                    seats_NEW += f',{seat_single}'
+                else: 
+                    seats_NEW += f'{seat_single}'
+        if len(seats_NEW):
+            item.orderevent.seats_price = seats_NEW
+            item.orderevent.save()
+        else:
+            item.orderevent.delete()
     item.delete()
     # del item
     json_file_path= os.path.abspath(event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
     try:
-        if hall_status[seat]['status'] == 3 or hall_status[seat]['status'] == 4:
+        # Verify if status is :
+        #   1 - booked
+        #   3 - preassigned
+        #   4 - under transition 
+        if hall_status[seat]['status'] in [1,3,4]:
+
             hall_status[seat]['status'] = 0 
             with open(json_file_path,'w') as jfp:
                 json.dump(hall_status,jfp)
@@ -557,14 +645,15 @@ def change_bookings(request, event_id):
 
 def sell_booking(request, order = None):
 
-    ordererevent =  OrderEvent.objects.get(id=order)
+    order_event =  OrderEvent.objects.get(id=order)
     ingressi= ['Gratuito', 'Ridotto', 'Intero']
-    costs = [0.0,  ordererevent.event.price_reduced, ordererevent.event.price_full]
-    booked_seats_price = ordererevent.seats_price
+    costs = [0.0,  order_event.event.price_reduced, order_event.event.price_full]
+    booked_seats_price = order_event.seats_price
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
         ordered_sellingseat = SellingSeats(
-            event = ordererevent.event,
+            event = order_event.event,
+            orderevent = order_event,
             seat = ordered_seat,
             price = int(ordered_price),
             cost = costs[int(ordered_price)],
@@ -574,13 +663,17 @@ def sell_booking(request, order = None):
     sellingseats = SellingSeats.objects.all()
 
     cart_items = []
-    current_event = ordererevent.event
+    current_event = order_event.event
     total = 0.0
     for sellingseat in sellingseats:
         cart_items.append(sellingseat)
         total += sellingseat.cost
     tax = current_event.vat_rate
     taxable =int( (total / (100 + tax) )* 10000) / 100
+
+    # OrderEvent is set as expired
+    order_event.expired = True
+    order_event.save()
     payment_methods = PaymentMethod.objects.all()
     context = {
         'event' : current_event,
@@ -594,6 +687,7 @@ def sell_booking(request, order = None):
 
 
 def edit_order(requeste, order_id):
+
     return HttpResponse(f'<H1>The page of change order {order_id}.</H1>')
 
 def erase_order(request, userorder_id, order_id):
@@ -781,3 +875,23 @@ def auto_obliterate(ticket_number):
         messages.warning(request,"Il biglietto numero {} è stato cancellato! Contatta la cassa per verificare!".format(ticket_number))
  
     return 
+
+def barcode_read(request, event_id:int=None):
+    orderevents = OrderEvent.objects.filter(event_id=event_id)
+    if request.method == 'POST':
+        barcode_code = request.POST['barcode']
+        try:
+            orderevent = OrderEvent.objects.get(orderevent_number=barcode_code)
+            if orderevent in orderevents:
+                print('FOUND, bravo!')
+            else:
+                print('NOT FOUND, coglione, altro spettacolo? Fake, mispelled?')
+
+        except:
+            print('The code is not rigth!@')
+
+    context = {
+        'event' : event_id,
+        'orderevents' : orderevents,
+    }
+    return render(request, 'boxoffice/barcode_read.html',context)

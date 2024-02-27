@@ -1,6 +1,7 @@
 from django.db import models
 from store.models import Event
 from accounts.models import Account
+from orders.models import OrderEvent
 
 class SellingSeats(models.Model):
     PRICES = (
@@ -9,6 +10,7 @@ class SellingSeats(models.Model):
         (2, 'Intero'),
     )
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    orderevent = models.ForeignKey(OrderEvent, on_delete=models.CASCADE, blank=True, null=True) 
     seat = models.CharField(max_length=3,verbose_name='Posto')
     price = models.IntegerField(choices=PRICES, default=0)
     cost = models.FloatField(default=0.0)

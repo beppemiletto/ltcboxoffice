@@ -1,6 +1,6 @@
 from django.db import models
 from accounts.models import Account
-from store.models import Event
+# from store.models import Event
 from django.conf import settings
 import os
 
@@ -83,12 +83,13 @@ class OrderEvent(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True, null=True)
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, blank=True, null=True)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True)
+    event = models.ForeignKey('store.Event', on_delete=models.CASCADE, blank=True, null=True)
     seats_price = models.CharField(max_length=512, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     barcode_path = models.FilePathField(path=barcode_image_path, max_length=512,null=True, blank=True)
     orderevent_number = models.CharField(max_length=50, null=True, blank=True)
+    expired = models.BooleanField(default = False)
 
     def __str__(self):
         if self.event != None:
@@ -106,7 +107,7 @@ class OrderEvent(models.Model):
 class UserEvent(models.Model):
     ordersevents = models.CharField(max_length=100)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True)
+    event = models.ForeignKey('store.Event', on_delete=models.CASCADE, blank=True, null=True)
     seats_price = models.CharField(max_length=512, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

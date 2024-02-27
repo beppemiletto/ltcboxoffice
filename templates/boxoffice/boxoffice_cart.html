@@ -85,9 +85,12 @@
                 </dl>
                 <dl  class="dlist-align">
                 {%for method in payments_methods %}
-                    <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-lg btn-block"> {{method.name}}</button> </a>
+                    <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
                     {%endfor%}
                 </dl>
+                <dl  class="dlist-align">
+                        <a href="{%url 'boxoffice_cart_cancel' event.id %}"><button type="button" class="btn btn-danger btn-sm btn-block"> CANCEL</button> </a>
+                    </dl>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
     
