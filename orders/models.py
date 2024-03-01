@@ -89,7 +89,7 @@ class OrderEvent(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     barcode_path = models.FilePathField(path=barcode_image_path, max_length=512,null=True, blank=True)
     orderevent_number = models.CharField(max_length=50, null=True, blank=True)
-    expired = models.BooleanField(default = False)
+    expired = models.BooleanField(default = False, blank=True, null=True)
 
     def __str__(self):
         if self.event != None:

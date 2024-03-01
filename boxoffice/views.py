@@ -7,6 +7,7 @@ from django.contrib import messages, auth
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction
+from .forms import Barcode_Reader, OrderEventForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
@@ -189,7 +190,7 @@ def event(request, event_id):
                     del seat_price, seat
 
                     orders[user_event.user.email]['orders'][orderevent.pk] = seats
-            del order_event, orderevent, seats
+            del order_event, seats
 
             # The user event remained empty since the ordeevents have been expired or removed
             # so the item in the dictionary is removed
@@ -199,7 +200,7 @@ def event(request, event_id):
 
 
 
-        del user_event, event_orders,item, event_id, jfp, boxoffice_orderevent, r_data, k
+        del user_event, event_orders, event_id, jfp, boxoffice_orderevent, r_data, k
 
     printer_status: bool = printer_ready()
 
@@ -338,7 +339,7 @@ def boxoffice_minus_price(request, item_id = None):
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
 
-def boxoffice_print(request, event_id, method_id=None):
+def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
     printer_dummy = Dummy()
     # printer_net = EscPosNetwork(host='localhost', port= 9100)
     try:
@@ -386,7 +387,10 @@ def boxoffice_print(request, event_id, method_id=None):
 
         ticket.payment = None
         boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
-        ticket.orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
+        if orderevent_id is not None:
+            ticket.orderevent = OrderEvent.objects.get(id=orderevent_id)
+        else:
+            ticket.orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
         ticket.event = current_event
         ticket.user = boxoffice_user
         
@@ -397,7 +401,10 @@ def boxoffice_print(request, event_id, method_id=None):
 
         # aggiorna il OrderEvent della Cassa per questo Evento
         #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
-        boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
+        try:
+            boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
+        except ObjectDoesNotExist:
+            boxoffice_orderevent = None
 
         if boxoffice_orderevent is not None:
             seats_price_str:str = boxoffice_orderevent.seats_price
@@ -682,6 +689,7 @@ def sell_booking(request, order = None):
         'taxable': taxable,
         'tax': tax,
         'payments_methods': payment_methods,
+        'orderevent': order_event,
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
@@ -829,7 +837,7 @@ def obliterate(request, ticket_number):
 def auto_obliterate(ticket_number):
     try:
         ticket = Ticket.objects.get(number = ticket_number)
-        print(ticket.status)
+        # print(ticket.status)
     except ObjectDoesNotExist:
         context = {
             'ticket_number' : ticket_number,
@@ -878,19 +886,41 @@ def auto_obliterate(ticket_number):
 
 def barcode_read(request, event_id:int=None):
     orderevents = OrderEvent.objects.filter(event_id=event_id)
+    form = Barcode_Reader(initial={'barcode_code': ''})
     if request.method == 'POST':
-        barcode_code = request.POST['barcode']
-        try:
-            orderevent = OrderEvent.objects.get(orderevent_number=barcode_code)
-            if orderevent in orderevents:
-                print('FOUND, bravo!')
-            else:
-                print('NOT FOUND, coglione, altro spettacolo? Fake, mispelled?')
+        form = Barcode_Reader(request.POST)
+        if form.is_valid():
+            barcode_code = form.cleaned_data['barcode_code']
+            try:
+                orderevent = OrderEvent.objects.get(orderevent_number=barcode_code)
+                if orderevent in orderevents:
+                    orderevent_form = OrderEventForm(data={'barcode_code':orderevent.orderevent_number,
+                                                           'user': orderevent.user,
+                                                           'event': orderevent.event,
+                                                           'seats_price': orderevent.seats_price,
+                                                           'created_at':orderevent.created_at,
+                                                           'updated_at': orderevent.updated_at,
+                                                           'expired': orderevent.expired})
+                    valid_order:bool = not orderevent.expired
 
-        except:
-            print('The code is not rigth!@')
+                    context = {
+                        'valid': valid_order,
+                        'form': orderevent_form,
+                        'event' : event_id,
+                        'orderevent' : orderevent,
+                    }
+                    messages.success(request,f"Il codice {barcode_code} letto o digitato è valido! Procedura di lettura del codice corretta.")
+                    return render(request, 'boxoffice/orderevent_details.html',context)
+                else:
+                    print('NOT FOUND, coglione, altro spettacolo? Fake, mispelled?')
+
+            except Exception as e:
+                print(e)
+                messages.warning(request,f"Il codice {barcode_code} letto o digitato non è valido! \n Procedura di lettura del codice per ordine fallita e abortita.")
+                return redirect(reverse('event', kwargs={"event_id": event_id}))
 
     context = {
+        'form':form,
         'event' : event_id,
         'orderevents' : orderevents,
     }

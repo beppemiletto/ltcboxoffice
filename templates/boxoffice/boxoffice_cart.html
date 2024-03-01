@@ -84,9 +84,16 @@
                   <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
                 <dl  class="dlist-align">
-                {%for method in payments_methods %}
-                    <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
-                    {%endfor%}
+                    {%if orderevent %}
+                        {%for method in payments_methods %}
+                            <a href="{%url 'boxoffice_print' event.id method.id orderevent.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                        {%endfor%}
+                    {%else%}
+                        {%for method in payments_methods %}
+                            <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                        {%endfor%}
+                    {%endif%}
+
                 </dl>
                 <dl  class="dlist-align">
                         <a href="{%url 'boxoffice_cart_cancel' event.id %}"><button type="button" class="btn btn-danger btn-sm btn-block"> CANCEL</button> </a>

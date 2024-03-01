@@ -2,44 +2,55 @@
 {% load static %}
 {% block content %}
 <!-- ========================= SECTION MAIN ========================= -->
+<body class="m-3"> 
 <section class="section-intro padding-y-sm">
-<div class="container">
+  <div class="container">
 
-<div class="intro-banner-wrap">
-	<img src="{% static 'images/banners/banner-CassaBoxOffice_1200x300.png' %}" class="img-fluid rounded">
-</div>
-
-</div> <!-- container //  -->
-</section>
-<!-- ========================= SECTION MAIN END// ========================= -->
-
-<!-- ========================= SECTION  ========================= -->
-<section class="section-name padding-y-sm">
-
-<form class="row g-3 needs-validation" novalidate action="{% url 'barcode_read' event %}" method="post">
-    {% csrf_token %}
-  <div class="col-md-4">
-    <label for="validationCustom01" class="form-label">Barcode</label>
-    <input type="text" class="form-control" id="barcode" name="barcode" value="" required>
-    <div class="valid-feedback">
-      Looks good!
-    </div>
+  <div class="intro-banner-wrap">
+    <img src="{% static 'images/banners/banner-barcode_534x150.png' %}" class="img-fluid rounded">
   </div>
 
-  <div class="col-12">
-    <button class="btn btn-primary" type="submit">Submit form</button>
+  <h1 class="text-primary"> 
+    Barcode reader 
+</h1> 
+
+{%include 'includes/alerts.html'%}
+<h4> 
+    Scan the printed / displayed barcode  
+</h4> 
+
+  </div> <!-- container //  -->
+  </section>
+  <!-- ========================= SECTION MAIN END// ========================= -->
+
+  <!-- ========================= SECTION  ========================= -->
+<div class="d-flex aligns-items-center justify-content-center card text-center w-75 mx-auto" >
+
+  <form action="{% url 'barcode_read' event %}" method="post">
+    {% csrf_token %}
+    <div class="row mb-3">
+
+        <div class="col">
+            <div class="form-group">
+                <label >Insert barcode code</label>
+                <input type="text" name="barcode_code" class="form-control" value=""  required autofocus>
+            </div>
+        </div>
+  
+
+    </div>
+
+  
+  <div class="row">
+    <button class="btn btn-primary btn-lg" type="submit">Usa codice barre</button>
   </div>
 </form>
-		
-		<a href="{%url 'event' event %}">
-			<button type="button" class="btn btn-primary btn-lg btn-block">Cancel</button>
-		</a>		
-	</div>
-</div><!-- container // -->
-</section>
-<!-- ========================= SECTION  END// ========================= -->
-
-</body>
-</html>
+<div class="row">
+  <a href="{%url 'event' event %}">
+    <button type="button" class="btn btn-warning btn-lg">Cancel</button>
+  </a>		
+</div>
+</div>
+  </body>
 
 {% endblock %}

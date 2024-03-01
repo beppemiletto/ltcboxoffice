@@ -1,0 +1,115 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+{% block content %}
+<!-- ========================= SECTION MAIN ========================= -->
+<body class="m-3"> 
+<section class="section-intro padding-y-sm">
+  <div class="container">
+
+  <div class="intro-banner-wrap">
+    {%if valid %}
+    <img src="{% static 'images/banners/banner-barcode_534x150_OK.png' %}" class="img-fluid rounded">
+    {%else%}
+    <img src="{% static 'images/banners/banner-barcode_534x150_KO.png' %}" class="img-fluid rounded">
+    {%endif%}
+  </div>
+
+  <h1 class="text-primary"> 
+    Barcode reader 
+</h1> 
+<h4> 
+    Scan the printed / displayed barcode  
+  </h4> 
+  {%include 'includes/alerts.html'%}
+
+  </div> <!-- container //  -->
+  </section>
+  <!-- ========================= SECTION MAIN END// ========================= -->
+
+  <!-- ========================= SECTION  ========================= -->
+<div class="d-flex aligns-items-center justify-content-center card text-center w-75 mx-auto" >
+
+  <form action="{% url 'sell_booking' orderevent.pk %}" method="post">
+    {% csrf_token %}
+    <div class="row mb-3">
+        <div class="col">
+            <div class="form-group">
+                <label >Barcode</label>
+                <input type="text" name="barcode_code" class="form-control" value="{{ orderevent.orderevent_number }}"  required>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label >Utente</label>
+                <input type="text" name="user" class="form-control" value="{{ orderevent.user }}"  required>
+            </div>
+        </div>
+
+    </div>
+    <div class="row mb-3">
+      <div class="col">
+          <div class="form-group">
+              <label >Spettacolo: <b> {{ orderevent.event.show.shw_title }} </b></label>
+              <input type="text" name="event" class="form-control" value="{{ orderevent.event }} - {{ orderevent.event.date_time }}"  required>
+          </div>
+      </div>
+      <div class="col">
+          <div class="form-group">
+              <label >Posti e prezzi</label>
+              <input type="text" name="seat_price" class="form-control" value="{{ orderevent.seats_price }}"  required>
+          </div>
+      </div>
+
+  </div>
+  <div class="row mb-3">
+    <div class="col">
+        <div class="form-group">
+            <label >Prenotazione creata </label>
+            <input type="text" name="created_at" class="form-control" value="{{ orderevent.created_at }}"  required>
+        </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+          <label >Prenotazione aggiornata </label>
+          <input type="text" name="updated_at" class="form-control" value=" {{ orderevent.updated_at }}"  required>
+      </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col">
+      <div class="form-group">
+        {%if orderevent.expired == True %}
+          <label class="text-danger">Stato ordine EVASO! </label>
+          <input type="button" name="expired" class="form-control btn-danger" value="{{ orderevent.expired }}" >
+        {%else%}
+          <label class="text-success">Stato ordine INEVASO </label>
+          <input type="button" name="expired" class="form-control btn-success" value="{{ orderevent.expired }}" >
+        {%endif%}
+      </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+          <label >Prenotazione aggiornata </label>
+          <input type="text" name="updated_at" class="form-control" value=" {{ orderevent.updated_at }}"  required>
+      </div>
+  </div>
+
+</div>
+  <div class="row mb3">
+    {%if valid %}
+    <button class="btn btn-primary btn-lg" type="submit">Processa ordine</button>
+    {%else%}
+    <button class="btn btn-primary btn-lg" type="submit" disabled>Ordine Non Processabile</button>
+    {%endif%}
+
+  </div>
+</form>
+<div class="row">
+  <a href="{%url 'event' event %}">
+    <button type="button" class="btn btn-warning btn-lg">Cancel</button>
+  </a>		
+</div>
+</div>
+  </body>
+
+{% endblock %}

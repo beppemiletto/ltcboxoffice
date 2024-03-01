@@ -116,6 +116,9 @@
 
     <!-- ============================ Actions menu  ================================= -->
     <div class="row">
+        {%include 'includes/alerts.html'%}
+    </div>
+    <div class="row">
         <div class="col-sm">
                 <form method="POST" action="{% url 'event' current_event.id %}">
                     {% csrf_token %}
