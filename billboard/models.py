@@ -52,3 +52,15 @@ class Show(models.Model):
         return reverse('show_detail', args=[self.section.slug, self.slug])
     
 
+class Venue(models.Model):
+    name                    = models.CharField(max_length=50, unique=True)
+    slug                    = models.SlugField(max_length=100, unique=True)
+    address                 = models.CharField(max_length=100 )
+    capacity                = models.PositiveIntegerField(default=234)
+    ba_code_siae            = models.CharField(max_length=13, default="0050450366484" )
+    local_code_siae         = models.CharField(max_length=5, default="  045" )
+
+
+    def __str__(self) -> str:
+        return self.name
+    

@@ -1,0 +1,115 @@
+{% extends 'boxoffice_base.html' %}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+    
+    <!-- ============================ COMPONENT 1 ================================= -->
+    {%if not cart_items%}
+        <H2 class="text-center">La pagina modifiche non ha ricevuto nessun ordine da modificare.</H2>
+        <br>
+        <H3 class="text-center">Hai selezionato l'ordine numero {{number}} per l'evento:
+            <br>
+            <small">{{event.show.shw_title}} del {{event.date_time|date:"D d m Y"}} alle {{event.date_time|date:"H : i"}}.
+            </small></H3>
+                    <img src="{{event.show.shw_image.url}}" class="rounded mx-auto d-block" alt="Image for Show" >
+                    <br>
+        <div class="text-center">
+            <a href="{%url 'event_list'%}" class="btn btn-outline-primary"> Abbandona.</a>
+        </div>
+    {%else%}
+    <div class="row">
+        <aside class="col-lg-9">
+    <div class="card">
+    <table class="table table-borderless table-shopping-cart">
+    <thead class="text-muted">
+    <tr class="small text-uppercase">
+      <th scope="col">Evento e posto</th>
+      <th scope="col" width="120">Tipo Ingresso</th>
+      <th scope="col" width="120">Prezzo</th>
+      <th scope="col" class="text-right" width="200"> </th>
+    </tr>
+    </thead>
+    <tbody>
+        {%for key, item in cart_items.items %}
+    <tr>
+        <td>
+            <figure class="itemside align-items-center">
+                <div class="aside"><img src="{{event.show.shw_image.url}}" class="img-sm"></div>
+                <figcaption class="info">
+                    <a href="#" class="title text-dark">Posto {{item.seat}}</a>
+                        <p class="text-muted small">{{event.show.shw_title}} 
+                        <br>
+                            {{event.date_time|date:"D d m Y"}}
+                            <br>
+                            {{event.date_time|date:"H : i"}}
+                        </p>
+                </figcaption>
+            </figure>
+        </td>
+        <td> 
+            <!-- col.// -->
+                            <div class="input-group-sm input-spinner">
+                                <div class="input-group-prepend">
+                                <a href="{%url 'minus_ingresso' number key %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
+                                </div>
+                                <input type="text" class="form-control"  value="{{item.ingresso}}">
+                                <div class="input-group-append">
+                                <a href="{%url 'plus_ingresso' number key %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
+                                </div>
+                            </div> <!-- input-group.// -->
+                        </div> <!-- col.// -->
+        </td>
+        <td> 
+            <div class="price-wrap"> 
+                {{item.ingresso_str}}
+                <br>
+                <var class="price">{{item.price}}</var> 
+            </div> <!-- price-wrap .// -->
+        </td>
+        <td class="text-right"> 
+        <a href="{%url 'remove_seat' number key %}" class="btn btn-danger"> Elimina</a>
+        </td>
+    </tr>
+    {%endfor%}
+    </tbody>
+    </table>
+    </div> <!-- card.// -->
+    
+        </aside> <!-- col.// -->
+        <aside class="col-lg-3">
+    
+            <div class="card">
+            <div class="card-body">
+                <dl class="dlist-align">
+                  <dt>Imponibile:</dt>
+                  <dd class="text-right">€ {{taxable|stringformat:".2f"}}</dd>
+                </dl>
+                <dl class="dlist-align">
+                  <dt>IVA ({{vat_rate}} %):</dt>
+                  <dd class="text-right">€ {{tax|stringformat:".2f"}}</dd>
+                </dl>
+                <dl class="dlist-align">
+                  <dt>Totale:</dt>
+                  <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
+                </dl>
+                <hr>
+                <p class="text-center mb-3">
+                
+                </p>
+                <a href="{%url 'change_bookings' event.pk%}" class="btn btn-primary btn-block"> Esci da modifica</a>
+            </div> <!-- card-body.// -->
+            </div> <!-- card.// -->
+    
+    </aside> <!-- col.// -->
+    
+    
+    </div> <!-- row.// -->
+    <!-- ============================ COMPONENT 1 END .// ================================= -->
+    {%endif%}
+    </div> <!-- container .//  -->
+    </section>
+    <!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Show, Section, SiaeType
+from .models import Show, Section, SiaeType, Venue
 
 class ShowAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('shw_title',)}
@@ -12,9 +12,13 @@ class SectionAdmin(admin.ModelAdmin):
 class SiaeTypeAdmin(admin.ModelAdmin):
     list_display = ('code','description', 'iva') 
 
+class VenueAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug':('name',)}
+
 
 
 # Register your models here.
 admin.site.register(Show, ShowAdmin)
 admin.site.register(Section, SectionAdmin)
 admin.site.register(SiaeType, SiaeTypeAdmin)
+admin.site.register(Venue, VenueAdmin)

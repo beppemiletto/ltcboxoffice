@@ -11,7 +11,7 @@ from .forms import Barcode_Reader, OrderEventForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
-from orders.models import OrderEvent, UserEvent
+from orders.models import OrderEvent, UserEvent, Order
 from tickets.models import Ticket
 from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
@@ -25,6 +25,7 @@ import json , os
 from pdf2image import convert_from_path
 from PIL import Image, ImageFilter
 from collections import OrderedDict
+import re
 
 # Create your views here.
 @login_required(login_url='login')
@@ -618,7 +619,7 @@ def change_bookings(request, event_id):
             return redirect(reverse('event', kwargs={"event_id": current_event.pk}))
         
     else:
-        paginator = Paginator(users_event, 5)
+        paginator = Paginator(users_event, 8)
         page = request.GET.get('page')
         paged_users_event = paginator.get_page(page)
         bookings = {}
@@ -631,7 +632,7 @@ def change_bookings(request, event_id):
             orders_event = orders_str.split(',')
             orders_dict = {}
             for order_str in orders_event:
-                print(order_str, type(order_str))
+                # print(order_str, type(order_str))
                 orderevent = OrderEvent.objects.get(id = int(order_str))
                 orders_dict[orderevent.pk] =  (orderevent.seats_price, orderevent.created_at)
             
@@ -693,10 +694,44 @@ def sell_booking(request, order = None):
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
+@login_required(login_url='login')
+def edit_order(request, orderevent_id):
+    orderevent_edit = OrderEvent.objects.get(id=orderevent_id)
+    order = orderevent_edit.order
+    payment = orderevent_edit.payment
+    user = orderevent_edit.user
+    event = orderevent_edit.event
+    seats_price = orderevent_edit.seats_price
+    updated_at = orderevent_edit.updated_at
+    barcode_path = orderevent_edit.barcode_path
+    orderevent_number = orderevent_edit.orderevent_number
+    expired = orderevent_edit.expired
 
-def edit_order(requeste, order_id):
+    cart_items = orderevent_edit.seats_dicts()
+    prices = [0,event.price_reduced, event.price_full]
+    taxable:float = 0.0
+    tax:float = event.vat_rate
+    total:float = 0.0
+    for key, item in cart_items.items():
+        item['ingresso_str'] = prices[int(item['ingresso'])]
+        total += float(item['ingresso_str']) 
+    taxable=total/(1+tax/100)
+    
 
-    return HttpResponse(f'<H1>The page of change order {order_id}.</H1>')
+    context = {
+        'total': total,
+        'taxable': taxable,
+        'tax': tax,
+        'cart_items' : cart_items,
+        'event' : event,
+        'user' : user,
+        'number' : orderevent_number,
+    }
+
+
+
+    return render(request, 'boxoffice/orderevent_edit.html', context)
+
 
 def erase_order(request, userorder_id, order_id):
     userevent = UserEvent.objects.get(id = userorder_id)
@@ -925,3 +960,196 @@ def barcode_read(request, event_id:int=None):
         'orderevents' : orderevents,
     }
     return render(request, 'boxoffice/barcode_read.html',context)
+
+def remove_seat(request, number = None, seat= None):
+    item = get_object_or_404(OrderEvent, orderevent_number=number)
+    removed_seat = seat
+    event = item.event
+    order = item.order
+    user = item.user
+    # item.delete()
+    # UPDATE the JSON Hall file status
+    json_file_path= os.path.abspath(event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+    try:
+        if hall_status[removed_seat]['status'] == 1:
+            hall_status[seat]['status'] = 0 
+            # hall_status[seat]['status'] = 1 # for testing purposes 
+            hall_status[seat]['order'] = '' 
+            with open(json_file_path,'w') as jfp:
+                json.dump(hall_status,jfp)
+    except:
+        print('Something wrong!')
+    
+    # UPDATE Orderevent
+
+    seats_price_old = item.seats_price
+    seat_patterns = {
+        'begin' : re.compile(f"^{removed_seat}\$[0-2],"),
+        'center' : re.compile(f"^.+,{removed_seat}\$[0-2],"),
+        'only' : re.compile(f"^{removed_seat}\$[0-2]$"),
+        'end' : re.compile(f"^.+,{removed_seat}\$[0-2]$")
+    }
+    subs_type = None
+
+    for key , pattern in seat_patterns.items():
+        if bool(re.match(pattern, seats_price_old)):
+            subs_type = key
+
+    deleted_orderevent = None
+    if subs_type == 'begin':
+        seats_price_new = re.sub(seat_patterns['begin'],'',seats_price_old)
+        item.seats_price = seats_price_new
+        item.save()
+    elif subs_type == 'center' or subs_type=='end':
+        pattern = re.compile(f',{removed_seat}\$[0-2]')
+        seats_price_new = re.sub(pattern,'',seats_price_old)
+        item.seats_price = seats_price_new
+        item.save()
+    elif subs_type == 'only':
+        deleted_orderevent = item.pk
+        item.delete()
+        
+    #UPDATE Order if needed
+    if subs_type == 'only':
+        # the ordevent based on the identified order is the only one.
+        # no other reason for identified order to remain active 
+        items = OrderEvent.objects.filter(order_id=order.pk)
+        items_number = items.count()
+        if items_number < 2:
+            order_killed = Order.objects.get(id=order.pk)
+            order_killed.delete()
+
+    #UPDATE UserOrder if needed
+    userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
+
+    if deleted_orderevent is not None:
+        orderevents_old = userevent.ordersevents
+        orderevent_patterns = {
+            'begin' : re.compile(f"^{deleted_orderevent},"),
+            'center' : re.compile(f"^.+,{deleted_orderevent},"),
+            'only' : re.compile(f"^{deleted_orderevent}$"),
+            'end' : re.compile(f"^.+,{deleted_orderevent}$")
+            }
+        for key , pattern in orderevent_patterns.items():
+            if bool(re.match(pattern, orderevents_old)):
+                orderevent_subs_type = key
+        if orderevent_subs_type == 'begin':
+            orderevents_new = re.sub(orderevent_patterns['begin'],'',orderevents_old)
+            userevent.ordersevents = orderevents_new
+        elif orderevent_subs_type == 'center' or orderevent_subs_type=='end':
+            pattern = re.compile(f',{deleted_orderevent}\$[0-2]')
+            orderevents_new = re.sub(pattern,'',orderevents_old)
+            userevent.ordersevents = orderevents_new
+        elif orderevent_subs_type == 'only':
+            pass
+            # userevent.delete()
+                        
+
+
+
+    seats_price_old = userevent.seats_price
+    seats_price_new = ''
+
+
+
+
+    for key , pattern in seat_patterns.items():
+        if bool(re.match(pattern, seats_price_old)):
+            subs_type = key
+
+    if subs_type == 'begin':
+        seats_price_new = re.sub(seat_patterns['begin'],'',seats_price_old)
+        userevent.seats_price = seats_price_new
+        userevent.save()
+    elif subs_type == 'center' or subs_type=='end':
+        pattern = re.compile(f',{removed_seat}\$[0-2]')
+        seats_price_new = re.sub(pattern,'',seats_price_old)
+        userevent.seats_price = seats_price_new
+        userevent.save()
+    elif subs_type == 'only':
+        userevent.delete()
+
+    try:
+        item = OrderEvent.objects.get(orderevent_number=number)
+        item_exists = True
+    except ObjectDoesNotExist:
+        item_exists = False
+
+
+    if item_exists:
+
+        return redirect(reverse('edit_order', kwargs={"orderevent_id": item.pk}))
+    else:   
+        return redirect(reverse('change_bookings', kwargs={"event_id": event.pk}))
+
+
+def plus_ingresso(request, number = None, seat= None):
+    item = get_object_or_404(OrderEvent, orderevent_number=number)
+    event = item.event
+    user = item.user
+
+    seats_price = item.seats_price
+
+
+    find_pattern = re.compile(f'{seat}\$[0-2]')
+    seat_price_old = find_pattern.findall(seats_price)[0]
+    place, price = seat_price_old.split('$')
+    if int(price)<2:
+        price_int = int(price)
+        price_int += 1
+        seat_price_new = f'{seat}${price_int}'
+        change = True
+    else:
+        change= False
+                
+    if change:
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        item.seats_price = seats_price_new
+   
+        item.save()
+    
+        userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
+        seats_price = userevent.seats_price
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        userevent.seats_price = seats_price_new
+
+        userevent.save    
+
+    return redirect(reverse('edit_order', kwargs={"orderevent_id": item.pk}))
+
+
+def minus_ingresso(request, number = None, seat= None):
+    item = get_object_or_404(OrderEvent, orderevent_number=number)
+    event = item.event
+    user = item.user
+
+    seats_price = item.seats_price
+
+
+    find_pattern = re.compile(f'{seat}\$[0-2]')
+    seat_price_old = find_pattern.findall(seats_price)[0]
+    place, price = seat_price_old.split('$')
+    if int(price)>0:
+        price_int = int(price)
+        price_int -= 1
+        seat_price_new = f'{seat}${price_int}'
+        change = True
+    else:
+        change= False
+                
+    if change:
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        item.seats_price = seats_price_new
+   
+        item.save()
+    
+        userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
+        seats_price = userevent.seats_price
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        userevent.seats_price = seats_price_new
+
+        userevent.save    
+
+    return redirect(reverse('edit_order', kwargs={"orderevent_id": item.pk}))

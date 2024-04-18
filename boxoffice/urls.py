@@ -15,11 +15,16 @@ urlpatterns = [
     path('boxoffice_print/<int:event_id>/<int:method_id>/<int:orderevent_id>/', views.boxoffice_print, name='boxoffice_print'),
     path('close_transaction/<int:event_id>/', views.close_transaction, name='close_transaction'),
     path('change_bookings/<int:event_id>/', views.change_bookings, name='change_bookings'),
-    path('edit_order/<int:order_id>/', views.edit_order, name='edit_order'),
+    path('edit_order/<int:orderevent_id>/', views.edit_order, name='edit_order'),
     path('obliterate/<str:ticket_number>/', views.obliterate, name='obliterate'),
     path('erase_order/<int:userorder_id>/<int:order_id>/', views.erase_order, name='erase_order'),
     path('sell_booking/<int:order>/', views.sell_booking, name='sell_booking'),
     path('event_list/', views.event_list, name='event_list'),
     path('barcode_read/<int:event_id>', views.barcode_read, name='barcode_read'),
-    
+    # path('', views.cart, name='cart'),
+    # path('add_cart/<int:event_id>/', views.add_cart, name='add_cart'),
+    path('plus_ingresso/<str:number>/<str:seat>/', views.plus_ingresso, name='plus_ingresso'),
+    path('minus_ingresso/<str:number>/<str:seat>/', views.minus_ingresso, name='minus_ingresso'),
+    path('remove_seat/<str:number>/<str:seat>/', views.remove_seat, name='remove_seat'),
+    # path('checkout/', views.checkout, name='checkout'),    
 ] 

@@ -1,5 +1,5 @@
 from django.db import models
-from billboard.models import Show
+from billboard.models import Show, Venue
 from hall.models import Seat
 from orders.models import OrderEvent
 from django.conf import settings
@@ -12,6 +12,7 @@ class Event(models.Model):
     price_full      = models.FloatField()
     price_reduced   = models.FloatField()
     vat_rate        = models.FloatField(default=10)
+    venue           = models.ForeignKey(Venue, on_delete=models.CASCADE, blank=True, null=True, default= 1)
     event_slug      = models.CharField(max_length=200, blank=True)
     sold_out        = models.BooleanField(default=False)
     

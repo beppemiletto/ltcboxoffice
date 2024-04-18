@@ -103,6 +103,13 @@ class OrderEvent(models.Model):
             seat, ingresso = item.split('$')
             self.dict_seats[seat] = [seat, ingresso]
         return self.dict_seats
+    
+    def seats_dicts(self):
+        self.dict_seats = {}
+        for item in self.seats_price.split(','):
+            seat, ingresso = item.split('$')
+            self.dict_seats[seat] = {'seat':seat, 'ingresso':ingresso}
+        return self.dict_seats
 
 class UserEvent(models.Model):
     ordersevents = models.CharField(max_length=100)
