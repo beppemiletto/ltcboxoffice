@@ -83,23 +83,27 @@
     
             <div class="card">
             <div class="card-body">
+                <a href="{%url 'hall_detail' event.event_slug number %}" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Aggiungi posti.</a>
+                <hr>
                 <dl class="dlist-align">
                   <dt>Imponibile:</dt>
                   <dd class="text-right">€ {{taxable|stringformat:".2f"}}</dd>
                 </dl>
                 <dl class="dlist-align">
                   <dt>IVA ({{vat_rate}} %):</dt>
-                  <dd class="text-right">€ {{tax|stringformat:".2f"}}</dd>
+                  <dd class="text-right"> {{tax|stringformat:".0f"}} %</dd>
                 </dl>
                 <dl class="dlist-align">
                   <dt>Totale:</dt>
                   <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
                 <hr>
-                <p class="text-center mb-3">
-                
-                </p>
                 <a href="{%url 'change_bookings' event.pk%}" class="btn btn-primary btn-block"> Esci da modifica</a>
+                <hr>
+                <p class="text-muted text-center"> Ordine dell'utente:</p>
+                <p class="text-muted text-center"> {{user.first_name}}, {{user.last_name}}</p>
+                <p class="text-muted text-center"> {{user.email}}</p>
+                <a href="{%url 'send_updatemail' number%}" class="btn btn-primary btn-block"> Esci e manda email aggiornamento</a>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
     

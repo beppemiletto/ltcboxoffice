@@ -48,7 +48,7 @@ def print_ticket(request):
         event = Event.objects.get(id=ordereventobj.event.pk)
         show = Show.objects.get(id=event.show.pk)
 
-        seats_dict = ordereventobj.seats_dict()
+        seats_list = ordereventobj.seats_list()
         # verifica utente per contesto di vendita
         # se utente Staff allora assume vendita in cassa
         if request.user.is_staff:
@@ -67,7 +67,7 @@ def print_ticket(request):
 
 
 
-        for k, seat in seats_dict.items():
+        for k, seat in seats_list.items():
             try:
                 tickets_all = Ticket.objects.filter(orderevent__event=event)
                 total_tickets_x_event = tickets_all.count()

@@ -77,17 +77,12 @@ def payments(request):
             if str(orderevent.pk) not in ordersevents:
                 ordersevents += ',{}'.format(orderevent.pk)
                 userevent.ordersevents = ordersevents
-            items = userevent.seats_price
-            items += ',{}${}'.format(seat, item.ingresso)
-            userevent.seats_price = items
             userevent.save()
         except:
             userevent = UserEvent()
             userevent.ordersevents = str(orderevent.pk)
             userevent.event = event
             userevent.user = current_user
-            items = '{}${}'.format(seat, item.ingresso)
-            userevent.seats_price = items
             userevent.save()
 
 

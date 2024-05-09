@@ -4,14 +4,19 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.core.mail import EmailMultiAlternatives
+from django.utils.formats import localize
+from email.mime.image import MIMEImage
+from accounts.models import Account
 from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction
 from .forms import Barcode_Reader, OrderEventForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
-from orders.models import OrderEvent, UserEvent, Order
+from orders.models import OrderEvent, UserEvent, Order, Payment
 from tickets.models import Ticket
 from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
@@ -73,6 +78,15 @@ def event(request, event_id):
         for item in event_orders:
             if item.user.first_name == "Cassa" and item.user.last_name == "Laboratorio":
                 boxoffice_orderevent = item
+                break
+    
+    if boxoffice_orderevent == None:
+        boxoffice_user = Account.objects.get(username='ltcboxoffice')
+        boxoffice_orderevent = OrderEvent()
+        boxoffice_orderevent.user = boxoffice_user
+        boxoffice_orderevent.event = current_event
+        boxoffice_orderevent.orderevent_number= f'{current_event.pk:05}_000000_000000'
+        boxoffice_orderevent.save()
 
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
@@ -83,7 +97,7 @@ def event(request, event_id):
         selected_seats=[]
         selected_seats_str = request.POST['selected_seats']
         cart_items = []
-        costs = [0.0,  current_event.price_reduced, current_event.price_full]
+        costs = current_event.prices()
         ingressi  = ['Gratuito','Ridotto' , 'Intero']
         total = 0.0
         try:
@@ -145,7 +159,7 @@ def event(request, event_id):
     rows[row_label]=row  # last row closure
 
 
-    print(f"Found {event_orders.count()} ordini aggregati su {users_event.count()} utenti che hanno prenotato")
+    # print(f"Found {event_orders.count()} ordini aggregati su {users_event.count()} utenti che hanno prenotato")
 
     orders =  OrderedDict()
 
@@ -308,7 +322,7 @@ def boxoffice_remove_cart(request, item_id):
 def boxoffice_plus_price(request, item_id = None):
     item = SellingSeats.objects.get(id=item_id)
     current_event = item.event
-    costs = [0.0,  current_event.price_reduced, current_event.price_full]
+    costs = current_event.prices()
     ingressi  = ['Gratuito','Ridotto' , 'Intero']
     price_old = item.price
     if price_old < 2:
@@ -326,7 +340,7 @@ def boxoffice_plus_price(request, item_id = None):
 def boxoffice_minus_price(request, item_id = None):
     item = SellingSeats.objects.get(id=item_id)
     current_event = item.event
-    costs = [0.0,  current_event.price_reduced, current_event.price_full]
+    costs = current_event.prices()
     ingressi  = ['Gratuito','Ridotto' , 'Intero']
     price_old = item.price
     if price_old > 0:
@@ -357,108 +371,147 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
         # return HttpResponse(html)
 
 
+    boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
     current_event = Event.objects.get(id = event_id)
     payment_method = PaymentMethod.objects.get(id = method_id)
-    costs = [0, current_event.price_reduced, current_event.price_full]
+    if orderevent_id is not None:
+        orderevent = OrderEvent.objects.get(id=orderevent_id)
+        user = orderevent.user
+    else:
+        orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
+        user = boxoffice_user
+
+    costs = current_event.prices()
     ingressi = ['Gratuito','Ridotto', 'Intero']
+
     show= current_event.show
     sold_seats = SellingSeats.objects.all()
+
+    # recalculate the total amount for payment
+    amount_paid = 0
+    for seat in sold_seats:
+        amount_paid += seat.cost
+
+
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
 
+    if orderevent_id is not None:
+        payment = orderevent.order.payment
+    else:
+        payment = Payment()
+        payment.user = user
+        payment.payer_given_name = user.first_name
+        payment.payer_surname = user.last_name
+        payment.payer_mail = user.email
+    payment.payment_method = payment_method.slug
+    payment.amount_paid=amount_paid
+    payment.status='COMPLETED'
+    payment.save()
+
+    header= {
+        'date' : localize(current_event.date_time),
+        'show' : show.shw_title,
+    }
+
     tickets_list = []
-    for sold_seat in sold_seats:
+    seats_number = sold_seats.count()
+    for idx, sold_seat in enumerate(sold_seats):
         try:
-            tickets_all = Ticket.objects.filter(event=current_event)
-            serial = tickets_all.count() + 1
+            ticket = Ticket.objects.get(event=current_event, seat = sold_seat.seat)
         except:
-            serial = 1
-        ticket = Ticket()
+            try:
+                tickets_all = Ticket.objects.filter(event=current_event)
+                serial = tickets_all.count() + 1
+            except:
+                serial = 1
+            ticket = Ticket()
+            ticket.seat = sold_seat.seat
+            ticket.status = 'New'
+            ticket.sell_mode = ticket.SELLING_MODE[ticket.SELLING_MODE.index(('C','Cassa'))][0]
+            ticket.number=f"{ticket.sell_mode[0]}{current_event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+            ticket.event = current_event
         data = {}
-        ticket.sell_mode = ticket.SELLING_MODE[ticket.SELLING_MODE.index(('C','Cassa'))][0]
-        ticket.status = 'New'
-
-        ticket.seat = sold_seat.seat
         data['seat'] = sold_seat.seat
-
         ticket.price = sold_seat.price
         data['ingresso'] = ingressi[sold_seat.price]
         data['costo'] = costs[sold_seat.price]
-
-        ticket.payment = None
-        boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
-        if orderevent_id is not None:
-            ticket.orderevent = OrderEvent.objects.get(id=orderevent_id)
-        else:
-            ticket.orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
-        ticket.event = current_event
-        ticket.user = boxoffice_user
-        
-        ticket.number=f"{ticket.sell_mode[0]}{current_event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+        ticket.orderevent = orderevent
+        ticket.user = user
+        ticket.payment = payment
         data['numero']= ticket.number
 
         ticket.save()
 
-        # aggiorna il OrderEvent della Cassa per questo Evento
-        #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
-        try:
-            boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
-        except ObjectDoesNotExist:
-            boxoffice_orderevent = None
+        # # aggiorna il OrderEvent della Cassa per questo Evento
+        # #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
+        # try:
+        #     boxoffice_orderevent = OrderEvent.objects.get(event__id=current_event.pk, user__last_name='Laboratorio', user__first_name = "Cassa"  )
+        # except ObjectDoesNotExist:
+        #     boxoffice_orderevent = None
 
-        if boxoffice_orderevent is not None:
-            seats_price_str:str = boxoffice_orderevent.seats_price
-            if len(seats_price_str) > 3:
-                seats_price_str += f",{sold_seat.seat}${str(sold_seat.price)}"
-            else:
-                seats_price_str = f"{sold_seat.seat}${str(sold_seat.price)}"
-            boxoffice_orderevent.seats_price = seats_price_str
-            boxoffice_orderevent.save()
+        # if boxoffice_orderevent is not None:
+        #     seats_price_str:str = boxoffice_orderevent.seats_price
+        #     if len(seats_price_str) > 3:
+        #         seats_price_str += f",{sold_seat.seat}${str(sold_seat.price)}"
+        #     else:
+        #         seats_price_str = f"{sold_seat.seat}${str(sold_seat.price)}"
+        #     boxoffice_orderevent.seats_price = seats_price_str
+        #     boxoffice_orderevent.save()
 
 
-        ticket_printer = TicketPrinter(
-            save_path = 'media/tickets',
-            numero=ticket.number,
-            show= show.shw_title,
-            evento_datetime=current_event.date_time, 
-            evento = current_event,
-            seat= ticket.seat, 
-            ingresso= ingressi[ticket.price],
-            price= costs[ticket.price]
-        )
+        # ticket_printer = TicketPrinter(
+        #     save_path = 'media/tickets',
+        #     numero=ticket.number,
+        #     show= show.shw_title,
+        #     evento_datetime=current_event.date_time, 
+        #     evento = current_event,
+        #     seat= ticket.seat, 
+        #     ingresso= ingressi[ticket.price],
+        #     price= costs[ticket.price]
+        # )
 
-        filename = ticket_printer.build_background()
-        ticket_printer.write_text()
-        img = ticket_printer.make_qrcode(user=ticket.user, event=current_event.pk)
-        ticket_printer.draw_qrcode(img_path=img)
-        images = convert_from_path(filename)
-        images[-1].save('the_ticket.png', 'PNG')
+        # filename = ticket_printer.build_background()
+        # ticket_printer.write_text()
+        # img = ticket_printer.make_qrcode(user=ticket.user, event=current_event.pk)
+        # ticket_printer.draw_qrcode(img_path=img)
+        # images = convert_from_path(filename)
+        # images[-1].save('the_ticket.png', 'PNG')
 
-        with Image.open('the_ticket.png') as ticket_image_rgba:
-            ticket_image_rgba.load()
-        ticket_image_l = ticket_image_rgba.convert('L')
-        w, h = ticket_image_l.size
-        k = 0.53
+        # with Image.open('the_ticket.png') as ticket_image_rgba:
+        #     ticket_image_rgba.load()
+        # ticket_image_l = ticket_image_rgba.convert('L')
+        # w, h = ticket_image_l.size
+        # k = 0.53
     
-        final_size = (int(w *k),int( h*k))
-        ticket_image_l_scaled= ticket_image_l.resize(final_size)
+        # final_size = (int(w *k),int( h*k))
+        # ticket_image_l_scaled= ticket_image_l.resize(final_size)
         # ticket_image_l_rotated= ticket_image_l.transpose(Image.ROTATE_90)
         # threshold = 127
         # ticket_image_l_rotated = ticket_image_l_rotated.point(lambda x: 255 if x > threshold else 0)
         # ticket_image_l_rotated = ticket_image_l_rotated.filter(ImageFilter.CONTOUR)
         if not recovery:
-            ticket_image_l_scaled.save('the_ticket.png', 'PNG')
-            time.sleep(0.25)
+            if idx == 0:
+                printer_usb.print_list_header(header=header)
+            printer_usb.print_list_item(data=data)
+            if idx == (seats_number -1):
+                printer_usb.print_list_footer(data=data)
 
-            printer_usb.print_ticket_image('the_ticket.png')  
+
+
+            # ticket_image_l_scaled.save('the_ticket.png', 'PNG')
+            # time.sleep(0.25)
+
+            # printer_usb.print_ticket_image('the_ticket.png')  
         else:
-            if os.name == 'posix':
-                cmd_str = f'cp {filename} media/tickets/recovery/.'
-            else:
-                cmd_str = f'copy {filename} media/tickets/recovery/.'
+            pass
+            # if os.name == 'posix':
+            #     cmd_str = f'cp {filename} media/tickets/recovery/.'
+            # else:
+            #     cmd_str = f'copy {filename} media/tickets/recovery/.'
             
-            os.system(cmd_str)
+            # os.system(cmd_str)
 
     
         hall_status[ticket.seat]['status'] = 5
@@ -473,7 +526,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
         }
     
     for tckt in tickets_list:
-        auto_obliterate(tckt.number)
+        request = auto_obliterate(request, tckt.number)
 
 
     with open(json_file_path,'w') as jfp:
@@ -487,7 +540,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
 def close_transaction(request, context={}):
 
     current_event = context['event']
-    costs = [0, current_event.price_reduced, current_event.price_full]
+    costs = current_event.prices()
     ingressi = ['Gratuito','Ridotto', 'Intero']
     show= current_event.show
     boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
@@ -497,7 +550,7 @@ def close_transaction(request, context={}):
         serial_number:int = payments.count() + 1
     except:
         serial_number:int = 1 
-    payment = BoxOfficeTransaction(
+    transaction = BoxOfficeTransaction(
         user = boxoffice_user,
         event = current_event,
         seats_sold = '',
@@ -516,15 +569,16 @@ def close_transaction(request, context={}):
     totale:float = 0
     for sold_seat in sold_seats:
         ticket = Ticket.objects.get(event=current_event, seat = sold_seat.seat)
-        ticket.status = 'Printed'
+        if ticket.status == 'New':
+            ticket.status = 'Obliterated'
         totale += costs[ticket.price]
         ticket.save()
         seats_list.append(f'{sold_seat.seat}${ticket.price}')
         sold_seat.delete()
     
-    payment.seats_sold = ','.join(seats_list)
-    payment.amount_paid = "{:5.2f}".format(totale)
-    payment.save()
+    transaction.seats_sold = ','.join(seats_list)
+    transaction.amount_paid = "{:5.2f}".format(totale)
+    transaction.save()
     
     return  redirect(reverse('event', kwargs={"event_id": current_event.pk}))
 
@@ -572,7 +626,7 @@ def change_bookings(request, event_id):
         selected_seats=[]
         selected_seats_str = request.POST['selected_seats']
         cart_items = []
-        costs = [0.0,  current_event.price_reduced, current_event.price_full]
+        costs = current_event.prices()
         ingressi  = ['Gratuito','Ridotto' , 'Intero']
         total = 0.0
         try:
@@ -655,7 +709,7 @@ def sell_booking(request, order = None):
 
     order_event =  OrderEvent.objects.get(id=order)
     ingressi= ['Gratuito', 'Ridotto', 'Intero']
-    costs = [0.0,  order_event.event.price_reduced, order_event.event.price_full]
+    costs = order_event.event.prices()
     booked_seats_price = order_event.seats_price
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
@@ -708,7 +762,7 @@ def edit_order(request, orderevent_id):
     expired = orderevent_edit.expired
 
     cart_items = orderevent_edit.seats_dicts()
-    prices = [0,event.price_reduced, event.price_full]
+    prices = event.prices()
     taxable:float = 0.0
     tax:float = event.vat_rate
     total:float = 0.0
@@ -739,21 +793,18 @@ def erase_order(request, userorder_id, order_id):
     current_event = Event.objects.get(id = orderevent.event.id)
     json_file_path= os.path.abspath(current_event.get_json_path())
     orders_str = userevent.ordersevents
-    seats_user_event_str = userevent.seats_price
     seats_order_event_str = orderevent.seats_price
     orders_event = orders_str.split(',')
-    seats_user_event = seats_user_event_str.split(',')
     seats_order_event = seats_order_event_str.split(',')
     seats_changed = []
 
+    # Order Check - One to One or One to Many?
+    main_order_id = orderevent.order.pk
+    order = Order.objects.get(id=main_order_id)
+    orderevents_count = OrderEvent.objects.filter(order_id= main_order_id).count()
+
     for seat in seats_order_event:
-        seats_user_event.remove(seat)
         seats_changed.append(seat)
-    if len(seats_user_event) > 0:
-        seats_user_event_str = ','.join(seats_user_event)
-        userevent.seats_price = seats_user_event_str
-    else:
-        seats_user_event_str = ''
 
     orders_event.remove(str(order_id))
     if len(orders_event) > 0:
@@ -798,6 +849,13 @@ def erase_order(request, userorder_id, order_id):
 
     orderevent.delete()
 
+    # Delete also the order if was the only orderevent in that order o update the economics
+    # if removed only one o many ordervents
+    if orderevents_count < 2:
+        order.delete()
+    else:
+        updateorder(main_order_id)
+
     return redirect(event_list)
 
 def printer_ready():
@@ -841,7 +899,7 @@ def obliterate(request, ticket_number):
     if ticket.status == "Printed" or ticket.status == "New" :
         ticket.status= 'Obliterated'
         ticket.save()
-        prices = (0.0, ticket.event.price_reduced, ticket.event.price_full)
+        prices = ticket.event.prices()
         sell_mode_code = ticket_number[0]
         sell_modes = { 'W':'Web','C':'Cassa','P': 'Prenotazione' }
         ingresso = Ingresso(
@@ -869,7 +927,7 @@ def obliterate(request, ticket_number):
  
     return render(request, 'boxoffice/obliterate_result.html', context)
 
-def auto_obliterate(ticket_number):
+def auto_obliterate( request, ticket_number):
     try:
         ticket = Ticket.objects.get(number = ticket_number)
         # print(ticket.status)
@@ -891,14 +949,14 @@ def auto_obliterate(ticket_number):
     
     ticket_valid: bool = (abs(td) <= time_diff)
 
-    print(f'Ticket valid = {ticket_valid}')
+    # print(f'Ticket valid = {ticket_valid}')
 
     ingresso = None
 
     if ticket.status == "Printed" or ticket.status == "New" :
         ticket.status= 'Obliterated'
         ticket.save()
-        prices = (0.0, ticket.event.price_reduced, ticket.event.price_full)
+        prices = ticket.event.prices()
         sell_mode_code = ticket_number[0]
         sell_modes = { 'W':'Web','C':'Cassa','P': 'Prenotazione' }
         ingresso = Ingresso(
@@ -917,7 +975,7 @@ def auto_obliterate(ticket_number):
         result = False
         messages.warning(request,"Il biglietto numero {} è stato cancellato! Contatta la cassa per verificare!".format(ticket_number))
  
-    return 
+    return request
 
 def barcode_read(request, event_id:int=None):
     orderevents = OrderEvent.objects.filter(event_id=event_id)
@@ -1015,11 +1073,15 @@ def remove_seat(request, number = None, seat= None):
     if subs_type == 'only':
         # the ordevent based on the identified order is the only one.
         # no other reason for identified order to remain active 
-        items = OrderEvent.objects.filter(order_id=order.pk)
-        items_number = items.count()
+        items_number = OrderEvent.objects.filter(order_id=order.pk).count()
         if items_number < 2:
             order_killed = Order.objects.get(id=order.pk)
             order_killed.delete()
+        else:
+            total, tax = updateorder(order.pk)
+
+    else:
+        total, tax = updateorder(order.pk)
 
     #UPDATE UserOrder if needed
     userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
@@ -1038,38 +1100,15 @@ def remove_seat(request, number = None, seat= None):
         if orderevent_subs_type == 'begin':
             orderevents_new = re.sub(orderevent_patterns['begin'],'',orderevents_old)
             userevent.ordersevents = orderevents_new
+            userevent.save()
         elif orderevent_subs_type == 'center' or orderevent_subs_type=='end':
             pattern = re.compile(f',{deleted_orderevent}\$[0-2]')
             orderevents_new = re.sub(pattern,'',orderevents_old)
             userevent.ordersevents = orderevents_new
+            userevent.save()
         elif orderevent_subs_type == 'only':
-            pass
-            # userevent.delete()
+            userevent.delete()
                         
-
-
-
-    seats_price_old = userevent.seats_price
-    seats_price_new = ''
-
-
-
-
-    for key , pattern in seat_patterns.items():
-        if bool(re.match(pattern, seats_price_old)):
-            subs_type = key
-
-    if subs_type == 'begin':
-        seats_price_new = re.sub(seat_patterns['begin'],'',seats_price_old)
-        userevent.seats_price = seats_price_new
-        userevent.save()
-    elif subs_type == 'center' or subs_type=='end':
-        pattern = re.compile(f',{removed_seat}\$[0-2]')
-        seats_price_new = re.sub(pattern,'',seats_price_old)
-        userevent.seats_price = seats_price_new
-        userevent.save()
-    elif subs_type == 'only':
-        userevent.delete()
 
     try:
         item = OrderEvent.objects.get(orderevent_number=number)
@@ -1107,15 +1146,10 @@ def plus_ingresso(request, number = None, seat= None):
     if change:
         seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
         item.seats_price = seats_price_new
-   
         item.save()
-    
-        userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
-        seats_price = userevent.seats_price
-        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
-        userevent.seats_price = seats_price_new
-
-        userevent.save    
+        #  Update also related Order Total
+        main_order_id = item.order.pk
+        total , tax = updateorder(main_order_id)
 
     return redirect(reverse('edit_order', kwargs={"orderevent_id": item.pk}))
 
@@ -1142,14 +1176,170 @@ def minus_ingresso(request, number = None, seat= None):
     if change:
         seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
         item.seats_price = seats_price_new
-   
         item.save()
-    
-        userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
-        seats_price = userevent.seats_price
-        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
-        userevent.seats_price = seats_price_new
-
-        userevent.save    
+        #  Update also related Order Total
+        main_order_id = item.order.pk
+        total , tax = updateorder(main_order_id)
 
     return redirect(reverse('edit_order', kwargs={"orderevent_id": item.pk}))
+
+def hall_detail(request, event_slug=None, number=None):
+    event = get_object_or_404(Event, event_slug=event_slug)
+    orderevent = OrderEvent.objects.get(orderevent_number=number)
+    user = orderevent.user
+    userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
+    former_seats = orderevent.seats_list_name()
+    json_file_path= os.path.abspath(event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+    if request.method == 'POST':
+        selected_seats = request.POST['selected_seats'].split(',')
+        orderevent_seats_price = orderevent.seats_price
+        userevent_seats_price = orderevent.seats_price
+
+        try:
+            added_seats = ''
+            for seat in selected_seats:
+                hall_status[seat]['status'] = 1
+                hall_status[seat]['order'] = number
+                added_seats +=f',{seat}$2' 
+            with open(json_file_path,'w') as jfp:
+                json.dump(hall_status,jfp)
+        except:
+            print('Something wrong!')
+
+        orderevent_seats_price +=added_seats
+        orderevent.seats_price = orderevent_seats_price
+        orderevent.save()
+        #  Update also related Order Total
+        main_order_id = orderevent.order.pk
+        total , tax = updateorder(main_order_id)
+
+        return redirect(reverse('edit_order', kwargs={"orderevent_id": orderevent.pk}))
+    else:
+        # preparing rows
+        row_hall = Row.objects.all()
+        rows={}
+        row ={}
+        row_label = ''
+        for k, seat in hall_status.items():
+            if  row_label != seat['row']:
+                if row_label != '':
+                    rows[row_label]=row
+                row = {}
+                row_label = seat['row']
+                r_data = Row.objects.get(name = row_label)
+                row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+            row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
+        rows[row_label]=row  # last row closure
+
+
+
+        context = {
+            'number': number,
+            'hall_status': hall_status,
+            'rows': rows,
+            'json_file' : json_file_path,
+            'event': event,
+            'formerseats' : former_seats,
+            'orderevent' : orderevent,
+        }
+
+        return render(request, 'boxoffice/hall_detail.html', context)
+    
+def send_updatemail(request, number):
+    # Send order update email to customer
+   # prepare a dictionary for email data
+    email_data = {}
+    orderevent = OrderEvent.objects.get(orderevent_number=number)
+    event= orderevent.event
+
+    prices = event.prices()
+    booked_seats = {}
+
+    for item in orderevent.seats_price.split(','):
+        seat, price = item.split('$')
+
+        booked_seats[seat] = prices[int(price)]
+
+    email_data[orderevent.orderevent_number] = {
+    'show':orderevent.event.show.shw_title,
+    'datetime': orderevent.event.date_time,
+    'seats': booked_seats,
+    'barcode': orderevent.barcode_path.split('/')[-1],
+    'barcode_path': orderevent.barcode_path 
+    }
+
+
+
+    # Count the order events included in the single order
+    orderevents_count = len(email_data)
+
+    # Send order received email to customer 
+
+    current_site = get_current_site(request)
+
+    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata aggiornata!'
+    email_context = {
+        'count': orderevents_count,
+        'user': orderevent.user,
+        'userevent': orderevent.user,
+        'order': orderevent.order,
+        'email_data' : email_data,
+    }
+    message = render_to_string('boxoffice/order_changed_email.html', email_context).strip()
+    to_email = [orderevent.user.email,]
+    # send_email = EmailMessage(mail_subject, message, to=[to_email])
+    send_email = EmailMultiAlternatives(
+        mail_subject,
+        message,
+        to=to_email
+    )
+    send_email.content_subtype = 'html'
+    send_email.mixed_subtype = 'related'
+    # send_email.attach(message, "text/html")
+    img_dir = 'static/images'
+    image = 'logo.png'
+    file_path = os.path.join(img_dir, image)
+    with open(file_path,'rb') as fip:
+        img = MIMEImage(fip.read(),_subtype='png')
+        img.add_header('Content-ID', '<{name}>'.format(name=image))
+        # img.add_header('Content-Disposition', 'inline', filename=image)
+    send_email.attach(img)
+
+    for orderevent_number, orderevent_data in email_data.items():
+        file_path:os.path = orderevent_data['barcode_path']
+    #this name must be same as in the htmltemplate being only a placeholder
+        barcode:str = orderevent_data['barcode']
+
+        with open(file_path,'rb') as fip:
+            brc = MIMEImage(fip.read(),_subtype='png')
+            brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
+            # img.add_header('Content-Disposition', 'inline', filename=image)
+        send_email.attach(brc)
+
+    send_email.send()
+
+    current_event=orderevent.event
+
+    return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))
+
+def updateorder(main_order_id=None):
+    order= Order.objects.get(id=main_order_id)
+    orderevents = OrderEvent.objects.filter(order_id= main_order_id)
+    total = 0
+    tax = 0
+
+    for orderevent in orderevents:
+        prices = orderevent.event.prices()
+        seats_price = orderevent.seats_price
+        subtotal = 0
+        for seat_price in seats_price.split(','):
+            seat, price = seat_price.split('$')
+            subtotal += prices[int(price)]
+        total += subtotal
+    tax += total * orderevent.event.vat_rate / 100.0
+    order.order_total = total
+    order.tax = tax
+    order.save()
+    return (total, tax) 

@@ -16,7 +16,7 @@ class UserEventAdmin(admin.ModelAdmin):
     list_filter = ['user', 'event']
 
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['pk','payment_id','user','status']
+    list_display = ['pk','user','status','amount_paid', 'payment_method',]
     list_filter = ['user', 'status']
 
 

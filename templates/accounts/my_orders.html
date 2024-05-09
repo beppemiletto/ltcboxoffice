@@ -34,7 +34,7 @@
                                           <tbody>
                                           {% for order in future_orders %}
                                                 <tr>
-                                                  <th scope="row"><a href="{% url 'order_detail_tkts' order.pk %}">{{ order.order_number }}</th>
+                                                  <th scope="row"><a href="{% url 'order_detail_tkts' order.order_number %}">{{ order.order_number }}</th>
                                                   <td>{{ order.full_name }}</td>
                                                   <td>{{ order.phone }}</td>
                                                   <td>$ {{ order.order_total }}</td>
@@ -65,7 +65,7 @@
                                         <tbody>
                                             {% for order in past_orders %}
                                             <tr>
-                                                <th scope="row"><a href="{% url 'order_detail' order.pk %}">{{ order.order_number }}</th>
+                                                <th scope="row"><a href="{% url 'order_detail' order.order_number %}">{{ order.order_number }}</th>
                                                     <td>{{ order.full_name }}</td>
                                                     <td>{{ order.phone }}</td>
                                                     <td>$ {{ order.order_total }}</td>

@@ -277,14 +277,14 @@ def order_detail(request, order_id):
 
 # prepara pagina dettaglio ordini con link per scaricare biglietti
 @login_required(login_url='login')
-def order_detail_tkts(request, order_id):
+def order_detail_tkts(request, order_number):
     now = datetime.now(pytz.timezone('Europe/Rome'))
     order_details_future = []
-    order_details = OrderEvent.objects.filter(order__order_number=order_id)
+    order_details = OrderEvent.objects.filter(order__order_number=order_number)
     for details in order_details:
         if details.event.date_time > now:
             order_details_future.append(details)
-    order = Order.objects.get(order_number=order_id)
+    order = Order.objects.get(order_number=order_number)
     context = {
         'order_details': order_details_future,
         'order': order,

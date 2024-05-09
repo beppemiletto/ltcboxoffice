@@ -75,7 +75,8 @@ class Event(models.Model):
         json_filename_fullpath = os.path.join(settings.HALL_STATUS_FILES_ROOT, json_filename)
         return json_filename_fullpath
     
-
+    def prices(self):
+        return [0.0 , self.price_reduced, self.price_full]
 
 
     

@@ -26,5 +26,7 @@ urlpatterns = [
     path('plus_ingresso/<str:number>/<str:seat>/', views.plus_ingresso, name='plus_ingresso'),
     path('minus_ingresso/<str:number>/<str:seat>/', views.minus_ingresso, name='minus_ingresso'),
     path('remove_seat/<str:number>/<str:seat>/', views.remove_seat, name='remove_seat'),
+    path('hall_detail/<slug:event_slug>/<str:number>/', views.hall_detail, name='hall_detail'),
+    path('send_updatemail/<str:number>/', views.send_updatemail, name='send_updatemail'),
     # path('checkout/', views.checkout, name='checkout'),    
 ] 

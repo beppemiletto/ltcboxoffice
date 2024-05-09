@@ -361,12 +361,12 @@ def booking_payments(request, newContext={}):
         user=current_user,
         payment_id=body['transID'],
         payment_method=body['payment_method'],
-        amount_paid=order.order_total,
+        amount_paid= 0.00,
         status=body['status'],
         # payer_id=body['payer']['payer_id'],
-        # payer_mail=body['payer']['email_address'],
-        # payer_surname=body['payer']['name']['surname'],
-        # payer_given_name=body['payer']['name']['given_name'],
+        payer_mail=current_user.email,
+        payer_surname=current_user.last_name,
+        payer_given_name=current_user.first_name,
         )
     payment.save()
     order.payment = payment
@@ -449,17 +449,12 @@ def booking_payments(request, newContext={}):
             if str(orderevent.pk) not in ordersevents:
                 ordersevents += ',{}'.format(orderevent.pk)
                 userevent.ordersevents = ordersevents
-            items = userevent.seats_price
-            items += ',{}${}'.format(seat, item.ingresso)
-            userevent.seats_price = items
             userevent.save()
         except:
             userevent = UserEvent()
             userevent.ordersevents = str(orderevent.pk)
             userevent.event = event
             userevent.user = current_user
-            items = '{}${}'.format(seat, item.ingresso)
-            userevent.seats_price = items
             userevent.save()
 
 
@@ -543,6 +538,9 @@ def booking_complete(request, newContext={}):
     for number, orderevent in email_data.items():
         newtarget:os.path = os.path.join(os.getcwd(),os.getcwd().split('/')[-1],'static/images',orderevent['barcode'])
         os.rename(orderevent['barcode_path'],newtarget)
+        orderevent_object = OrderEvent.objects.get(orderevent_number=number)
+        orderevent_object.barcode_path = newtarget
+        orderevent_object.save()
 
     del number, orderevent, newtarget
     

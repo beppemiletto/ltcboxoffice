@@ -8,13 +8,9 @@
         
         Salve {{user.first_name}},
         <br>
-        Il tuo ordine <b>{{ order.order_number }}</b> è stato ricevuto e processato.
+        Il tuo ordine <b>{{ order.order_number }}</b> è stato modificato.
         <br>
-        {%if count > 1 %}
-        Hai prenotato posti per {{count}} eventi al Teatro Comunale di Cambiano.
-        {% else %}
         Hai prenotato posti per un evento al Teatro Comunale di Cambiano.
-        {% endif %}
         <br>
         {%for number, orderevent in  email_data.items %}
         <h3> Prenotazione Evento Codice {{number}}: </h3>
@@ -87,4 +83,6 @@ Lo staff di LTCBoxOffice.
 </small>
 </body>
 </html>
+
+
 {% endautoescape %}

@@ -34,6 +34,8 @@ class PaymentMethod(models.Model):
     account_type = models.IntegerField(choices=ACCOUNT_TYPES, default=0)
     commission_model =  models.IntegerField(choices=COMMISSION_MODELS, default=0)
 
+    def __str__(self):
+        return self.name
 
 class BoxOfficeTransaction(models.Model):
     user = models.ForeignKey(Account, on_delete=models.CASCADE)

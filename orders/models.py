@@ -27,7 +27,7 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.payment_id
+        return f'{self.payment_id} - Euro {self.amount_paid} - {self.payment_method} by {self.user}'
 
 
 
@@ -97,12 +97,19 @@ class OrderEvent(models.Model):
         else:
             return ''
         
-    def seats_dict(self):
+    def seats_list(self):
         self.dict_seats = {}
         for item in self.seats_price.split(','):
             seat, ingresso = item.split('$')
             self.dict_seats[seat] = [seat, ingresso]
         return self.dict_seats
+
+    def seats_list_name(self):
+        self.list_seats = []
+        for item in self.seats_price.split(','):
+            seat, ingresso = item.split('$')
+            self.list_seats.append(seat)
+        return self.list_seats
     
     def seats_dicts(self):
         self.dict_seats = {}
@@ -115,7 +122,6 @@ class UserEvent(models.Model):
     ordersevents = models.CharField(max_length=100)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
     event = models.ForeignKey('store.Event', on_delete=models.CASCADE, blank=True, null=True)
-    seats_price = models.CharField(max_length=512, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -125,12 +131,28 @@ class UserEvent(models.Model):
         else:
             return ''
         
-    def seats_dict(self):
+    def seats_list(self):
         self.dict_seats = {}
         for item in self.seats_price.split(','):
             seat, ingresso = item.split('$')
             self.dict_seats[seat] = [seat, ingresso]
         return self.dict_seats
+    
+    def seats_price(self):
+        orderevents_csv = self.ordersevents
+        orderevents_list = orderevents_csv.split(',')
+        seats_price_csv = ''
+        for orderevent_id in orderevents_list:
+            orderevent = OrderEvent.objects.get(id=orderevent_id)
+            if len(seats_price_csv) > 1:
+                seats_price_csv += f',{orderevent.seats_price}'
+            else:
+                seats_price_csv += f'{orderevent.seats_price}'
+
+
+        return seats_price_csv
+
+
 
 
         
