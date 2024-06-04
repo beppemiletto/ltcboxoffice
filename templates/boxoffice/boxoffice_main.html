@@ -1,10 +1,10 @@
 {% extends 'boxoffice_base.html' %}
 {%load static%}
 {% block content %}
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=1600px, user-scalable=yes, initial-scale=1.0, minimum-scale=0.5, maximum-scale=1.0">
 <meta charset="UTF-8">
 <section class="section-content padding-y bg">
-<div class="container p-1 bg-primary text-white">
+<div class="container-fluid p-1 bg-primary text-white">
 
         <div class="row">
             <div class="col-md"> <h5>GESTIONE CASSA </h5></div>
@@ -26,7 +26,7 @@
 <!-- ============================ HALL and bookings tables ================================= -->
     <div class="row">
 
-        <div class="col-lg-8">  <!-- col for table -->
+        <div class="col-md-6">  <!-- col for table -->
             <table class="table table-hover table-sm">
             <tr>
                 <td class="table-primary" colspan = "9"> </td>
@@ -67,7 +67,7 @@
     </table>
     </div> <!-- col for table -->
 
-    <div class="col-lg-4">  <!-- col for bookings list -->
+    <div class="col-md-3">  <!-- col for bookings list USERS -->
         
         <div class="card example-1 scrollbar-ripe-malinka">
             <table class="table table-hover table-sm">
@@ -94,11 +94,11 @@
                                                 </small></p>
                                             </td>
                                             <td>
-                                                <a href="{%url 'sell_booking' id%}" >
+                                                <a href="{%url 'sell_booking' order=id mode=1%}" >
                                                     <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
                                                 </a>
                                             </td>
-                                            <td><button type="button" class="btn btn-warning btn-sm"><i class='far fa-edit'></i></button></td>
+
                                         </tr>
                                         {%endfor%}
                                 </table>
@@ -112,6 +112,42 @@
 
         </div>
           
+    </div>
+
+    <div class="col-md-3">  <!-- col for bookings list  BOXOFFICE's CUSTOMERS -->
+        
+        <div class="card example-1 scrollbar-ripe-malinka">
+            <table class="table table-hover table-sm">
+                <thead class="thead" aria-colspan="3"> Prenotazioni Boxoffice.</thead>
+                <th class="text-small"> Cognome Nome </th>
+                <th>Num. Ordine</th>
+                <th>Vendi</th>
+                <tbody>
+                    {%for boxofficebooking in boxofficebookings%}
+                        <tr>
+                            
+                            <td>
+                                <p><small>{{boxofficebooking.customer.last_name}} {{boxofficebooking.customer.first_name}} </small></p>
+                             </td>
+                             <td>
+                                <p><small> {{boxofficebooking.seats_price|truncatechars:16}} </small></p>
+                             </td>
+
+                            <td>
+                                <a href="{%url 'sell_booking' order=boxofficebooking.pk mode=2 %}" >
+                                    <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
+                                </a>
+                            </td>
+                        </tr>
+                    {%endfor%}
+                    
+                </tbody>
+                
+            </table>
+
+        </div>
+          
+    </div>
     </div>
 
     <!-- ============================ Actions menu  ================================= -->

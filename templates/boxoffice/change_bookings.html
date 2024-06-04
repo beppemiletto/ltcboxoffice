@@ -1,126 +1,226 @@
-{%extends 'boxoffice_base.html'%}
+                    {%extends 'boxoffice_base.html'%}
 {%load static%}
 {%load index%}
 
 {% block content%}
 <section class="section-content padding-y bg">
     <div class="container">
-    
-    <!-- ============================ COMPONENT 1 ================================= -->
-    {%if not bookings%}
-        <H2 class="text-center">Non ci sono prenotazioni o prevendite da visualizzare / modificare.</H2>
-         <br>
-        <div class="text-center">
-            <a href="{%url 'event_list'%}" class="btn btn-outline-primary"> Torna alla Home in area riservata.</a>
-        </div>
-    {%else%}
-    <div class="row">
-        <aside class="col-lg-9">
-    <div class="card">
-    <table class="table table-border small">
-    <thead class="text-dark">
-        <th class="header" scope="colgroup" colspan="3"> <h4> Evento: </h4>
-            <figure class="itemside align-items-center">
-                <div class="aside"><img src="{{current_event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
-                <figcaption class="info">
-                    <a href="#" class="title text-dark"> {{current_event.show.shw_title}}</a>
-                    <p>  del {{current_event.date_time|date:"D d m Y"}} alle ore {{current_event.date_time|date:"H : i"}}  </p>
-                </figcaption>
-            </figure>
-         </th>
-    <tr class="small text-uppercase">
-      <th scope="col" width="400">Utente</th>
-      <th scope="col" width="600">Posti e tipo ingressi     |     Data ultima operazione</th>
-    </tr>
-    </thead>
-    <tbody>
-        {%for key, booking in bookings.items %}
-    <tr>
-        <td>
-            
-                    <a href="#" class="title text-dark"> {{key}}</a>
- 
-        </td>
-    
-        <td> 
-            <table class="table table-border text-xsmall">
-
-                <tbody>
+        <div class="row">
+            <aside class="col-lg-12">
+                <div class="card"> <!-- header card card -->
+                    <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="3"> <h4> Evento: </h4>
+                                <figure class="itemside align-items-center">
+                                    <div class="aside"><img src="{{current_event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
+                                    <figcaption class="info"> 
+                                        <a href="#" class="title text-dark"> {{current_event.show.shw_title}}</a>
+                                        <p>  del {{current_event.date_time|date:"D d m Y"}} alle ore {{current_event.date_time|date:"H : i"}}  </p>
+                                    </figcaption>
+                                </figure>
+                            </th>
+                        </thead>
+                    </table>
+                </div> <!-- header card card -->
+            </aside>
+        </div> <!-- row -->
+                <!--  IN CASE nothing to show-->
+        <div class="row">
+            {%if not orderevents and not bookings%}
+            <H2 class="text-center">Non ci sono prenotazioni o prevendite da visualizzare / modificare.</H2>
+                <br>
+                <div class="text-center">
+                    <a href="{%url 'event_list'%}" class="btn btn-outline-primary"> Torna alla Home in area riservata.</a>
+                </div>
+            {%else%}
+            <!-- FIRST TABLE FOR WEB USER ORDERS -->
+            <aside class="col-lg-5">
+                <div class="card">
+                    <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="3"> 
+                                <h4> Prenotazioni da utenti WEB</h4>
+                            </th>
+                            <tr class="small text-uppercase">
+                                <th scope="col" width="150">Utente Web</th>
+                                <th scope="col" width="350">Numero posti  |   Data ultima operazione</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {%for key, orderevent in orderevents.items %}
+                            <tr>
+                                <td>
+                                    <a href="#" class="title text-dark"> {{key}}</a>
+                                </td>
+                                <td> 
+                                    <table class="table table-border text-xsmall">
+                                        <tbody>
+                                            {%for key_order, order in orderevent.1.items %}
+                                                <!-- Se la prenotazione expired == True -->
+                                                {%if order.2 %}
+                                            <tr>
+                                                <td > 
+                                                    <div class="text-right">  <a href="#" class="btn btn-primary btn-sm disabled" > {{key_order}}</a>  </div> 
+                                                </td>
+                                                <td>
+                                                    {{order.0}}
+                                                </td>
+                                                <td>
+                                                    {{order.3|date:"D d m Y"}}
+                                                </td>
+                                                <td>
+                                                    <a href="#"  > <i class="fas fa-ban" style='font-size:18px'></i> </a>
+                                                </td>
+                                                
+                                            </tr>
+                                                <!-- la prenotazione expired == FALSE -->
+                                                {%else%}
+                                            <tr>
+                                                <td > 
+                                                    <div class="text-right">    <a href="{% url 'edit_order' key_order %}" class="btn btn-primary btn-sm"> {{key_order}}</a>  </div> 
+                                                </td>
+                                                <td>
+                                                    {{order.0}}
+                                                </td>
+                                                <td>
+                                                    {{order.1|date:"D d m Y"}}
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'erase_order' orderevent.0 key_order %}"  > <i class='fas fa-eraser' style='font-size:18px'></i> </a>
+                                                </td>
+                                                
+                                            </tr>
+                                                {%endif%}
+                                            {%endfor%}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            {%endfor%}
+                        </tbody>
+                    </table>
+                    <nav class="mt-4" aria-label="Page navigation sample">
+                        {%if paged_users_event.has_other_pages %}
                     
-                    {%for key_order, order in booking.1.items %}
-                    <tr>
-                        <td >
+                        <ul class="pagination">
+                            {%if paged_users_event.has_previous%}
+                            <li class="page-item"><a class="page-link" href="?page={{paged_users_event.previous_page_number}}">Previous</a></li>
+                            {%else%}
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            {%endif%}
+                            {%for i in paged_users_event.paginator.page_range%}
+                            {%if paged_users_event.number == i %}
+                            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
+                            {%else%}
+                            <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
+                            {%endif%}
+                            {%endfor%}
+                            {%if paged_users_event.has_next%}
+                            <li class="page-item"><a class="page-link" href="?page={{paged_users_event.next_page_number}}">Next</a></li>
+                            {%else%}
+                            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            {%endif%}
+                        </ul>
+                    {%endif%}
+                    </nav>
+                </div> <!-- card.// -->
+            </aside> <!-- aside -->
 
-                            <div class="text-right"> 
-                                <a href="{% url 'edit_order' key_order %}" class="btn btn-primary btn-sm"> {{key_order}}</a>
-                            </div> 
-                        </td>
-                        <td>
-                            {{order.0}}
-                        </td>
-                        <td>
-                            {{order.1|date:"D d m Y"}}
-                        </td>
-                        <td>
-                            <a href="{% url 'erase_order' booking.0 key_order %}"  > 
-                                <i class='fas fa-eraser' style='font-size:18px'></i>
-                            </a>
-                        </td>
-                        
-                    </tr>
-                    {%endfor%}
-                </tbody>
-            </table>
-        </td>
-    {%endfor%}
-    </tbody>
-    </table>
-    <nav class="mt-4" aria-label="Page navigation sample">
-        {%if paged_users_event.has_other_pages %}
-       
-        <ul class="pagination">
-            {%if paged_users_event.has_previous%}
-            <li class="page-item"><a class="page-link" href="?page={{paged_users_event.previous_page_number}}">Previous</a></li>
-            {%else%}
-            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-            {%endif%}
-            {%for i in paged_users_event.paginator.page_range%}
-            {%if paged_users_event.number == i %}
-            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
-            {%else%}
-            <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
-            {%endif%}
-            {%endfor%}
-            {%if paged_users_event.has_next%}
-            <li class="page-item"><a class="page-link" href="?page={{paged_users_event.next_page_number}}">Next</a></li>
-            {%else%}
-            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
-            {%endif%}
-        </ul>
-      {%endif%}
-    </nav>
+            <!-- SECOND TABLE FOR CUSTOMER ORDERS -->
+            <aside class="col-lg-5">
+                <div class="card">
+                    <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="4"> <h4>Prenotazioni da BoxOffice per clienti</h4> </th>
+                            <tr class="small text-uppercase">
+                                <th scope="col" width="150">Cliente boxoffice</th>
+                                <th scope="col" width="50">  Numero posti</th>
+                                <th scope="col" width="200"> Data ultima operazione</th>
+                                <th scope="col" width=" 50"> Erase</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {%for key_order, booking in bookings.items %}
+                            <!-- IF BOOKING EXPIRED == TRUE-->
+                            {%if booking.2 %}
+                            <tr>
+                                <td > 
+                                    <div class="text-right">  <a href="#" class="btn btn-primary btn-sm disabled" > {{key_order}}</a>  </div> 
+                                </td>
+                                <td>
+                                    {{booking.0}}
+                                </td>
+                                <td>
+                                    {{booking.3|date:"D d m Y"}}
+                                </td>
+                                <td>
+                                    <a href="#"  > <i class="fas fa-ban" style='font-size:18px'></i> </a>
+                                </td>
+                                
+                            </tr>
+                            <!-- IF BOOKING EXPIRED == FALSE-->
+                            {%else%}
+                            <tr>
+                                <td > 
+                                    <div class="text-right">    <a href="#" class="btn btn-primary btn-sm"> {{key_order}}</a>  </div> 
+                                </td>
+                                <td>
+                                    {{booking.0}}
+                                </td>
+                                <td>
+                                    {{booking.1|date:"D d m Y"}}
+                                </td>
+                                <td>
+                                    <a href="{% url 'erase_booking' booking.4 %}"  > <i class='fas fa-eraser' style='font-size:18px'></i> </a>
+                                </td>
+                                
+                            </tr>
+                            {%endif%}
+                        {%endfor%}
+                        </tbody>
+                    </table>
+                    <nav class="mt-4" aria-label="Page navigation sample">
+                        {%if paged_bookings.has_other_pages %}
+                        Paged bookings has other pages
+                        <ul class="pagination">
+                            {%if paged_bookings.has_previous%}
+                            <li class="page-item"><a class="page-link" href="?pagebooking={{paged_bookings.previous_page_number}}">Previous</a></li>
+                            {%else%}
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            {%endif%}
+                            {%for i in paged_bookings.paginator.page_range%}
+                            {%if paged_bookings.number == i %}
+                            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
+                            {%else%}
+                            <li class="page-item"><a class="page-link" href="?pagebooking={{i}}">{{i}}</a></li>
+                            {%endif%}
+                            {%endfor%}
+                            {%if paged_bookings.has_next%}
+                            <li class="page-item"><a class="page-link" href="?pagebooking={{paged_bookings.next_page_number}}">Next</a></li>
+                            {%else%}
+                            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            {%endif%}
+                        </ul>
+                        {%else%}
+                        Paged bookings DO NOT HAVE other pages
+                        {%endif%}
+                    </nav>
+                </div> <!-- card.// -->
+            </aside> <!-- col.// -->
+            <aside class="col-lg-2">
+        
+                <div class="card">
+                <div class="card-body">
+                    
+                    <hr>
 
-    </div> <!-- card.// -->
-    
-        </aside> <!-- col.// -->
-        <aside class="col-lg-3">
-    
-            <div class="card">
-            <div class="card-body">
-                
-                <hr>
-
-                <a href="{%url 'boxoffice'%}" class="btn btn-light btn-block">Torna alla home</a>
-            </div> <!-- card-body.// -->
-            </div> <!-- card.// -->
-    
-    </aside> <!-- col.// -->
-    
-    
-    </div> <!-- row.// -->
-    <!-- ============================ COMPONENT 1 END .// ================================= -->
+                    <a href="{%url 'boxoffice'%}" class="btn btn-light btn-block">Torna alla home</a>
+                </div> <!-- card-body.// -->
+                </div> <!-- card.// -->
+        
+            </aside> <!-- col.// -->
+        </div> <!-- row.// -->
     {%endif%}
     </div> <!-- container .//  -->
-    </section>
-    <!-- ========================= SECTION CONTENT END// ========================= -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
 {%endblock%}

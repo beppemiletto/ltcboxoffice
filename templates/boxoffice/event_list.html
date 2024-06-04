@@ -51,7 +51,7 @@
             </div> <!-- price-wrap .// -->
         </td>
         <td class="text-right"> 
-        <a href="#" class="btn btn-primary"> Aggiungi</a>
+        <a href="{% url 'add_bookings' event.pk %}" class="btn btn-primary">Nuova prenotazione</a>
         </td>
     </tr>
     {%endfor%}

@@ -11,8 +11,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.formats import localize
 from email.mime.image import MIMEImage
 from accounts.models import Account
-from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction
-from .forms import Barcode_Reader, OrderEventForm
+from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction, CustomerProfile, BoxOfficeBookingEvent
+from .forms import Barcode_Reader, OrderEventForm, CustomerProfileForm, CustomerShortForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
@@ -71,6 +71,8 @@ def event(request, event_id):
     current_event = Event.objects.get(id=event_id)
     event_orders = OrderEvent.objects.filter(event__id=current_event.pk)
     users_event = UserEvent.objects.filter(event__id=current_event.pk).order_by('user__last_name')
+    event_bookings = BoxOfficeBookingEvent.objects.filter(event__id=current_event.pk).order_by('customer__last_name')
+
     # verifica esistenza dell'OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
     # se manca il record specifico lo crea
     boxoffice_orderevent = None
@@ -217,6 +219,8 @@ def event(request, event_id):
 
         del user_event, event_orders, event_id, jfp, boxoffice_orderevent, r_data, k
 
+    boxofficebookingevent = BoxOfficeBookingEvent.objects.filter(event=current_event).filter(expired=False).order_by('customer__last_name')
+
     printer_status: bool = printer_ready()
 
     context = {
@@ -226,6 +230,7 @@ def event(request, event_id):
         'current_event' : current_event,
         'orders' : orders,
         'printer_ready': printer_status,
+        'boxofficebookings': boxofficebookingevent,
     }
 
     # return HttpResponse(f"Apriamo allegramente la pagina di gestione della cassa per evento numero {event_id}.")
@@ -354,7 +359,7 @@ def boxoffice_minus_price(request, item_id = None):
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
 
-def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
+def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_id=None):
     printer_dummy = Dummy()
     # printer_net = EscPosNetwork(host='localhost', port= 9100)
     try:
@@ -375,8 +380,13 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
     current_event = Event.objects.get(id = event_id)
     payment_method = PaymentMethod.objects.get(id = method_id)
     if orderevent_id is not None:
-        orderevent = OrderEvent.objects.get(id=orderevent_id)
-        user = orderevent.user
+        if mode_id=='1':
+            orderevent = OrderEvent.objects.get(id=orderevent_id)
+            user = orderevent.user
+        elif mode_id=='2':
+            orderevent = BoxOfficeBookingEvent.objects.get(id=orderevent_id)
+            user = boxoffice_user
+
     else:
         orderevent = OrderEvent.objects.get(event_id=current_event.pk, user=boxoffice_user )
         user = boxoffice_user
@@ -397,7 +407,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
 
-    if orderevent_id is not None:
+    if orderevent_id is not None and mode_id=='1':
         payment = orderevent.order.payment
     else:
         payment = Payment()
@@ -437,7 +447,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None):
         ticket.price = sold_seat.price
         data['ingresso'] = ingressi[sold_seat.price]
         data['costo'] = costs[sold_seat.price]
-        ticket.orderevent = orderevent
+        ticket.orderevent = orderevent.pk
         ticket.user = user
         ticket.payment = payment
         data['numero']= ticket.number
@@ -605,10 +615,11 @@ def event_list(request):
 
     return
 
-def change_bookings(request, event_id):
+def change_bookings(request, event_id=None):
     current_event = Event.objects.get(id=event_id)
     event_orders = OrderEvent.objects.filter(event__id=current_event.pk)
-    users_event = UserEvent.objects.filter(event__id=current_event.pk)
+    users_event = UserEvent.objects.filter(event__id=current_event.pk).order_by('user__username')
+    event_bookings = BoxOfficeBookingEvent.objects.filter(event__id=current_event.pk).order_by('customer__last_name')
     # aggiorna il OrderEvent della Cassa per questo Evento
     #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
     try:
@@ -618,9 +629,7 @@ def change_bookings(request, event_id):
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
-
-    
-    
+       
     if request.method == 'POST':
         go = False
         selected_seats=[]
@@ -673,10 +682,10 @@ def change_bookings(request, event_id):
             return redirect(reverse('event', kwargs={"event_id": current_event.pk}))
         
     else:
-        paginator = Paginator(users_event, 8)
-        page = request.GET.get('page')
-        paged_users_event = paginator.get_page(page)
-        bookings = {}
+        userevent_paginator = Paginator(users_event, 8)
+        pageuserevent = request.GET.get('page')
+        paged_users_event = userevent_paginator.get_page(pageuserevent)
+        orderevents = {}
 
         for single_user in paged_users_event:
             cognome = single_user.user.last_name.strip()
@@ -688,10 +697,30 @@ def change_bookings(request, event_id):
             for order_str in orders_event:
                 # print(order_str, type(order_str))
                 orderevent = OrderEvent.objects.get(id = int(order_str))
-                orders_dict[orderevent.pk] =  (orderevent.seats_price, orderevent.created_at)
+                seats_count = orderevent.seats_count()
+                
+                orders_dict[orderevent.pk] =  (seats_count, orderevent.created_at, orderevent.expired, orderevent.updated_at)
             
 
-            bookings[f'{cognome}-{email}'] = (userevent_id , orders_dict)      
+            orderevents[f'{cognome}-{email}'] = (userevent_id , orders_dict)      
+
+        customerbooking_paginator = Paginator(event_bookings, 8)
+        pagebooking = request.GET.get('pagebooking')
+        paged_bookings = customerbooking_paginator.get_page(pagebooking)
+        bookings = {}
+
+        for single_booking in paged_bookings:
+            booking_number = single_booking.booking_number
+            cognome = single_booking.customer.last_name.strip()
+            nome = single_booking.customer.first_name.strip()
+            created_at = single_booking.created_at
+            expired = single_booking.expired
+            updated_at = single_booking.updated_at
+            seats_count = single_booking.seats_count()
+
+            bookings[f'{cognome}-{nome} #{booking_number[-6:]}'] = (seats_count, created_at, expired, updated_at, single_booking.pk)      
+
+
 
         context = {
             'hall_status': hall_status,
@@ -699,15 +728,22 @@ def change_bookings(request, event_id):
             'current_event' : current_event,
             'event_orders' : event_orders,
             'bookings' : bookings,
+            'orderevents' : orderevents,
             'paged_users_event': paged_users_event,
+            'paged_bookings' : paged_bookings,
         }
 
 
         return render(request, 'boxoffice/change_bookings.html', context)
 
-def sell_booking(request, order = None):
+def sell_booking(request, order = None, mode=None):
+    if mode == '1':
+        order_event =  OrderEvent.objects.get(id=order)
+        order_number = order_event.orderevent_number
+    elif mode=='2':
+        order_event =  BoxOfficeBookingEvent.objects.get(id=order)
+        order_number = order_event.booking_number
 
-    order_event =  OrderEvent.objects.get(id=order)
     ingressi= ['Gratuito', 'Ridotto', 'Intero']
     costs = order_event.event.prices()
     booked_seats_price = order_event.seats_price
@@ -715,7 +751,7 @@ def sell_booking(request, order = None):
         ordered_seat, ordered_price  = seat_price.split('$')
         ordered_sellingseat = SellingSeats(
             event = order_event.event,
-            orderevent = order_event,
+            orderevent = order_number,
             seat = ordered_seat,
             price = int(ordered_price),
             cost = costs[int(ordered_price)],
@@ -745,6 +781,7 @@ def sell_booking(request, order = None):
         'tax': tax,
         'payments_methods': payment_methods,
         'orderevent': order_event,
+        'mode': mode,
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
@@ -785,7 +822,6 @@ def edit_order(request, orderevent_id):
 
 
     return render(request, 'boxoffice/orderevent_edit.html', context)
-
 
 def erase_order(request, userorder_id, order_id):
     userevent = UserEvent.objects.get(id = userorder_id)
@@ -1343,3 +1379,300 @@ def updateorder(main_order_id=None):
     order.tax = tax
     order.save()
     return (total, tax) 
+
+def add_bookings(request, event_id=None):
+    current_event = Event.objects.get(id=event_id)
+    # preparing rows
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+    if request.method == 'POST':
+        customer_profile_form = CustomerProfileForm(request.POST)
+        if customer_profile_form.is_valid():
+            email = customer_profile_form.cleaned_data['email']
+            first_name = customer_profile_form.cleaned_data['first_name']
+            last_name = customer_profile_form.cleaned_data['last_name']
+            try:
+                maybe_customers = CustomerProfile.objects.filter(email=email)
+                if maybe_customers.count():
+                    the_customer = maybe_customers.get(email=email)
+                    if the_customer.last_name.lower != last_name.lower:
+                        the_customer.first_name = first_name
+                        the_customer.last_name = last_name
+                        if customer_profile_form.cleaned_data['phone_number'] != '':
+                            the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                        if customer_profile_form.cleaned_data['address'] != '':
+                            the_customer.address = customer_profile_form.cleaned_data['address']
+                        if customer_profile_form.cleaned_data['city'] != '':
+                            the_customer.city = customer_profile_form.cleaned_data['city']
+                        if customer_profile_form.cleaned_data['province'] != '':
+                            the_customer.province = customer_profile_form.cleaned_data['province']
+                        if customer_profile_form.cleaned_data['post_code'] != '':
+                            the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+
+                        the_customer.save()
+                else:
+                    raise 
+            except:
+                the_customer = CustomerProfile()
+                the_customer.first_name = first_name
+                the_customer.last_name = last_name
+                the_customer.email = customer_profile_form.cleaned_data['email']
+                the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                the_customer.address = customer_profile_form.cleaned_data['address']
+                the_customer.city = customer_profile_form.cleaned_data['city']
+                the_customer.province = customer_profile_form.cleaned_data['province']
+                the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+
+                the_customer.save()
+            selected_seats_str = request.POST['selected_seats']
+            selected_seats = []
+            if len(selected_seats_str) > 1:
+                selected_seats = selected_seats_str.split(',')
+
+            if len(selected_seats):
+
+                try:
+                    added_seats = ''
+                    seat_count=0
+                    for seat in selected_seats:
+                        seat_count += 1
+                        hall_status[seat]['status'] = 1
+                        hall_status[seat]['order'] = 'boxoffice_pending'
+                        if seat_count==1:
+                            added_seats +=f'{seat}$2' 
+                        else:
+                            added_seats +=f',{seat}$2' 
+                    with open(json_file_path,'w') as jfp:
+                        json.dump(hall_status,jfp)
+                except:
+                    print('Something wrong!')
+
+                boxofficebookingevent = BoxOfficeBookingEvent(
+                customer = the_customer,
+                event = current_event,
+                seats_price = added_seats,
+                )
+                boxofficebookingevent.save()
+                boxofficebookingevent.booking_number = f'{current_event.pk:05d}_{the_customer.pk:05d}_{boxofficebookingevent.pk:06d}'
+                boxofficebookingevent.save()
+
+                return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": boxofficebookingevent.booking_number}))
+            else:
+                return HttpResponse("Non ci sono posti selezionati")
+
+    else:
+        row_hall = Row.objects.all()
+        rows={}
+        row ={}
+        row_label = ''
+        for k, seat in hall_status.items():
+            if  row_label != seat['row']:
+                if row_label != '':
+                    rows[row_label]=row
+                row = {}
+                row_label = seat['row']
+                r_data = Row.objects.get(name = row_label)
+                row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+            row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
+        rows[row_label]=row  # last row closure
+
+        customer_profile_form = CustomerProfileForm()
+
+        context = {
+            'customer_profile_form' : customer_profile_form,
+            'hall_status': hall_status,
+            'rows': rows,
+            'json_file' : json_file_path,
+            'event': current_event,
+        }
+
+        return render(request, 'boxoffice/addbooking_halldetail.html', context)
+    
+
+@login_required(login_url='login')
+def edit_booking(request, boxofficebookingevent_number=None):
+    boxofficebookingevent_edit = BoxOfficeBookingEvent.objects.get(booking_number=boxofficebookingevent_number)
+    customer = boxofficebookingevent_edit.customer
+    event = boxofficebookingevent_edit.event
+
+    cart_items = boxofficebookingevent_edit.seats_dicts()
+    prices = event.prices()
+    taxable:float = 0.0
+    tax:float = event.vat_rate
+    total:float = 0.0
+    for key, item in cart_items.items():
+        item['ingresso_str'] = prices[int(item['ingresso'])]
+        total += float(item['ingresso_str']) 
+    taxable=total/(1+tax/100)
+    
+    if request.method=='POST':
+        # controlla dati cliente
+        form = CustomerShortForm(request.POST)
+        if form.is_valid():
+            if customer.first_name != form.cleaned_data['first_name']:
+                customer.first_name = form.cleaned_data['first_name'] 
+            if customer.last_name != form.cleaned_data['last_name']:
+                customer.last_name = form.cleaned_data['last_name'] 
+            if customer.email != form.cleaned_data['email']:
+                customer.email = form.cleaned_data['email'] 
+            if customer.phone_number != form.cleaned_data['phone_number']:
+                customer.phone_number = form.cleaned_data['phone_number'] 
+            customer.save() 
+
+        return redirect(event_list)
+    # inserire la verifica. controllo della situazione hall json rispetto alla prenotazione cliente boxoffice registrata 
+    else:
+        form = CustomerShortForm({
+            'first_name': customer.first_name,
+            'last_name': customer.last_name,
+            'email': customer.email,
+            'phone_number': customer.phone_number,
+                                   })
+
+        context = {
+            'form' : form,
+            'total': total,
+            'taxable': taxable,
+            'tax': tax,
+            'cart_items' : cart_items,
+            'event' : event,
+            'customer' : customer,
+            'number' : boxofficebookingevent_number,
+        }
+
+
+
+        return render(request, 'boxoffice/booking_edit.html', context)
+
+def plus_ingr_booking(request, number = None, seat= None):
+    item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
+    seats_price = item.seats_price
+
+    find_pattern = re.compile(f'{seat}\$[0-2]')
+    seat_price_old = find_pattern.findall(seats_price)[0]
+    place, price = seat_price_old.split('$')
+    if int(price)<2:
+        price_int = int(price)
+        price_int += 1
+        seat_price_new = f'{seat}${price_int}'
+        change = True
+    else:
+        change= False
+                
+    if change:
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        item.seats_price = seats_price_new
+        item.save()
+
+
+    return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": item.booking_number}))
+
+
+def minus_ingr_booking(request, number = None, seat= None):
+    item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
+    
+    seats_price = item.seats_price
+
+
+    find_pattern = re.compile(f'{seat}\$[0-2]')
+    seat_price_old = find_pattern.findall(seats_price)[0]
+    place, price = seat_price_old.split('$')
+    if int(price)>0:
+        price_int = int(price)
+        price_int -= 1
+        seat_price_new = f'{seat}${price_int}'
+        change = True
+    else:
+        change= False
+                
+    if change:
+        seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        item.seats_price = seats_price_new
+        item.save()
+
+    return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": item.booking_number}))
+
+
+def removeseat_booking(request, number = None, seat= None):
+    item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
+    removed_seat = seat
+    event = item.event
+    user = item.customer
+    # item.delete()
+    # UPDATE the JSON Hall file status
+    json_file_path= os.path.abspath(event.get_json_path())
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+    try:
+        if hall_status[removed_seat]['status'] == 1:
+            hall_status[seat]['status'] = 0 
+            # hall_status[seat]['status'] = 1 # for testing purposes 
+            hall_status[seat]['order'] = '' 
+            with open(json_file_path,'w') as jfp:
+                json.dump(hall_status,jfp)
+    except:
+        print('Something wrong!')
+    
+    # UPDATE Orderevent
+
+    seats_price_old = item.seats_price
+    seat_patterns = {
+        'begin' : re.compile(f"^{removed_seat}\$[0-2],"),
+        'center' : re.compile(f"^.+,{removed_seat}\$[0-2],"),
+        'only' : re.compile(f"^{removed_seat}\$[0-2]$"),
+        'end' : re.compile(f"^.+,{removed_seat}\$[0-2]$")
+    }
+    subs_type = None
+
+    for key , pattern in seat_patterns.items():
+        if bool(re.match(pattern, seats_price_old)):
+            subs_type = key
+
+    if subs_type == 'begin':
+        seats_price_new = re.sub(seat_patterns['begin'],'',seats_price_old)
+        item.seats_price = seats_price_new
+        item.save()
+    elif subs_type == 'center' or subs_type=='end':
+        pattern = re.compile(f',{removed_seat}\$[0-2]')
+        seats_price_new = re.sub(pattern,'',seats_price_old)
+        item.seats_price = seats_price_new
+        item.save()
+    elif subs_type == 'only':
+        item.delete()
+        
+                        
+
+    try:
+        item = BoxOfficeBookingEvent.objects.get(booking_number=number)
+        return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": item.booking_number}))
+    except ObjectDoesNotExist:
+        return redirect(event_list)
+
+def erase_booking(request, customerbooking_id=None):
+    booking = BoxOfficeBookingEvent.objects.get(id = customerbooking_id)
+    current_event = Event.objects.get(id = booking.event.id)
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    seats_booking_str = booking.seats_price
+    seats_booking = seats_booking_str.split(',')
+    seats_changed = []
+
+    for seat in seats_booking:
+        seats_changed.append(seat)
+
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    for seat in seats_changed:
+        key = seat.split('$')[0]
+        print(hall_status[key]['status'])
+        hall_status[key]['status'] = 0
+        hall_status[key]['order'] = ''
+
+
+    with open(json_file_path,'w') as jfp:
+        json.dump(hall_status,jfp)
+
+    booking.delete()
+
+    return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))

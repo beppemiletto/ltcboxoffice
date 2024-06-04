@@ -3,13 +3,13 @@
 {% block content %}
 {%load index%}
 {%load ifinlist%}
-<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0, minimum-scale=0.5, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <section class="section-content padding-y bg">
 <div class="container">
     <div class="card">
         <div class="row no-gutters">
-            <h3>Aggiungi posti alla tua prenotazione {{number}}</h3>
+            <h3>Aggiungi prenotazione per evento {{event.show.shw_title}}</h3>
             <!-- <br>
             <h6>{{json_file}}</h6> -->
 
@@ -80,35 +80,62 @@
     </table>
 </div> <!-- card.// -->
 <!-- ============================ COMPONENT 1 END .// ================================= -->
-<div class="row">
-    <div class="col-sm">
+
+
         <div class="card">
-            <!-- RIGA PER SOLA PRENOTAZIONE PRIMA DI INSERIRE POSSIBILE VENDITA    -->
-            <form method="POST" action="{% url 'hall_detail' event.event_slug number %}">
-            <!-- RIGA PER SOLA VENDITA NATIVA DA RPRISTANARE QUANDO SI INTRODUCE VENDITA  -->
-            <!-- <form method="POST" action="{% url 'add_cart' event.id %}"> -->
+            <div class="row">
+            <div class="col-md-12">
+            <form method="POST" action="{% url 'add_bookings' event.pk %}">
+
                 {% csrf_token %}
+                <div class="form-row">
+                    <div class="form_group col-md-12">
+                        <label >Nome</label>
+                        {{customer_profile_form.first_name}}
+                        <label >Cognome</label>
+                        {{customer_profile_form.last_name}}
+                        <label >Telefono</label>
+                        {{customer_profile_form.phone_number}}
+                        <label >Email</label>
+                        {{customer_profile_form.email}}
+                    </div>
+                </div>
+                <div class="form-row">
+
+                <div class="form-group col-md-12" >
+                    <label> Indirizzo</label>
+                    {{customer_profile_form.address}}
+                        <label >CAP</label>
+                        {{customer_profile_form.post_code}}
+                        <label >Citta'</label>
+                        {{customer_profile_form.city}}
+                        <label >Provincia</label>
+                        {{customer_profile_form.province}}
+                    </div>
+                </div>
+                <div class="form-row">
+
+                <div class="form-group col-md-12">
                 <button type="submit" class="btn btn-primary">Inserisci nel carrello.</button>
-                <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
-                <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
-            </form>
+            </div>
         </div>
-    </div>
-    <div class="col-sm">
-        <div class="card">
-            <a href="{% url 'hall_detail' event.event_slug number %}">
+        <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
+        <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
+            </form>
+            </div>
+            </div>
+
+            <a href="{% url 'add_bookings' event.pk %}">
                     <button type="button" class="btn btn-warning">Azzera i posti (reset)</button>
                 </a>
             </div>
-        </div> 
-        <div class="col-sm">
             <div class="card"> 
-                <a href="{% url 'edit_order' orderevent.pk %}">
+                <a href="{% url 'event_list' %}">
                     <button type="button" class="btn btn-info">Esci dalla selezione posti</button>
                 </a>
         </div>
-  </div>
-</div>
+
+
 </div> <!-- container .//  -->
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->

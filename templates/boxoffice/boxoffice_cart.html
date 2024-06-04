@@ -86,7 +86,7 @@
                 <dl  class="dlist-align">
                     {%if orderevent %}
                         {%for method in payments_methods %}
-                            <a href="{%url 'boxoffice_print' event.id method.id orderevent.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                            <a href="{%url 'boxoffice_print' event_id=event.id method_id=method.id orderevent_id=orderevent.id mode_id=mode%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
                         {%endfor%}
                     {%else%}
                         {%for method in payments_methods %}

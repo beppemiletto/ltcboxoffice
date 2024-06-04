@@ -22,7 +22,7 @@ class Ticket(models.Model):
     number = models.CharField(max_length=25, blank=True, default='')
     seat = models.CharField(max_length=3, editable= False, blank=True, default='C03')
     user = models.ForeignKey(Account, on_delete=models.CASCADE, blank=True, null=True)
-    orderevent = models.ForeignKey(OrderEvent,on_delete=models.CASCADE,editable=False, blank=True, default=20, null= True)
+    orderevent = models.CharField(max_length=25, blank=True, default='', null= True)
     event = models.ForeignKey(Event,on_delete=models.CASCADE,editable=True, blank=True, null= True)
     price = models.IntegerField()
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, blank=True, null=True)

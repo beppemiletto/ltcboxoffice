@@ -29,7 +29,7 @@
   <!-- ========================= SECTION  ========================= -->
 <div class="d-flex aligns-items-center justify-content-center card text-center w-75 mx-auto" >
 
-  <form action="{% url 'sell_booking' orderevent.pk %}" method="post">
+  <form action="{% url 'sell_booking' order=orderevent.pk mode=1%}" method="post">
     {% csrf_token %}
     <div class="row mb-3">
         <div class="col">
