@@ -9,7 +9,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 class OrderEventAdmin(admin.ModelAdmin):
     list_display = ['pk','event','event_id','seats_price', 'user','order', 'expired']
-    list_filter = ['user', 'order', 'event']
+    list_filter = ['event','user', 'order']
 
 class UserEventAdmin(admin.ModelAdmin):
     list_display = ['pk','event','user','ordersevents']

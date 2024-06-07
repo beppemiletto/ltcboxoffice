@@ -39,16 +39,21 @@
         </td>
         <td> 
             <!-- col.// -->
-                            <div class="input-group-sm input-spinner">
-                                <div class="input-group-prepend">
-                                <a href="{%url 'boxoffice_minus_price' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                                </div>
-                                <input type="text" class="form-control"  value="{{item.price}}">
-                                <div class="input-group-append">
-                                <a href="{%url 'boxoffice_plus_price' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                                </div>
-                            </div> <!-- input-group.// -->
-                        </div> <!-- col.// -->
+             {%if event.price_full > 0 %}
+                <div class="input-group-sm input-spinner">
+                    <div class="input-group-prepend">
+                    <a href="{%url 'boxoffice_minus_price' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
+                    </div>
+                    <input type="text" class="form-control"  value="{{item.price}}">
+                    <div class="input-group-append">
+                    <a href="{%url 'boxoffice_plus_price' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
+                    </div>
+                </div> <!-- input-group.// -->
+            {%else%}
+                <div class="text-dark">
+                    <p><small>Gratuito</small></p>
+                </div> 
+            {%endif%}
         </td>
         <td> 
             <div class="price-wrap"> 

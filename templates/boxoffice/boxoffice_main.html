@@ -89,7 +89,9 @@
                                             <td>
                                                 <p><small>{{id}} -
                                                     {%for seat in order%}
+                                                    {% if forloop.counter <= 3 %}
                                                         {{seat}}
+                                                    {%endif%}
                                                     {%endfor%}
                                                 </small></p>
                                             </td>

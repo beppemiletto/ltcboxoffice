@@ -85,7 +85,7 @@
         <div class="card">
             <div class="row">
             <div class="col-md-12">
-            <form method="POST" action="{% url 'add_bookings' event.pk %}">
+            <form method="POST" action="{% url 'add_bookings' event_id=event.pk customer=customer.email %}">
 
                 {% csrf_token %}
                 <div class="form-row">

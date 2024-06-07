@@ -37,7 +37,7 @@ class CustomerProfileForm(forms.Form):
     city = forms.CharField(max_length=100, required=False)
     province = forms.CharField(max_length=20, required=False)
     post_code = forms.CharField(max_length=10, required=False)
-    email     = forms.EmailField(max_length=100, required=False)
+    email     = forms.EmailField(max_length=100, required=True)
     phone_number = forms.CharField(max_length=50, required=False)
 
 

@@ -51,6 +51,7 @@
         </td>
         <td> 
             <!-- col.// -->
+             {%if event.price_full > 0 %}
                             <div class="input-group-sm input-spinner">
                                 <div class="input-group-prepend">
                                 <a href="{%url 'minus_ingresso' number key %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
@@ -60,7 +61,11 @@
                                 <a href="{%url 'plus_ingresso' number key %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
                                 </div>
                             </div> <!-- input-group.// -->
-                        </div> <!-- col.// -->
+                            {%else%}
+                            <div class="text-dark">
+                                <p><small>Gratuito</small></p>
+                            </div>           
+                            {%endif%} 
         </td>
         <td> 
             <div class="price-wrap"> 

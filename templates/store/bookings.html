@@ -44,17 +44,22 @@
             </figure>
         </td>
         <td> 
-            <!-- col.// -->
-                            <div class="input-group-sm input-spinner">
-                                <div class="input-group-prepend">
-                                <a href="{%url 'minus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                                </div>
-                                <input type="text" class="form-control"  value="{{item.ingresso}}">
-                                <div class="input-group-append">
-                                <a href="{%url 'plus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                                </div>
-                            </div> <!-- input-group.// -->
-                        </div> <!-- col.// -->
+                {%if item.event.price_full > 0 %}
+                <div class="input-group-sm input-spinner">
+                    <div class="input-group-prepend">
+                    <a href="{%url 'minus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
+                    </div>
+                    <input type="text" class="form-control"  value="{{item.ingresso}}">
+                    <div class="input-group-append">
+                    <a href="{%url 'plus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
+                    </div>
+                </div>
+                {%else%}
+                <div class="text-dark">
+                    <p><small>Gratuito</small></p>
+                </div>           
+                {%endif%} <!-- input-group.// -->
+            <!-- </div> col.// -->
         </td>
         <td> 
             <div class="price-wrap"> 

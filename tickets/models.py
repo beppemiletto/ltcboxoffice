@@ -34,7 +34,7 @@ class Ticket(models.Model):
 
     def __str__(self) -> str:
         if self.orderevent is not None:
-            return '{} - {} - {} - {}'.format(self.pk,self.orderevent.event.show.shw_title, self.orderevent.event.date_time,self.user.last_name)
+            return '{} - {} - {} - {}'.format(self.pk,self.orderevent, self.event.date_time,self.user.last_name)
         else:
             return ''
     

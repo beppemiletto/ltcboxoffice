@@ -1,7 +1,6 @@
 from django.db import models
 from billboard.models import Show, Venue
 from hall.models import Seat
-from orders.models import OrderEvent
 from django.conf import settings
 import os, json
 
@@ -53,14 +52,37 @@ class Event(models.Model):
                 }
             event_hall[seat.name] = seat_status
         if port_booking:
+            from orders.models import OrderEvent
             orderevents = OrderEvent.objects.filter(event_id=self.pk)
             if orderevents.count() > 0:
                 for orderevent in orderevents:
+                    if orderevent.expired:
+                        state = 5  # order expired so status 5 in event's HALL json file 
+                    else:
+                        state = 1 # order GOOD not expired so status 1 in event's HALL json file 
                     for seat_price in orderevent.seats_price.split(','):
-                        seat, price = seat_price.split('$')
-                        event_hall[seat]['status'] = 1
-                        event_hall[seat]['order'] = orderevent.orderevent_number
+                        if '$' in seat_price:
+                            seat, price = seat_price.split('$')
+                            event_hall[seat]['status'] = state
+                            event_hall[seat]['order'] = orderevent.orderevent_number
+                        else:
+                            print("malformed orderevent seat_price: @ {} the seat_price string {}".format(orderevent.orderevent_number, orderevent.seats_price))
 
+            from boxoffice.models import BoxOfficeBookingEvent
+            bookings = BoxOfficeBookingEvent.objects.filter(event_id=self.pk)
+            if bookings.count() > 0:
+                for booking in bookings:
+                    if booking.expired:
+                        state = 5 # order expired so status 5 in event's HALL json file 
+                    else:
+                        state = 1 # order GOOD not expired so status 1 in event's HALL json file 
+                    for seat_price in booking.seats_price.split(','):
+                        if '$' in seat_price:
+                            seat, price = seat_price.split('$')
+                            event_hall[seat]['status'] = state
+                            event_hall[seat]['order'] = booking.booking_number
+                        else:
+                            print("malformed booking seat_price:  @ {} the seat_price string {}".format(booking.booking_number, booking.seats_price))
 
         if not os.path.exists(json_filename_fullpath):
             print('writing a new:{}'.format(json_filename_fullpath))

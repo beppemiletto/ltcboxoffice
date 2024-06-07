@@ -265,10 +265,14 @@ def boxoffice_cart_cancel(request, event_id):
         hall_status = json.load(jfp)
     for sellingseat in sellingseats:
         if sellingseat.orderevent is not None:
-            orderevent = OrderEvent.objects.get(id=sellingseat.orderevent.pk)
-            if orderevent.expired:
-                orderevent.expired = False
-            orderevent.save()
+            try:
+                orderevent = OrderEvent.objects.get(orderevent_number=sellingseat.orderevent)
+                if orderevent.expired:
+                    orderevent.expired = False
+                orderevent.save()
+            except:
+                print("Orderevent with number {} NOT FOUND PM".format(sellingseat.orderevent))
+                pass
         seat = sellingseat.seat
         # Verify if status is :
         #   1 - booked
@@ -288,8 +292,13 @@ def boxoffice_remove_cart(request, item_id):
     item = get_object_or_404(SellingSeats, id=item_id)
     seat = item.seat
     event = item.event
-    if item.orderevent is not None:
-        seats_old = item.orderevent.seats_price.split(',')
+    if item.orderevent != '':
+        try:
+            item_orderevent = OrderEvent.objects.get(orderevent_number = item.orderevent)
+        except:
+            item_orderevent = BoxOfficeBookingEvent.objects.get(booking_number = item.orderevent)
+
+        seats_old = item_orderevent.seats_price.split(',')
         seats_NEW = ''
         for seat_single in seats_old:
             if seat in seat_single :
@@ -300,8 +309,8 @@ def boxoffice_remove_cart(request, item_id):
                 else: 
                     seats_NEW += f'{seat_single}'
         if len(seats_NEW):
-            item.orderevent.seats_price = seats_NEW
-            item.orderevent.save()
+            item_orderevent.seats_price = seats_NEW
+            item_orderevent.save()
         else:
             item.orderevent.delete()
     item.delete()
@@ -1380,115 +1389,128 @@ def updateorder(main_order_id=None):
     order.save()
     return (total, tax) 
 
-def add_bookings(request, event_id=None):
+def add_bookings(request, event_id=None, customer=None):
     current_event = Event.objects.get(id=event_id)
-    # preparing rows
-    json_file_path= os.path.abspath(current_event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
-    if request.method == 'POST':
-        customer_profile_form = CustomerProfileForm(request.POST)
-        if customer_profile_form.is_valid():
-            email = customer_profile_form.cleaned_data['email']
-            first_name = customer_profile_form.cleaned_data['first_name']
-            last_name = customer_profile_form.cleaned_data['last_name']
-            try:
-                maybe_customers = CustomerProfile.objects.filter(email=email)
-                if maybe_customers.count():
-                    the_customer = maybe_customers.get(email=email)
-                    if the_customer.last_name.lower != last_name.lower:
-                        the_customer.first_name = first_name
-                        the_customer.last_name = last_name
-                        if customer_profile_form.cleaned_data['phone_number'] != '':
-                            the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
-                        if customer_profile_form.cleaned_data['address'] != '':
-                            the_customer.address = customer_profile_form.cleaned_data['address']
-                        if customer_profile_form.cleaned_data['city'] != '':
-                            the_customer.city = customer_profile_form.cleaned_data['city']
-                        if customer_profile_form.cleaned_data['province'] != '':
-                            the_customer.province = customer_profile_form.cleaned_data['province']
-                        if customer_profile_form.cleaned_data['post_code'] != '':
-                            the_customer.post_code = customer_profile_form.cleaned_data['post_code']
-
-                        the_customer.save()
-                else:
-                    raise 
-            except:
-                the_customer = CustomerProfile()
-                the_customer.first_name = first_name
-                the_customer.last_name = last_name
-                the_customer.email = customer_profile_form.cleaned_data['email']
-                the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
-                the_customer.address = customer_profile_form.cleaned_data['address']
-                the_customer.city = customer_profile_form.cleaned_data['city']
-                the_customer.province = customer_profile_form.cleaned_data['province']
-                the_customer.post_code = customer_profile_form.cleaned_data['post_code']
-
-                the_customer.save()
-            selected_seats_str = request.POST['selected_seats']
-            selected_seats = []
-            if len(selected_seats_str) > 1:
-                selected_seats = selected_seats_str.split(',')
-
-            if len(selected_seats):
-
+    if customer is not None:
+        # preparing rows
+        json_file_path= os.path.abspath(current_event.get_json_path())
+        with open(json_file_path,'r') as jfp:
+            hall_status = json.load(jfp)
+        if request.method == 'POST':
+            customer_profile_form = CustomerProfileForm(request.POST)
+            if customer_profile_form.is_valid():
+                email = customer_profile_form.cleaned_data['email']
+                first_name = customer_profile_form.cleaned_data['first_name']
+                last_name = customer_profile_form.cleaned_data['last_name']
                 try:
-                    added_seats = ''
-                    seat_count=0
-                    for seat in selected_seats:
-                        seat_count += 1
-                        hall_status[seat]['status'] = 1
-                        hall_status[seat]['order'] = 'boxoffice_pending'
-                        if seat_count==1:
-                            added_seats +=f'{seat}$2' 
-                        else:
-                            added_seats +=f',{seat}$2' 
-                    with open(json_file_path,'w') as jfp:
-                        json.dump(hall_status,jfp)
+                    maybe_customers = CustomerProfile.objects.filter(email=email)
+                    if maybe_customers.count():
+                        the_customer = maybe_customers.get(email=email)
+                        if the_customer.last_name.lower != last_name.lower:
+                            the_customer.first_name = first_name
+                            the_customer.last_name = last_name
+                            if customer_profile_form.cleaned_data['phone_number'] != '':
+                                the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                            if customer_profile_form.cleaned_data['address'] != '':
+                                the_customer.address = customer_profile_form.cleaned_data['address']
+                            if customer_profile_form.cleaned_data['city'] != '':
+                                the_customer.city = customer_profile_form.cleaned_data['city']
+                            if customer_profile_form.cleaned_data['province'] != '':
+                                the_customer.province = customer_profile_form.cleaned_data['province']
+                            if customer_profile_form.cleaned_data['post_code'] != '':
+                                the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+
+                            the_customer.save()
+                    else:
+                        raise 
                 except:
-                    print('Something wrong!')
+                    the_customer = CustomerProfile()
+                    the_customer.first_name = first_name
+                    the_customer.last_name = last_name
+                    the_customer.email = customer_profile_form.cleaned_data['email']
+                    the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                    the_customer.address = customer_profile_form.cleaned_data['address']
+                    the_customer.city = customer_profile_form.cleaned_data['city']
+                    the_customer.province = customer_profile_form.cleaned_data['province']
+                    the_customer.post_code = customer_profile_form.cleaned_data['post_code']
 
-                boxofficebookingevent = BoxOfficeBookingEvent(
-                customer = the_customer,
-                event = current_event,
-                seats_price = added_seats,
-                )
-                boxofficebookingevent.save()
-                boxofficebookingevent.booking_number = f'{current_event.pk:05d}_{the_customer.pk:05d}_{boxofficebookingevent.pk:06d}'
-                boxofficebookingevent.save()
+                    the_customer.save()
+                selected_seats_str = request.POST['selected_seats']
+                selected_seats = []
+                if len(selected_seats_str) > 1:
+                    selected_seats = selected_seats_str.split(',')
 
-                return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": boxofficebookingevent.booking_number}))
-            else:
-                return HttpResponse("Non ci sono posti selezionati")
+                if len(selected_seats):
 
+                    try:
+                        added_seats = ''
+                        seat_count=0
+                        for seat in selected_seats:
+                            seat_count += 1
+                            hall_status[seat]['status'] = 1
+                            hall_status[seat]['order'] = 'boxoffice_pending'
+                            if seat_count==1:
+                                added_seats +=f'{seat}$2' 
+                            else:
+                                added_seats +=f',{seat}$2' 
+                        with open(json_file_path,'w') as jfp:
+                            json.dump(hall_status,jfp)
+                    except:
+                        print('Something wrong!')
+
+                    boxofficebookingevent = BoxOfficeBookingEvent(
+                    customer = the_customer,
+                    event = current_event,
+                    seats_price = added_seats,
+                    )
+                    boxofficebookingevent.save()
+                    boxofficebookingevent.booking_number = f'{current_event.pk:05d}_{the_customer.pk:05d}_{boxofficebookingevent.pk:06d}'
+                    boxofficebookingevent.save()
+
+                    return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": boxofficebookingevent.booking_number}))
+                else:
+                    return HttpResponse("Non ci sono posti selezionati")
+
+        else:
+            row_hall = Row.objects.all()
+            rows={}
+            row ={}
+            row_label = ''
+            for k, seat in hall_status.items():
+                if  row_label != seat['row']:
+                    if row_label != '':
+                        rows[row_label]=row
+                    row = {}
+                    row_label = seat['row']
+                    r_data = Row.objects.get(name = row_label)
+                    row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
+            rows[row_label]=row  # last row closure
+            customer_obj = CustomerProfile.objects.get(email=customer)
+
+            customer_profile_form = CustomerProfileForm(initial= {
+                'first_name' : customer_obj.first_name ,
+                'last_name' : customer_obj.last_name,
+                'address' : customer_obj.address,
+                'city' : customer_obj.city,
+                'province' : customer_obj.province,
+                'post_code' : customer_obj.post_code,
+                'email' :customer_obj.email,
+                'phone_number':customer_obj.phone_number,
+            })
+
+            context = {
+                'customer_profile_form' : customer_profile_form,
+                'hall_status': hall_status,
+                'rows': rows,
+                'json_file' : json_file_path,
+                'event': current_event,
+                'customer': customer_obj,
+            }
+
+            return render(request, 'boxoffice/addbooking_halldetail.html', context)
     else:
-        row_hall = Row.objects.all()
-        rows={}
-        row ={}
-        row_label = ''
-        for k, seat in hall_status.items():
-            if  row_label != seat['row']:
-                if row_label != '':
-                    rows[row_label]=row
-                row = {}
-                row_label = seat['row']
-                r_data = Row.objects.get(name = row_label)
-                row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
-            row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
-        rows[row_label]=row  # last row closure
-
-        customer_profile_form = CustomerProfileForm()
-
-        context = {
-            'customer_profile_form' : customer_profile_form,
-            'hall_status': hall_status,
-            'rows': rows,
-            'json_file' : json_file_path,
-            'event': current_event,
-        }
-
-        return render(request, 'boxoffice/addbooking_halldetail.html', context)
-    
+        return redirect(reverse('customers', kwargs={"event_id": current_event.pk}))       
 
 @login_required(login_url='login')
 def edit_booking(request, boxofficebookingevent_number=None):
@@ -1676,3 +1698,71 @@ def erase_booking(request, customerbooking_id=None):
     booking.delete()
 
     return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))
+
+def customers(request, event_id=None, customer=None):
+    if customer is not None:
+        if request.method == 'POST':
+            customer_profile_form = CustomerProfileForm(request.POST)
+            if customer_profile_form.is_valid():
+                email = customer_profile_form.cleaned_data['email']
+                first_name = customer_profile_form.cleaned_data['first_name']
+                last_name = customer_profile_form.cleaned_data['last_name']
+                try:
+                    maybe_customers = CustomerProfile.objects.filter(email=email)
+                    if maybe_customers.count():
+                        the_customer = maybe_customers.get(email=email)
+                        if the_customer.last_name.lower != last_name.lower:
+                            the_customer.first_name = first_name
+                            the_customer.last_name = last_name
+                            if customer_profile_form.cleaned_data['phone_number'] != '':
+                                the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                            if customer_profile_form.cleaned_data['address'] != '':
+                                the_customer.address = customer_profile_form.cleaned_data['address']
+                            if customer_profile_form.cleaned_data['city'] != '':
+                                the_customer.city = customer_profile_form.cleaned_data['city']
+                            if customer_profile_form.cleaned_data['province'] != '':
+                                the_customer.province = customer_profile_form.cleaned_data['province']
+                            if customer_profile_form.cleaned_data['post_code'] != '':
+                                the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+
+                            the_customer.save()
+                    else:
+                        raise 
+                except:
+                    the_customer = CustomerProfile()
+                    the_customer.first_name = first_name
+                    the_customer.last_name = last_name
+                    the_customer.email = customer_profile_form.cleaned_data['email']
+                    the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
+                    the_customer.address = customer_profile_form.cleaned_data['address']
+                    the_customer.city = customer_profile_form.cleaned_data['city']
+                    the_customer.province = customer_profile_form.cleaned_data['province']
+                    the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+
+                    the_customer.save()
+            customer_obj = the_customer
+
+        else:
+
+            customer_obj= CustomerProfile.objects.get(email=customer)
+        return redirect(reverse('add_bookings', kwargs={'event_id': event_id, 'customer': customer_obj.email}))
+    else:
+        current_event = Event.objects.get(id=event_id)
+        customers = CustomerProfile.objects.order_by('last_name', 'first_name', 'email')
+
+
+        customers_paginator = Paginator(customers, 10)
+        page = request.GET.get('page')
+        paged_customers = customers_paginator.get_page(page)
+
+        customer_profile_form = CustomerProfileForm()
+
+        context =  {
+            'new_customer': 'new_customer',
+            'customer_profile_form': customer_profile_form,
+            'customers': customers,
+            'paged_customers': paged_customers,
+            'current_event': current_event,
+        }
+
+        return render(request,'boxoffice/customers.html',context)    

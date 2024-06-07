@@ -1,0 +1,153 @@
+{%extends 'boxoffice_base.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+        <div class="row">
+            <aside class="col-lg-12">
+                <div class="card"> <!-- header card card -->
+                    <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="3"> <h4> Evento: </h4>
+                                <figure class="itemside align-items-center">
+                                    <div class="aside"><img src="{{current_event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
+                                    <figcaption class="info"> 
+                                        <a href="#" class="title text-dark"> {{current_event.show.shw_title}}</a>
+                                        <p>  del {{current_event.date_time|date:"D d m Y"}} alle ore {{current_event.date_time|date:"H : i"}}  </p>
+                                    </figcaption>
+                                </figure>
+                            </th>
+                            <th>
+                                <h2>SCELTA CLIENTE REGISTRATO O REGISTRAZIONE NUOVO CLIENTE</h2>
+                            </th>
+                        </thead>
+                    </table>
+                </div> <!-- header card card -->
+            </aside>
+        </div> <!-- row -->
+                <!--  IN CASE nothing to show-->
+        <div class="row">
+            <!-- FIRST TABLE FOR WEB USER ORDERS -->
+            <aside class="col-lg-5">
+                <div class="card">
+                    {%if not paged_customers%}
+                    <H2 class="text-center">Non ci sono Clienti registrati.</H2>
+                    <br>
+                    <div class="text-center">
+                        <a href="{%url 'event_list'%}" class="btn btn-outline-primary"> Torna alla Home in area riservata.</a>
+                        </div>
+                        {%else%}
+        
+                        <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="3"> 
+                                <h4> Clienti in anagrafica</h4>
+                                </th>
+                            <tr class="small text-uppercase">
+                                <th scope="col" width="150">Cognome </th>
+                                <th scope="col" width="150">Nome</th>
+                                <th scope="col" width="150">email</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    {%for customer in paged_customers %}
+                                    <tr>
+                                        <td>
+                                            <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.last_name}}</a>
+                                </td>
+                                <td> 
+                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.first_name}}</a>
+                                </td>
+                                <td> 
+                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.email}}</a>
+                                    </td>
+                                    </tr>
+                                    {%endfor%}
+                                    </tbody>
+                                    </table>
+                                    
+                                    <nav class="mt-4" aria-label="Page navigation sample">
+                                        {%if paged_customers.has_other_pages %}
+                                        
+                                        <ul class="pagination">
+                                            {%if paged_customers.has_previous%}
+                                            <li class="page-item"><a class="page-link" href="?page={{paged_customers.previous_page_number}}">Previous</a></li>
+                                            {%else%}
+                                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                            {%endif%}
+                                            {%for i in paged_customers.paginator.page_range%}
+                                            {%if paged_customers.number == i %}
+                                            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
+                                            {%else%}
+                                            <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
+                                            {%endif%}
+                                            {%endfor%}
+                                            {%if paged_customers.has_next%}
+                                            <li class="page-item"><a class="page-link" href="?page={{paged_customers.next_page_number}}">Next</a></li>
+                                            {%else%}
+                                            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                                            {%endif%}
+                                            </ul>
+                                            {%endif%}
+                                            </nav>
+                                        {%endif%}
+                                            </div> <!-- card.// -->
+            </aside> <!-- aside -->
+
+            <!-- A new customer form -->
+            <aside class="col-lg-6">
+                <form method="POST" action="{% url 'customers' event_id=current_event.pk customer=new_customer %}">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form_group col-md-12">
+                            <label >Nome*</label>
+                            {{customer_profile_form.first_name}}
+                            <label >Cognome*</label>
+                            {{customer_profile_form.last_name}}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form_group col-md-12">
+                            <label >Telefono</label>
+                            {{customer_profile_form.phone_number}}
+                            <label >Email*</label>
+                            {{customer_profile_form.email}}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form_group col-md-12">
+                        <label> Indirizzo</label>
+                        {{customer_profile_form.address}}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form_group col-md-12">
+                            <label >CAP</label>
+                            {{customer_profile_form.post_code}}
+                            <label >Citta'</label>
+                            {{customer_profile_form.city}}
+                        </div>
+                    </div>
+                            <div class="form-row">
+                                <div class="form_group col-md-12">
+                            <label >Provincia</label>
+                            {{customer_profile_form.province}}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                    <button type="submit" class="btn btn-primary">Salva nuovo cliente</button>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <a href="{%url 'boxoffice'%}" class="btn btn-light btn-block">Torna alla home</a>
+                        </div>
+                    </div>
+                </form>
+            </aside> <!-- col.// -->
+        </div> <!-- row.// -->
+    </div> <!-- container .//  -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}
