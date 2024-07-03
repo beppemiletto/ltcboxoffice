@@ -25,6 +25,7 @@
                                             </tr>
                                             <tr>
                                               <th scope="col">Ordine #</th>
+                                              <th scope="col">Evento</th>
                                               <th scope="col">Nome</th>
                                               <th scope="col">Telefono</th>
                                               <th scope="col">Totale Ordine</th>
@@ -33,13 +34,14 @@
                                           </thead>
                                           <tbody>
                                           {% for order in future_orders %}
-                                                <tr>
-                                                  <th scope="row"><a href="{% url 'order_detail_tkts' order.order_number %}">{{ order.order_number }}</th>
-                                                  <td>{{ order.full_name }}</td>
-                                                  <td>{{ order.phone }}</td>
-                                                  <td>$ {{ order.order_total }}</td>
-                                                  <td>{{ order.created_at }}</td>
-                                                </tr>
+                                            <tr>
+                                                <th scope="row"><a href="{% url 'order_detail_tkts' order.order.order_number %}">{{ order.order.order_number }}</th>
+                                                <td>{{ order.event.show.shw_title }}</td>
+                                                <td>{{ order.order.full_name }}</td>
+                                                <td>{{ order.order.phone }}</td>
+                                                <td>$ {{ order.order.order_total }}</td>
+                                                <td>{{ order.order.created_at }}</td>
+                                            </tr>
 
                                           {% endfor %}
                                           </tbody>
@@ -56,21 +58,27 @@
                                             </tr>
                                             <tr>
                                                 <th scope="col">Ordine #</th>
+                                                <th scope="col">Evento</th>
                                                 <th scope="col">Nome</th>
-                                                <th scope="col">Telefono</th>
-                                                <th scope="col">Totale Ordine</th>
+                                                <th scope="col">Utilizzato</th>
                                                 <th scope="col">Data e ora inoltro</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {% for order in past_orders %}
                                             <tr>
-                                                <th scope="row"><a href="{% url 'order_detail' order.order_number %}">{{ order.order_number }}</th>
-                                                    <td>{{ order.full_name }}</td>
-                                                    <td>{{ order.phone }}</td>
-                                                    <td>$ {{ order.order_total }}</td>
-                                                    <td>{{ order.created_at }}</td>
-                                                </tr>
+                                                <th scope="row"><a href="#">{{ order.order.order_number }}</th>
+                                                <td>{{ order.event.show.shw_title }}</td>
+                                                <td>{{ order.order.full_name }}</td>
+                                                <td>
+                                                    {%if order.expired %}
+                                                    Si
+                                                    {%else%}
+                                                    No
+                                                    {%endif%}
+                                                </td>
+                                                <td>{{ order.order.created_at }}</td>
+                                            </tr>
 
                                           {% endfor %}
                                           </tbody>

@@ -54,7 +54,7 @@
                                             <th class="per70 text-center">Spettacolo</th>
                                             <th class="per5 text-center">Evento</th>
                                             <th class="per25 text-center">Posti</th>
-                                            <th class="per25 text-center">Biglietti</th>
+                                            <th class="per25 text-center">Cancella</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -62,8 +62,8 @@
                                         <tr>
                                             <td>{{ item.event.show.shw_title }} </td>
                                             <td class="text-center">{{ item.event.date_time }}</td>
-                                            <td class="text-center"> {{ item.seats_price }} </td>
-                                            <td class="text-center"> <a href="{% url 'print_ticket'%}?order={{item.order.id}}" class="btn btn-success">Biglietti</a></td>
+                                            <td class="text-center"> {{ item.seats_price|truncatechars:25  }} </td>
+                                            <td class="text-center"> <a href="{% url 'delete_order' order_id=item.pk%}" class="btn btn-warning">Cancella</a></td>
                                         </tr>
 
                                         {% endfor %}

@@ -16,7 +16,7 @@ class Event(models.Model):
     sold_out        = models.BooleanField(default=False)
     
     def __str__(self) -> str:
-        return self.show.slug
+        return f'{self.show.slug} - {self.date_time}'
     
     @property
     def get_unique_id(self):

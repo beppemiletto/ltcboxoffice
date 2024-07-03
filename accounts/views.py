@@ -7,11 +7,13 @@ from .forms import RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from carts.models import Cart, CartItem
 from carts.views import _cart_id
-from orders.models import Order, OrderEvent
+from orders.models import Order, OrderEvent, UserEvent
+from store.models import Event
 import random
 import string
 from datetime import datetime
 import pytz
+import json, os
 
 # verification mail
 from django.contrib.sites.shortcuts import get_current_site
@@ -221,9 +223,9 @@ def my_orders(request):
         orders_event = OrderEvent.objects.filter(order=order)
         for order_event in orders_event:
             if order_event.event.date_time > now:
-                future_orders.append(order)
+                future_orders.append(order_event)
             else:
-                past_orders.append(order)
+                past_orders.append(order_event)
 
 
     context = {
@@ -275,6 +277,64 @@ def order_detail(request, order_id):
 
     return render(request, 'accounts/order_details.html', context)
 
+@login_required(login_url='login')
+def delete_order(request, order_id):
+    orderevent = OrderEvent.objects.get(id = order_id)
+    order = Order.objects.get(id=orderevent.order.pk)
+    current_event = Event.objects.get(id = orderevent.event.id)
+    userevents = UserEvent.objects.filter(user = request.user)
+    try:
+        userevent = userevents.get(event = current_event)
+        orders_str = userevent.ordersevents
+        orders_event = orders_str.split(',')
+        orders_event.remove(str(order_id))
+        if len(orders_event) > 0:
+            orders_str = ','.join(orders_event)
+            userevent.ordersevents = orders_str
+            userevent.save()
+        else:
+            orders_str = ''
+            userevent.delete()
+    except:
+        userevent = None
+
+    json_file_path= os.path.abspath(current_event.get_json_path())
+    seats_order_event_str = orderevent.seats_price
+    seats_order_event = seats_order_event_str.split(',')
+    seats_changed = []
+
+    # Order Check - One to One or One to Many?
+    orderevents_count = OrderEvent.objects.filter(order_id= order.pk).count()
+
+    for seat in seats_order_event:
+        seats_changed.append(seat)
+
+
+    with open(json_file_path,'r') as jfp:
+        hall_status = json.load(jfp)
+
+    for seat in seats_changed:
+        key = seat.split('$')[0]
+        hall_status[key]['status'] = 0
+        hall_status[key]['order'] = None
+
+
+
+    with open(json_file_path,'w') as jfp:
+        json.dump(hall_status,jfp)
+
+    orderevent.delete()
+
+    # Delete also the order if was the only orderevent in that order o update the economics
+    # if removed only one o many ordervents
+    if orderevents_count < 2:
+        order.delete()
+    else:
+        updateorder(order.id)
+
+    return redirect(my_orders)
+
+
 # prepara pagina dettaglio ordini con link per scaricare biglietti
 @login_required(login_url='login')
 def order_detail_tkts(request, order_number):
@@ -322,3 +382,23 @@ def change_password(request):
 
 
     return render(request, 'accounts/change_password.html')
+
+def updateorder(main_order_id=None):
+    order= Order.objects.get(id=main_order_id)
+    orderevents = OrderEvent.objects.filter(order_id= main_order_id)
+    total = 0
+    tax = 0
+
+    for orderevent in orderevents:
+        prices = orderevent.event.prices()
+        seats_price = orderevent.seats_price
+        subtotal = 0
+        for seat_price in seats_price.split(','):
+            seat, price = seat_price.split('$')
+            subtotal += prices[int(price)]
+        total += subtotal
+    tax += total * orderevent.event.vat_rate / 100.0
+    order.order_total = total
+    order.tax = tax
+    order.save()
+    return (total, tax) 
