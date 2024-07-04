@@ -321,7 +321,7 @@ def delete_order(request, order_id):
 
 
     with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp)
+        json.dump(hall_status,jfp, indent=2)
 
     orderevent.delete()
 

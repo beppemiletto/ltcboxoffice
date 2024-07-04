@@ -23,7 +23,7 @@ def hall_detail(request, event_slug=None):
             for seat in selected_seats:
                 hall_status[seat]['status'] = 3 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
         except:
             print('Something wrong!')
         return HttpResponse('Il metodo usato era POST e i posti selezionati sono {}'.format(request.POST['selected_seats']))

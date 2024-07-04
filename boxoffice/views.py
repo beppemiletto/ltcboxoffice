@@ -129,7 +129,7 @@ def event(request, event_id):
                     go=True
 
                 with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp)
+                    json.dump(hall_status,jfp, indent=2)
 
             except:
                 print('Something wrong!')
@@ -282,7 +282,7 @@ def boxoffice_cart_cancel(request, event_id):
             hall_status[seat]['status'] = 0 
         sellingseat.delete()
     with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp)
+        json.dump(hall_status,jfp, indent=2)
 
     del sellingseats
     return redirect(reverse('event', kwargs={"event_id": event.pk}))
@@ -327,7 +327,7 @@ def boxoffice_remove_cart(request, item_id):
 
             hall_status[seat]['status'] = 0 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
     except FileNotFoundError:
         print('Something wrong!')
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": event.pk}))
@@ -549,7 +549,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
 
 
     with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp)
+        json.dump(hall_status,jfp, indent=2)
    
 
     response = close_transaction(request, context)
@@ -674,7 +674,7 @@ def change_bookings(request, event_id=None):
                     go=True
 
                 with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp)
+                    json.dump(hall_status,jfp, indent=2)
 
             except:
                 print('Something wrong!')
@@ -890,7 +890,7 @@ def erase_order(request, userorder_id, order_id):
             ticket.save()
 
     with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp)
+        json.dump(hall_status,jfp, indent=2)
 
     orderevent.delete()
 
@@ -1081,7 +1081,7 @@ def remove_seat(request, number = None, seat= None):
             # hall_status[seat]['status'] = 1 # for testing purposes 
             hall_status[seat]['order'] = '' 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
     except:
         print('Something wrong!')
     
@@ -1249,7 +1249,7 @@ def hall_detail(request, event_slug=None, number=None):
                 hall_status[seat]['order'] = number
                 added_seats +=f',{seat}$2' 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
         except:
             print('Something wrong!')
 
@@ -1454,7 +1454,7 @@ def add_bookings(request, event_id=None, customer=None):
                             else:
                                 added_seats +=f',{seat}$2' 
                         with open(json_file_path,'w') as jfp:
-                            json.dump(hall_status,jfp)
+                            json.dump(hall_status,jfp, indent=2)
                     except:
                         print('Something wrong!')
 
@@ -1632,7 +1632,7 @@ def removeseat_booking(request, number = None, seat= None):
             # hall_status[seat]['status'] = 1 # for testing purposes 
             hall_status[seat]['order'] = '' 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
     except:
         print('Something wrong!')
     
@@ -1693,7 +1693,7 @@ def erase_booking(request, customerbooking_id=None):
 
 
     with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp)
+        json.dump(hall_status,jfp, indent=2)
 
     booking.delete()
 

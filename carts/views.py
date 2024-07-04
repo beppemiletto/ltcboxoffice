@@ -34,7 +34,7 @@ def add_cart(request, event_id):
                 for seat in selected_seats:
                     hall_status[seat]['status'] = 4 
                 with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp)
+                    json.dump(hall_status,jfp, indent=2)
             except:
                 print('Something wrong!')
         # return HttpResponse("The method is POST and we got {} as selected seats".format(all_data))
@@ -83,7 +83,7 @@ def remove_cart(request, item_id):
         if hall_status[seat]['status'] == 3 or hall_status[seat]['status'] == 4:
             hall_status[seat]['status'] = 0 
             with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp)
+                json.dump(hall_status,jfp, indent=2)
     except:
         print('Something wrong!')
     return redirect('cart')
