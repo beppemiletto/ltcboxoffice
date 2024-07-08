@@ -16,9 +16,12 @@ def store(request, section_slug=None):
     shows = None
     if section_slug != None:
         sections = get_object_or_404(Section, slug=section_slug)
+        keyword = sections.name
         shows = Show.objects.filter(section=sections,  is_in_billboard=True, is_active=True)
+
     else:
         shows = Show.objects.all().filter(is_in_billboard=True, is_active=True).order_by('id')
+        keyword=None
     billboard_list = []
 
     max_date_time = datetime.now()+relativedelta(hours=18)
@@ -58,6 +61,7 @@ def store(request, section_slug=None):
     context = {
         'billboard': paged_shows,
         'show_count': show_count,
+        'keyword': keyword,
     }
     return render(request, 'store/store.html', context)
 

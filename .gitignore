@@ -177,3 +177,4 @@ printer_buffer.bin
 
 ltcboxoffice/static/images/
 static/images/barcode_img*
+hall_jsons/*.json
