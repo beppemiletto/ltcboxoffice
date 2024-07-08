@@ -104,6 +104,7 @@ def select_seats(request, section_slug, show_slug, event_slug):
 def search(request):
     if 'keyword' in request.GET :
         keyword = request.GET['keyword']
+        print(f'{keyword}')
         if keyword:
             shows = Show.objects.filter(Q(description__icontains=keyword) | Q(shw_title__icontains=keyword))
             billboard_list = []
