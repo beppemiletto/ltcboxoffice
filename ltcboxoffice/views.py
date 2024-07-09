@@ -57,6 +57,7 @@ def home(request):
         now = datetime.now()
         year = now.year
         month = now.month
+        # month =1 # for test only to be removed
         if month==1 or month==2:
             season = 'Inverno'
             message = "La stagione {}/{} dovrebbe essere in corso. Se non ci sono spettacoli prenotabili è per via di qualche disguido. Ci scusiamo con il pubblico.".format(year-1,year)
@@ -70,6 +71,7 @@ def home(request):
         elif month==9 or month==10 or month==11  or month==12:
             season = 'Autunno'
             message = "La stagione {}/{} dovrebbe essere in corso. Se non ci sono spettacoli prenotabili è per via di qualche disguido. Ci scusiamo con il pubblico.".format(year,year+1)
+
 
         context = {
             'season' : season,
