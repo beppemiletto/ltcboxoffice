@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
 from billboard.models import Show, Section
 from .models import Event
 from datetime import datetime
@@ -87,14 +88,15 @@ def show_detail(request, section_slug, show_slug):
                 prices = 'Intero: € {} - Ridotto € {}'.format(price_full, price_reduced)
             except TypeError:
                 prices = '{}'.format(event.price_full)
-
     
+    next_url = request.get_full_path()
+  
 
     context = {
         'events': events,
         'show': show,
         'prices': prices,
-
+        'next_url': next_url,
     }
     return render(request, 'store/show_detail.html', context)
 
@@ -154,4 +156,44 @@ def search(request):
             return render(request, 'store/store.html', context)
         else:
             return HttpResponse('Non è stata fornita nessuna chiave di ricerca.')
+
+        
+@login_required(login_url= 'login')
+def show_detail_showcode(request, showcode=None):
+    
+    try:
+        show = Show.objects.get(shw_code=showcode)
+        section_slug = show.section.slug
+        show_slug = show.slug
+    except Exception as e:
+        raise e
+
+
+    # section = get_object_or_404(Section, slug=section_slug)
+    # show = get_object_or_404(Show, slug=show_slug)
+    max_date_time = datetime.now()+relativedelta(hours=18)
+    max_date_time = max_date_time.replace(tzinfo=pytz.utc)  
+    events = Event.objects.filter(show=show,date_time__gte=max_date_time)
+    events_number = events.count()
+    prices = ''
+    if events_number > 0:
+        for event in events:
+            try: 
+                price_full = round(float(event.price_full),2)
+                price_reduced = round(float(event.price_reduced),2)
+                prices = 'Intero: € {} - Ridotto € {}'.format(price_full, price_reduced)
+            except TypeError:
+                prices = '{}'.format(event.price_full)
+
+    
+    next_url = f'/store/section/{section_slug}/{show_slug}/'
+
+    context = {
+        'events': events,
+        'show': show,
+        'prices': prices,
+        'next_url': next_url,
+
+    }
+    return render(request, 'store/show_detail.html', context)
 

@@ -165,11 +165,13 @@ MESSAGE_TAGS = {
 
 
 #SMTP settings
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp.teatrocambiano.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'beppe.miletto@gmail.com'
-EMAIL_HOST_PASSWORD= 'hlgptkhxvqseiece' 
-EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ltcboxoffice@teatrocambiano.com'
+EMAIL_HOST_PASSWORD= '2024Boxlabo?' 
+EMAIL_USE_TLS = False
+
+DEFAULT_FROM_EMAIL = 'ltcboxoffice@teatrocambiano.com'
 
 
 #CELERY SETTINGS

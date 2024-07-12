@@ -536,8 +536,16 @@ def booking_complete(request, newContext={}):
     transID = newContext['data']['transID']
     email_data = newContext['data']['email_data']
     for number, orderevent in email_data.items():
-        newtarget:os.path = os.path.join(os.getcwd(),os.getcwd().split('/')[-1],'static/images',orderevent['barcode'])
-        os.rename(orderevent['barcode_path'],newtarget)
+        newtarget:os.path = os.path.join(os.getcwd(),'ltcboxoffice/static/images',orderevent['barcode'])
+        if newtarget != orderevent['barcode_path']:
+            file_available: bool = False
+            # cnt_idle_cycle = 0
+            while not file_available:
+                # cnt_idle_cycle +=1
+                file_available: bool = os.path.isfile(orderevent['barcode_path']) and os.access(orderevent['barcode_path'], os.R_OK)
+
+            # print(f'idle for {cnt_idle_cycle} cycles')
+            os.rename(orderevent['barcode_path'],newtarget)
         orderevent_object = OrderEvent.objects.get(orderevent_number=number)
         orderevent_object.barcode_path = newtarget
         orderevent_object.save()
