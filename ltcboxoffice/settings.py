@@ -187,3 +187,8 @@ CELERY_BEAT_SCHEDULE = {
 'schedule': crontab(minute='*/5')
 }
 }
+
+#SESSION DURATION EXPIRE TIME
+
+SESSION_COOKIE_AGE = 3600 # 60 minute
+SESSION_SAVE_EVERY_REQUEST = True # users are logged out if inactive

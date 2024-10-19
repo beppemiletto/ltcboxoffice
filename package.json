@@ -2,6 +2,7 @@
   "dependencies": {
     "bootstrap": "^5.2.3",
     "jquery": "^3.6.4",
+    "jsprintmanager": "^7.0.1",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

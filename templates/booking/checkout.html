@@ -14,7 +14,7 @@
                         <div class="card-body">
                             <h4 class="card-title mb-4">Indirizzo invio prenotazione</h4>
                             <!-- place_order -->
-                            <form action="{% url 'record_booking' %}" method="post"> 
+                            <form action="{% url 'record_booking' %}" method="post" onsubmit="submit.disabled = true; return true;"> 
                                 {% csrf_token %}
                                 <div class="row">
                                     <div class="col">
@@ -175,7 +175,7 @@
                                     {%else%}
                                     <td>
 
-                                        <button type="submit" name="submit" class="btn btn-primary btn-block">Prenota. </button>
+                                        <button type="submit" name="submit" id="prenota-button" class="btn btn-primary btn-block" >Prenota. </button>
                                     </td>
                                     <td>
 
@@ -198,6 +198,13 @@
 
         </div> <!-- container .//  -->
     </section>
+
+    <script>
+        function disable_on_click() {
+          var element = document.getElementById('prenota-button');
+          element.setAttribute("disabled", "disabled");
+        }
+        </script>
     <!-- ========================= SECTION CONTENT END// ========================= -->
 
 {% endblock %}

@@ -20,7 +20,6 @@ from orders.models import OrderEvent, UserEvent, Order, Payment
 from tickets.models import Ticket
 from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
-from accounts.models import Account
 from hall.models import Row
 from billboard.models import Show
 import time
