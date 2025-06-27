@@ -1,0 +1,115 @@
+{%extends 'boxoffice_base.html'%}
+{%load static%}
+{%load index%}
+
+{% block content%}
+<section class="section-content padding-y bg">
+    <div class="container">
+        <div class="row">
+            <aside class="col-lg-12">
+                <div class="card"> <!-- header card card -->
+                    <table class="table table-border small">
+                        <thead class="text-dark">
+                            <th class="header" scope="colgroup" colspan="3"> <h4> Evento: </h4>
+                                <figure class="itemside align-items-center">
+                                    <div class="aside"><img src="{{current_event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
+                                    <figcaption class="info"> 
+                                        <a href="#" class="title text-dark"> {{current_event.show.shw_title}}</a>
+                                        <p>  del {{current_event.date_time|date:"D d m Y"}} alle ore {{current_event.date_time|date:"H : i"}}  </p>
+                                    </figcaption>
+                                </figure>
+                            </th>
+                            <th>
+                                <h4>{{new_customer.email}} già trovato</h4>
+                                <h5>Ho trovato un cliente già registrato con la stessa email. 
+                                    Non posso registrare due clienti con la stessa e-mail.</h5>
+                            </th>
+                        </thead>
+                    </table>
+                </div> <!-- header card card -->
+            </aside>
+        </div> <!-- row -->
+                <!--  IN CASE nothing to show-->
+        <div class="row">
+            <!-- FIRST TABLE FOR WEB USER ORDERS -->
+            <aside class="col-lg-5">
+                <div class="card">
+                    <H4 class="text-center">Nuovi dati immessi per il cliente.</H4>
+                    <table>
+                        <tr>
+                            <td>Nome:</td>
+                            <td>{{new_customer.first_name}}</td>
+                            <td>Cognome:</td>
+                            <td>{{new_customer.last_name}}</td>
+                        </tr>
+                        <tr>
+                            <td>e-mail:</td>
+                            <td>{{new_customer.email}}</td>
+                            <td>Telefono:</td>
+                            <td>{{new_customer.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">via:</td>
+                            <td colspan="3 ">{{new_customer.address}}</td>
+                        </tr>
+                                                <tr>
+                            <td>Città:</td>
+                            <td>{{new_customer.city}}</td>
+                            <td>CAP e Provincia:</td>
+                            <td>{{new_customer.post_code}} - {{new_customer.province}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </aside> <!-- aside -->
+
+            <!-- A new customer form -->
+            <aside class="col-lg-6">
+                <div class="card">
+                    <H4 class="text-center">Dati cliente già registrati a sistema.</H4>
+                    <table>
+                        <tr>
+                            <td>Nome:</td>
+                            <td>{{already_customer.first_name}}</td>
+                            <td>Cognome:</td>
+                            <td>{{already_customer.last_name}}</td>
+                        </tr>
+                        <tr>
+                            <td>e-mail:</td>
+                            <td>{{already_customer.email}}</td>
+                            <td>Telefono:</td>
+                            <td>{{already_customer.phone_number}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">via:</td>
+                            <td colspan="3 ">{{already_customer.address}}</td>
+                        </tr>
+                                                <tr>
+                            <td>Città:</td>
+                            <td>{{already_customer.city}}</td>
+                            <td>CAP e Provincia:</td>
+                            <td>{{already_customer.post_code}} - {{already_customer.province}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </aside> <!-- col.// -->
+        </div> <!-- row.// -->
+<div row>
+                    <form method="POST" action="{% url 'customer_new_already' event_id=current_event.pk customer=already_customer.pk %}">
+                    {% csrf_token %}
+                        <div class="form-group col-md-6">
+                    <button type="submit" class="btn btn-primary">Salva i nuovi dati del cliente</button>
+                        </div>
+                    
+                        <div class="form-group col-md-6">
+                            <a href="{% url 'customer_new_already' event_id=current_event.pk customer=already_customer.pk %}" class="btn btn-light btn-block">Continua con i dati già registrati</a>
+                        <div class="form-group col-md-6">
+                            <a href="{% url 'boxoffice' %}" class="btn btn-light btn-block">Torna alla home</a>
+                        </div>
+                    </div>
+                </form>
+
+</div>
+    </div> <!-- container .//  -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+{%endblock%}

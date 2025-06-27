@@ -98,6 +98,20 @@
 
             <!-- A new customer form -->
             <aside class="col-lg-6">
+                <div class="row">
+                    <h3>INSERISCI NUOVO CLIENTE</h3>
+                    <p>Se non hai trovato il cliente nell'elenco a sinistra, qui puoi inserire un nuovo cliente. I dati obbligatori sono il Nome, 
+                        il Cognome e l'indirizzo email.</p>
+                        <h6> Se inserisci un indirizzo email già registrato ti verrà mostrato un messaggio di scelta / errore. Altrimenti verrai indirizzato 
+                            alla scelta dei posti.
+                        </h6>
+                        <br>
+                        <br>
+                        <br>
+                </div>
+                <div row>
+                    
+                </div>
                 <form method="POST" action="{% url 'customers' event_id=current_event.pk customer=new_customer %}">
                     {% csrf_token %}
                     <div class="form-row">

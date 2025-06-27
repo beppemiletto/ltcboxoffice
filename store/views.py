@@ -10,8 +10,6 @@ from dateutil.relativedelta import *
 import pytz
 
 
-
-# Create your views here.
 def store(request, section_slug=None):
     sections = None
     shows = None
@@ -75,7 +73,7 @@ def show_detail(request, section_slug, show_slug):
 
     # section = get_object_or_404(Section, slug=section_slug)
     # show = get_object_or_404(Show, slug=show_slug)
-    max_date_time = datetime.now()+relativedelta(hours=18)
+    max_date_time = datetime.now()+relativedelta(hours=6)
     max_date_time = max_date_time.replace(tzinfo=pytz.utc)  
     events = Event.objects.filter(show=show,date_time__gte=max_date_time)
     events_number = events.count()

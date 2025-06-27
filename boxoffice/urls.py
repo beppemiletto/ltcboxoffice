@@ -15,6 +15,7 @@ urlpatterns = [
     path('boxoffice_print/<int:event_id>/<int:method_id>/<int:orderevent_id>/<str:mode_id>/', views.boxoffice_print, name='boxoffice_print'),
     path('close_transaction/<int:event_id>/', views.close_transaction, name='close_transaction'),
     path('change_bookings/<int:event_id>/', views.change_bookings, name='change_bookings'),
+    path('customer_new_already/<int:event_id>/<str:customer>/', views.customer_new_already, name='customer_new_already'),
     path('customers/<int:event_id>/<str:customer>/', views.customers, name='customers'),
     path('customers/<int:event_id>/', views.customers, name='customers'),
     path('add_bookings/<int:event_id>/<str:customer>/', views.add_bookings, name='add_bookings'),

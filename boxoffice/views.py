@@ -613,7 +613,7 @@ def event_list(request):
         for event in events:
             td = event.date_time - now
             # print(event.pk, td)
-            if td.days >= 0:
+            if td.days >= -15:
                 eventlist.append(event)
         
         context = {
@@ -1703,6 +1703,7 @@ def erase_booking(request, customerbooking_id=None):
     return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))
 
 def customers(request, event_id=None, customer=None):
+    current_event = Event.objects.get(id=event_id)    
     if customer is not None:
         if request.method == 'POST':
             customer_profile_form = CustomerProfileForm(request.POST)
@@ -1710,27 +1711,57 @@ def customers(request, event_id=None, customer=None):
                 email = customer_profile_form.cleaned_data['email']
                 first_name = customer_profile_form.cleaned_data['first_name']
                 last_name = customer_profile_form.cleaned_data['last_name']
+                if customer_profile_form.cleaned_data['phone_number'] != '':
+                    phone_number = customer_profile_form.cleaned_data['phone_number']
+                if customer_profile_form.cleaned_data['address'] != '':
+                    address = customer_profile_form.cleaned_data['address']
+                if customer_profile_form.cleaned_data['city'] != '':
+                    city = customer_profile_form.cleaned_data['city']
+                if customer_profile_form.cleaned_data['province'] != '':
+                    province = customer_profile_form.cleaned_data['province']
+                if customer_profile_form.cleaned_data['post_code'] != '':
+                    post_code = customer_profile_form.cleaned_data['post_code']
                 try:
                     maybe_customers = CustomerProfile.objects.filter(email=email)
-                    if maybe_customers.count():
-                        the_customer = maybe_customers.get(email=email)
-                        if the_customer.last_name.lower != last_name.lower:
-                            the_customer.first_name = first_name
-                            the_customer.last_name = last_name
-                            if customer_profile_form.cleaned_data['phone_number'] != '':
-                                the_customer.phone_number = customer_profile_form.cleaned_data['phone_number']
-                            if customer_profile_form.cleaned_data['address'] != '':
-                                the_customer.address = customer_profile_form.cleaned_data['address']
-                            if customer_profile_form.cleaned_data['city'] != '':
-                                the_customer.city = customer_profile_form.cleaned_data['city']
-                            if customer_profile_form.cleaned_data['province'] != '':
-                                the_customer.province = customer_profile_form.cleaned_data['province']
-                            if customer_profile_form.cleaned_data['post_code'] != '':
-                                the_customer.post_code = customer_profile_form.cleaned_data['post_code']
+                    if maybe_customers.count() > 1:
+                        pass
+                    elif maybe_customers.count() > 0:
+                        the_customer_already = maybe_customers.get(email=email)
 
-                            the_customer.save()
+                        the_customer_new = CustomerProfile()
+                        the_customer_new_dict= {}
+                        the_customer_new.first_name = first_name
+                        the_customer_new_dict['first_name'] = first_name
+                        the_customer_new.last_name = last_name
+                        the_customer_new_dict['last_name'] = last_name
+                        the_customer_new.email = email
+                        the_customer_new_dict['email'] = email
+                        the_customer_new.phone_number = customer_profile_form.cleaned_data['phone_number']
+                        the_customer_new_dict['phone_number'] = customer_profile_form.cleaned_data['phone_number']
+                        the_customer_new.address = customer_profile_form.cleaned_data['address']
+                        the_customer_new_dict['address']  = customer_profile_form.cleaned_data['address']
+                        the_customer_new.city = customer_profile_form.cleaned_data['city']
+                        the_customer_new_dict['city'] = customer_profile_form.cleaned_data['city']
+                        the_customer_new.province = customer_profile_form.cleaned_data['province']
+                        the_customer_new_dict['province'] = customer_profile_form.cleaned_data['province']
+                        the_customer_new.post_code = customer_profile_form.cleaned_data['post_code']
+                        the_customer_new_dict['post_code'] = customer_profile_form.cleaned_data['post_code']
+
+                        # save a JSON file to keep new data wothout passing them to and back from a template.
+
+                        new_data_json = "new_data_customer.json"
+                        with open(new_data_json,'w') as jfp:
+                            json.dump(the_customer_new_dict,jfp, indent=2)
+
+                        context =  {
+                            'new_customer': the_customer_new,
+                            'already_customer': the_customer_already,
+                            'current_event': current_event,
+                        }
+                        return render(request,'boxoffice/customer_already_recorded.html',context) 
+
                     else:
-                        raise 
+                        raise
                 except:
                     the_customer = CustomerProfile()
                     the_customer.first_name = first_name
@@ -1743,14 +1774,16 @@ def customers(request, event_id=None, customer=None):
                     the_customer.post_code = customer_profile_form.cleaned_data['post_code']
 
                     the_customer.save()
+
             customer_obj = the_customer
+
 
         else:
 
             customer_obj= CustomerProfile.objects.get(email=customer)
         return redirect(reverse('add_bookings', kwargs={'event_id': event_id, 'customer': customer_obj.email}))
     else:
-        current_event = Event.objects.get(id=event_id)
+
         customers = CustomerProfile.objects.order_by('last_name', 'first_name', 'email')
 
 
@@ -1769,6 +1802,31 @@ def customers(request, event_id=None, customer=None):
         }
 
         return render(request,'boxoffice/customers.html',context)    
+
+def customer_new_already(request, event_id=None, customer=None):
+    current_event = Event.objects.get(id=event_id)    
+    customer_already = CustomerProfile.objects.get(id=int(customer))
+    if request.method == 'POST':
+        # read a JSON file to keep new data wothout passing them to and back from a template.
+        new_data_json = "new_data_customer.json"
+        with open(new_data_json,'r') as jfp:
+            customer_new_dict = json.load(jfp)
+        customer_already.first_name = customer_new_dict['first_name']
+        customer_already.last_name = customer_new_dict['last_name']
+        customer_already.email = customer_new_dict['email']
+        customer_already.phone_number =  customer_new_dict['phone_number']
+        customer_already.address =  customer_new_dict['address']
+        customer_already.city =  customer_new_dict['city']
+        customer_already.province =  customer_new_dict['province']
+        customer_already.post_code =  customer_new_dict['post_code']
+
+        customer_already.save()
+
+        del customer_new_dict
+
+    return redirect(reverse('add_bookings', kwargs={'event_id': event_id, 'customer': customer_already.email}))
+
+
 
 def list_bookings(request, event_id=None, customer=None):
     current_event = Event.objects.get(id=event_id)
