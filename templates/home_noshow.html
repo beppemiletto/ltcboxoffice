@@ -1,26 +1,93 @@
-{% extends 'base.html' %}
+{% extends 'no_show_base.html' %}
 {% load static %}
 {% block content %}
 <!-- ========================= SECTION MAIN ========================= -->
-<section class="section-intro padding-y-sm">
-<div class="container">
 
-<div class="intro-banner-wrap">
-	<img src="{% static 'images/banners/banner-LTCBoxOffice_1200x300.png' %}" class="img-fluid rounded">
-</div>
+    
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="curtain"></div>
+    
+    <div class="container">
+        <!-- Logo del Laboratorio Teatrale -->
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiBmaWxsPSJ0cmFuc3BhcmVudCIvPgo8dGV4dCB4PSIzMDAiIHk9IjIwMCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjQ4IiBmaWxsPSIjZDRhZjM3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudGVyIj5MQUJPUkFUT1JJTyBURUFUUkFMRTwvdGV4dD4KPHRleHQgeD0iMzAwIiB5PSIyNTAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2Q0YWYzNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRlciI+Q0FNQklBTk88L3RleHQ+Cjwvc3ZnPgo=" 
+             alt="Laboratorio Teatrale di Cambiano" 
+             class="theater-logo" />
+        
+        <h1 class="main-title">Teatro di Cambiano</h1>
+        <p class="subtitle">Teatro Comunale</p>
+        
+        <div class="notice-card">
+            <div class="closure-notice">
+                Il Teatro di Cambiano è <strong>chiuso</strong> durante i mesi di:
+            </div>
+            
+            <div class="months">LUGLIO e AGOSTO</div>
+            
+            <div class="preparation-info">
+                <p>La prossima stagione teatrale è attualmente in fase di preparazione da parte dell'<span class="association-name">Associazione Laboratorio Teatrale di Cambiano A.P.S.</span>, che gestisce il Teatro Comunale in convenzione con il Comune di Cambiano.</p>
+            </div>
+            
+            <div class="contact-info">
+                <p style="color: #ffffff; margin-bottom: 1rem;">Per informazioni e prenotazioni:</p>
+                <a href="https://prenota.teatrocambiano.com" class="website-link">
+                    prenota.teatrocambiano.com
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Ci rivediamo a settembre con una nuova entusiasmante stagione!</p>
+        </div>
+    </div>
 
-</div> <!-- container //  -->
-</section>
+    <script>
+        // Create animated stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const numStars = 50;
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Add subtle parallax effect
+        function addParallaxEffect() {
+            document.addEventListener('mousemove', (e) => {
+                const stars = document.querySelectorAll('.star');
+                const x = e.clientX / window.innerWidth;
+                const y = e.clientY / window.innerHeight;
+                
+                stars.forEach((star, index) => {
+                    const speed = (index % 3 + 1) * 0.5;
+                    const xOffset = (x - 0.5) * speed;
+                    const yOffset = (y - 0.5) * speed;
+                    
+                    star.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+                });
+            });
+        }
+
+        // Initialize effects
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            addParallaxEffect();
+        });
+    </script>
+</body>
+</html>
 <!-- ========================= SECTION MAIN END// ========================= -->
 
 <!-- ========================= SECTION  ========================= -->
 <section class="section-name padding-y-sm">
 <div class="container">
-
-<header class="section-heading">
-	<h1 class="section-title">{{season}} {{year}}</h1>
-	<h2 class="section-title">Nessun spettacolo prenotabile.</h2>
-</header><!-- sect-heading -->
 
 	
 <div class="row">

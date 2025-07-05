@@ -25,7 +25,7 @@ def home(request):
                     if time_gap > zero_timedelta and time_gap < evidence_timedelta:
                         evidence_timedelta = time_gap
                         evidence_show = show
-                        evidence_show_url = show.get_url
+                        evidence_show_url = show.get_url()
                         date_start = event.date_time
                         evidence_show_found = True
 
@@ -36,7 +36,7 @@ def home(request):
                 if time_gap < evidence_timedelta:
                     evidence_timedelta = time_gap
                     evidence_show = show
-                    evidence_show_url = show.get_url
+                    evidence_show_url = show.get_url()
                     date_start = event.date_time
                 
         billboard[evidence_show.pk]= {

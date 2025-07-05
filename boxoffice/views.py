@@ -44,9 +44,10 @@ def boxoffice(request):
         time_diff = timedelta(
             days= 365
         )
-
+        next_close_event = None
         for event in events:
             td = event.date_time - now
+
             # print(event.pk, td)
             if td.days >= 0 and td<time_diff:
                 time_diff = td
@@ -274,7 +275,13 @@ def boxoffice_cart_cancel(request, event_id):
                     orderevent.expired = False
                 orderevent.save()
             except:
-                print("Orderevent with number {} NOT FOUND PM".format(sellingseat.orderevent))
+                try:
+                    orderevent = BoxOfficeBookingEvent.objects.get(booking_number=sellingseat.orderevent)
+                    if orderevent.expired:
+                        orderevent.expired = False
+                    orderevent.save()
+                except:
+                    print("Orderevent with number {} NOT FOUND PM".format(sellingseat.orderevent))
                 pass
         seat = sellingseat.seat
         # Verify if status is :
@@ -1299,7 +1306,7 @@ def send_updatemail(request, number):
     # Send order update email to customer
    # prepare a dictionary for email data
     email_data = {}
-    orderevent = OrderEvent.objects.get(orderevent_number=number)
+    orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
     event= orderevent.event
 
     prices = event.prices()
@@ -1310,12 +1317,10 @@ def send_updatemail(request, number):
 
         booked_seats[seat] = prices[int(price)]
 
-    email_data[orderevent.orderevent_number] = {
+    email_data[orderevent.booking_number] = {
     'show':orderevent.event.show.shw_title,
     'datetime': orderevent.event.date_time,
-    'seats': booked_seats,
-    'barcode': orderevent.barcode_path.split('/')[-1],
-    'barcode_path': orderevent.barcode_path 
+    'seats': booked_seats
     }
 
 
@@ -1327,16 +1332,14 @@ def send_updatemail(request, number):
 
     current_site = get_current_site(request)
 
-    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata aggiornata!'
+    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata registrata!'
     email_context = {
         'count': orderevents_count,
-        'user': orderevent.user,
-        'userevent': orderevent.user,
-        'order': orderevent.order,
+        'customer': orderevent.customer,
         'email_data' : email_data,
     }
     message = render_to_string('boxoffice/order_changed_email.html', email_context).strip()
-    to_email = [orderevent.user.email,]
+    to_email = [orderevent.customer.email,]
     # send_email = EmailMessage(mail_subject, message, to=[to_email])
     send_email = EmailMultiAlternatives(
         mail_subject,
@@ -1355,20 +1358,69 @@ def send_updatemail(request, number):
         # img.add_header('Content-Disposition', 'inline', filename=image)
     send_email.attach(img)
 
-    for orderevent_number, orderevent_data in email_data.items():
-        file_path:os.path = orderevent_data['barcode_path']
-    #this name must be same as in the htmltemplate being only a placeholder
-        barcode:str = orderevent_data['barcode']
+    send_email.send()
 
-        with open(file_path,'rb') as fip:
-            brc = MIMEImage(fip.read(),_subtype='png')
-            brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
-            # img.add_header('Content-Disposition', 'inline', filename=image)
-        send_email.attach(brc)
+    current_event=orderevent.event
+
+    return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))
+
+
+def send_cancelemail(request, number):
+    # Send order update email to customer
+   # prepare a dictionary for email data
+    email_data = {}
+    orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
+    event= orderevent.event
+
+    prices = event.prices()
+    booked_seats = {}
+
+    for item in orderevent.seats_price.split(','):
+        seat, price = item.split('$')
+
+        booked_seats[seat] = prices[int(price)]
+
+    email_data[orderevent.booking_number] = {
+    'show':orderevent.event.show.shw_title,
+    'datetime': orderevent.event.date_time,
+    'seats': booked_seats
+    }
+
+    # Send order cancel email to customer 
+
+    current_site = get_current_site(request)
+
+    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata cancellata!'
+    email_context = {
+        'number': number,
+        'customer': orderevent.customer,
+        'email_data' : email_data,
+    }
+    message = render_to_string('boxoffice/order_erased_email.html', email_context).strip()
+    to_email = [orderevent.customer.email,]
+    # send_email = EmailMessage(mail_subject, message, to=[to_email])
+    send_email = EmailMultiAlternatives(
+        mail_subject,
+        message,
+        to=to_email
+    )
+    send_email.content_subtype = 'html'
+    send_email.mixed_subtype = 'related'
+    # send_email.attach(message, "text/html")
+    img_dir = 'static/images'
+    image = 'logo.png'
+    file_path = os.path.join(img_dir, image)
+    with open(file_path,'rb') as fip:
+        img = MIMEImage(fip.read(),_subtype='png')
+        img.add_header('Content-ID', '<{name}>'.format(name=image))
+        # img.add_header('Content-Disposition', 'inline', filename=image)
+    send_email.attach(img)
 
     send_email.send()
 
     current_event=orderevent.event
+
+    orderevent.delete()
 
     return redirect(reverse('change_bookings', kwargs={"event_id": current_event.pk}))
 
@@ -1535,17 +1587,23 @@ def edit_booking(request, boxofficebookingevent_number=None):
         # controlla dati cliente
         form = CustomerShortForm(request.POST)
         if form.is_valid():
+            modified_customer = False
             if customer.first_name != form.cleaned_data['first_name']:
                 customer.first_name = form.cleaned_data['first_name'] 
+                modified_customer = True
             if customer.last_name != form.cleaned_data['last_name']:
                 customer.last_name = form.cleaned_data['last_name'] 
+                modified_customer = True
             if customer.email != form.cleaned_data['email']:
                 customer.email = form.cleaned_data['email'] 
+                modified_customer = True
             if customer.phone_number != form.cleaned_data['phone_number']:
                 customer.phone_number = form.cleaned_data['phone_number'] 
-            customer.save() 
-
-        return redirect(event_list)
+                modified_customer = True
+            if modified_customer:
+                customer.save() 
+            del modified_customer
+        return redirect(reverse('send_updatemail', kwargs={"number": boxofficebookingevent_number}))   
     # inserire la verifica. controllo della situazione hall json rispetto alla prenotazione cliente boxoffice registrata 
     else:
         form = CustomerShortForm({
@@ -1697,6 +1755,10 @@ def erase_booking(request, customerbooking_id=None):
 
     with open(json_file_path,'w') as jfp:
         json.dump(hall_status,jfp, indent=2)
+
+    number = booking.booking_number
+
+    return redirect(reverse('send_cancelemail', kwargs={"number": number}))   
 
     booking.delete()
 

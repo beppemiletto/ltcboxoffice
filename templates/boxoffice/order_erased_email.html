@@ -8,9 +8,9 @@
         
         Salve {{user.first_name}},
         <br>
-        Il tuo ordine <b>{{ order.order_number }}</b> è stato registrato.
+        Il tuo ordine <b>{{ number }}</b> è stato cancellato.
         <br>
-        BoxOffice ha prenotato posti per te ad un evento al Teatro Comunale di Cambiano.
+        BoxOffice ha cancellato la prenotazione dei posti per te ad un evento al Teatro Comunale di Cambiano.
         <br>
         {%for number, orderevent in  email_data.items %}
         <h3> Prenotazione Evento Codice {{number}}: </h3>
@@ -24,12 +24,12 @@
             Replica del <b>{{ orderevent.datetime|date:'l, d-m-Y'}}</b> alle {{ orderevent.datetime|time:'H:i' }}
         </p>
         <br>
-        I posti prenotati sono:
+        I posti prenotati erano:
         <br>
         <ol>
         {% for seat, price in orderevent.seats.items %}
                 <li>
-                   Poltrona {{seat}} al prezzo di {{price}} Euro
+                   Poltrona {{seat}}.
                 </li>
                 {%endfor%}
         </ol>
@@ -47,7 +47,7 @@
         <br>
 
         <br>
-Arrivederci al botteghino del Teatro Comunale di Cambiano,
+Speriamo di averti nostro ospite in un'altra occasione al botteghino del Teatro Comunale di Cambiano,
 <br>
 in via Lame 4 a Cambiano.
 <br>

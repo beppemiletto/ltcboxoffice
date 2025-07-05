@@ -12,10 +12,16 @@ class Barcode_Reader(forms.Form):
 
     def clean_barcode_code(self):
         data:str = self.cleaned_data['barcode_code']
+        lenghts = [5,6,6]
+
 
         codes:list = re.split('[_?]',data)
         if len(codes) == 3:
             print('Valid code detected')
+            for idx, code in enumerate(codes):
+                if len(code) < lenghts[idx]:
+                    raise ValidationError(_(f'Invalid code read: {code} in {data}. Try again.'))
+
         else:
             raise ValidationError(_(f'Invalid code:{data}'))
 

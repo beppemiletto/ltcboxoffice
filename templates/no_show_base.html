@@ -1,0 +1,333 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="max-age=604800" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<style type="text/css" media="screen">
+
+        body.with-cookie-bar {
+        
+        padding-top: 35px;
+        
+        }
+        
+        .cookie-bar {
+        
+        position: fixed;
+        
+        width: 100%;
+        
+        top:0;
+        
+        text-align:center;
+        
+        height:25px;
+        
+        line-height: 25px;
+        
+        background: #eee;
+        
+        }
+        
+        </style>
+
+<link href="{% static 'images/favicon.ico' %}" rel="shortcut icon" type="image/x-icon">
+
+
+<!-- jQuery -->
+<!-- <script src="{% static 'js/jquery-2.0.0.min.js' %}" type="text/javascript"></script> -->
+<script src="{% static 'js/jquery-3.6.4.min.js' %}" type="text/javascript"></script>
+
+<!-- Bootstrap4 files-->
+<script src="{% static 'js/bootstrap.bundle.min.js' %}" type="text/javascript"></script>
+<link href="{% static 'css/bootstrap.css' %}" rel="stylesheet" type="text/css"/>
+
+<!-- Font awesome 5 -->
+<link href="{% static 'fonts/fontawesome/css/all.min.css' %}" type="text/css" rel="stylesheet">
+
+<!-- custom style -->
+<link href="{% static 'css/ui.css' %}" rel="stylesheet" type="text/css"/>
+<link href="{% static 'css/responsive.css' %}" rel="stylesheet" media="only screen and (max-width: 1200px)" />
+
+<!-- custom javascript -->
+<script src="{% static 'js/script.js' %}" type="text/javascript"></script>
+
+<!-- Paypal Script -->
+<script src="https://www.paypal.com/sdk/js?client-id=AV48SpnVAilJKumklEog6Wu5__aOSRCu_nox9MWV5OJthtJ6RlvMFWomeM2co3iEQMVB8PHqYOUse-PD&currency=EUR"></script>
+
+<!-- JSZIP-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script type="text/javascript">
+/// some script
+
+// jquery ready start
+$(document).ready(function() {
+	var my_doc;
+        my_doc = document.getRootNode()
+        console.log(my_doc)
+
+}); 
+// jquery end
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teatro di Cambiano - Chiusura Estiva</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .curtain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(139, 69, 19, 0.1) 0%,
+                rgba(139, 69, 19, 0.05) 20%,
+                transparent 40%
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .container {
+            position: relative;
+            z-index: 3;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .theater-logo {
+            width: 300px;
+            height: auto;
+            margin-bottom: 2rem;
+            animation: fadeInDown 1s ease-out;
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
+        }
+
+        .theater-icon {
+            font-size: 4rem;
+            color: #d4af37;
+            margin-bottom: 2rem;
+            animation: fadeInDown 1s ease-out;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .main-title {
+            font-size: 2.5rem;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #d4af37;
+            margin-bottom: 3rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .notice-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 800px;
+            margin: 2rem 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeInScale 1s ease-out 0.6s both;
+            transform: translateY(20px);
+        }
+
+        .closure-notice {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .months {
+            font-size: 2rem;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin: 1rem 0;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .preparation-info {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .association-name {
+            color: #d4af37;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .contact-info {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .website-link {
+            display: inline-block;
+            color: #4ecdc4;
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 12px 24px;
+            border: 2px solid #4ecdc4;
+            border-radius: 30px;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .website-link:hover {
+            background: #4ecdc4;
+            color: #1a1a2e;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .footer {
+            margin-top: 3rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .theater-logo {
+                width: 250px;
+            }
+            
+            .main-title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .notice-card {
+                padding: 2rem;
+                margin: 1rem 0;
+            }
+            
+            .closure-notice {
+                font-size: 1.2rem;
+            }
+            
+            .months {
+                font-size: 1.5rem;
+            }
+            
+            .theater-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+            <!-- navbar -->
+        {% include 'includes/navbar.html' %}
+        
+        {% block content %}
+        <!-- content -->
+        {% endblock %}
+        
