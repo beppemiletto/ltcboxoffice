@@ -154,9 +154,3 @@ class UserEvent(models.Model):
 
 
         return seats_price_csv
-
-
-
-
-        
-    
