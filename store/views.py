@@ -98,6 +98,7 @@ def show_detail(request, section_slug, show_slug):
     }
     return render(request, 'store/show_detail.html', context)
 
+@login_required(login_url= 'login')
 def select_seats(request, section_slug, show_slug, event_slug):
     section = get_object_or_404(Section, slug=section_slug)
     show = get_object_or_404(Show, slug=show_slug)
