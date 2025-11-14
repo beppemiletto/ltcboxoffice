@@ -3,5 +3,6 @@
         "editor.defaultFormatter": "ms-python.autopep8"
     },
     "python.formatting.provider": "none",
-    "iis.configDir": ""
+    "iis.configDir": "",
+    "makefile.configureOnOpen": false
 }
