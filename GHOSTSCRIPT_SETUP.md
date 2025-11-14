@@ -49,8 +49,33 @@ gswin64c --version
 
 Dovresti vedere un output simile a:
 ```
-C:\Program Files\gs\gs10.04.0\bin\gswin64c.exe
+C:\Program Files\gs\gs10.06.0\bin\gswin64c.exe
 ```
+
+## Configurazione PATH (se necessario)
+
+Se Ghostscript è installato ma non viene trovato, aggiungi al PATH:
+
+### Metodo Automatico
+```cmd
+setup_ghostscript_path.bat
+```
+
+### Metodo Manuale PowerShell
+```powershell
+# Aggiungi al PATH della sessione corrente
+$env:Path += ";C:\Program Files\gs\gs10.06.0\bin"
+
+# Aggiungi permanentemente al PATH utente
+$gsPath = "C:\Program Files\gs\gs10.06.0\bin"
+[Environment]::SetEnvironmentVariable("Path", "$env:Path;$gsPath", "User")
+```
+
+Dopo aver modificato il PATH:
+1. Chiudi tutti i terminali
+2. Chiudi VS Code
+3. Riapri VS Code
+4. Riavvia Django: `python manage.py runserver`
 
 ## Riavvia Django
 
