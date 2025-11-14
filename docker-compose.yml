@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: ltcboxoffice_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-ltcboxoffice}
+      MYSQL_USER: ${DB_USER:-djangodbuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-aSdF!234}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - ltcboxoffice_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ltcboxoffice_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - ltcboxoffice_network
+
+  web:
+    build: .
+    container_name: ltcboxoffice_web
+    restart: unless-stopped
+    command: gunicorn --bind 0.0.0.0:8000 --workers 3 ltcboxoffice.wsgi:application
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_ENV=production
+      - DB_HOST=db
+      - DB_PORT=3306
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - ltcboxoffice_network
+
+  celery:
+    build: .
+    container_name: ltcboxoffice_celery
+    restart: unless-stopped
+    command: celery -A ltcboxoffice worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DJANGO_ENV=production
+      - DB_HOST=db
+      - DB_PORT=3306
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - ltcboxoffice_network
+
+  celery-beat:
+    build: .
+    container_name: ltcboxoffice_celery_beat
+    restart: unless-stopped
+    command: celery -A ltcboxoffice beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DJANGO_ENV=production
+      - DB_HOST=db
+      - DB_PORT=3306
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - ltcboxoffice_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: ltcboxoffice_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - web
+    networks:
+      - ltcboxoffice_network
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:
+
+networks:
+  ltcboxoffice_network:
+    driver: bridge

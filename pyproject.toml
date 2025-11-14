@@ -1,0 +1,161 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ltcboxoffice"
+version = "1.0.0"
+description = "Professional box office management system for Teatro Cambiano"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Beppe Miletto", email = "beppe.miletto@example.com"}
+]
+keywords = ["django", "box-office", "ticketing", "theater"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.1.1",
+    "flake8>=7.0.0",
+    "pylint>=3.0.3",
+    "pylint-django>=2.5.5",
+    "isort>=5.13.2",
+    "pytest>=7.4.4",
+    "pytest-django>=4.7.0",
+    "pytest-cov>=4.1.0",
+    "coverage>=7.4.0",
+    "faker>=22.6.0",
+    "factory-boy>=3.3.0",
+    "django-debug-toolbar>=4.3.0",
+    "django-extensions>=3.2.3",
+    "ipython>=8.21.0",
+    "pre-commit>=3.6.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | migrations
+  | node_modules
+  | staticfiles
+  | media
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = ["migrations", "venv", "env", ".venv", "staticfiles", "media", "node_modules"]
+known_django = "django"
+known_first_party = [
+    "accounts",
+    "billboard",
+    "booking",
+    "boxoffice",
+    "carts",
+    "fiscalmgm",
+    "hall",
+    "history",
+    "orders",
+    "store",
+    "tickets",
+    "ltcboxoffice"
+]
+sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
+django-settings-module = "ltcboxoffice.settings"
+ignore = ["migrations", "tests", "venv", ".venv", "staticfiles", "media", "node_modules"]
+max-line-length = 100
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "R0903",  # too-few-public-methods
+    "W0212",  # protected-access
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "ltcboxoffice.settings.development"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["tests"]
+norecursedirs = [
+    "migrations",
+    "static",
+    "media",
+    "node_modules",
+    ".git",
+    ".venv",
+    "venv",
+]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=.",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+    "*/.venv/*",
+    "manage.py",
+    "*/wsgi.py",
+    "*/asgi.py",
+    "*/settings/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

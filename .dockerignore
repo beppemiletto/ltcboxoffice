@@ -1,0 +1,55 @@
+# Docker-specific ignores
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+nginx.conf
+.dockerignore
+
+# Development files
+.env
+.env.local
+*.log
+logs/
+
+# Dependencies
+venv/
+.venv/
+node_modules/
+
+# Database
+*.sql
+*.sqlite3
+
+# Media and static (generated)
+media/
+staticfiles/
+static/admin/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Test files
+tests/
+pytest.ini
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
