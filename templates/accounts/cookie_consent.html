@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="section-content padding-y bg">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <header class="section-heading mb-4">
+                            <h3 class="section-title text-center">
+                                <i class="fas fa-cookie-bite"></i> Consenso all'utilizzo dei Cookies
+                            </h3>
+                        </header>
+
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle"></i> Informativa Privacy e Cookies</h5>
+                            <p>
+                                LTC Box Office utilizza cookies per garantire il corretto funzionamento 
+                                del sistema di prenotazione e migliorare la tua esperienza di navigazione.
+                            </p>
+                        </div>
+
+                        <div class="cookie-details mb-4">
+                            <h5 class="mb-3">Tipologie di Cookies Utilizzati:</h5>
+                            
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <strong>🔒 Cookies Tecnici Essenziali (Obbligatori)</strong>
+                                </div>
+                                <div class="card-body">
+                                    <ul>
+                                        <li><strong>Sessione e Autenticazione:</strong> Mantengono il tuo stato di login e le informazioni della sessione</li>
+                                        <li><strong>CSRF Token:</strong> Proteggono contro attacchi informatici e garantiscono la sicurezza delle transazioni</li>
+                                        <li><strong>Carrello:</strong> Memorizzano le tue prenotazioni durante la navigazione</li>
+                                        <li><strong>Durata:</strong> Fino a 60 minuti di inattività</li>
+                                    </ul>
+                                    <p class="mb-0 text-muted">
+                                        <small>Questi cookies sono strettamente necessari per il funzionamento del servizio di prenotazione online.</small>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <strong>📊 Cookies Funzionali (Opzionali)</strong>
+                                </div>
+                                <div class="card-body">
+                                    <ul>
+                                        <li><strong>Preferenze Utente:</strong> Memorizzano le tue preferenze di visualizzazione</li>
+                                        <li><strong>Messaggi:</strong> Gestiscono la visualizzazione dei messaggi di sistema</li>
+                                        <li><strong>Durata:</strong> Variabile in base alle preferenze</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Nota Importante:</strong> I cookies tecnici essenziali sono necessari per utilizzare 
+                            il sistema di prenotazione. Senza di essi non sarà possibile completare acquisti o gestire prenotazioni.
+                        </div>
+
+                        <form method="post" action="{% url 'cookie_consent' %}">
+                            {% csrf_token %}
+                            
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="accept_essential" 
+                                           name="accept_essential" checked disabled>
+                                    <label class="custom-control-label" for="accept_essential">
+                                        <strong>Accetto i cookies tecnici essenziali</strong> (obbligatorio)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="accept_functional" 
+                                           name="accept_functional">
+                                    <label class="custom-control-label" for="accept_functional">
+                                        Accetto i cookies funzionali (facoltativo)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="confirm_consent" 
+                                           name="confirm_consent" required>
+                                    <label class="custom-control-label" for="confirm_consent">
+                                        <strong>Confermo di aver letto e compreso l'informativa</strong> *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="form-row">
+                                <div class="col-md-6 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        <i class="fas fa-check"></i> Accetta e Continua
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <a href="{% url 'logout' %}" class="btn btn-secondary btn-block">
+                                        <i class="fas fa-times"></i> Rifiuta e Esci
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <a href="{% url 'cookie_policy' %}" target="_blank">
+                                        Leggi la Cookie Policy completa
+                                    </a>
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        <small>
+                            Ultimo aggiornamento: {{ now|date:"d/m/Y" }}<br>
+                            Teatro Cambiano - LTC Box Office
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

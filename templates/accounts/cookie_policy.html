@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="section-content padding-y bg">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4">
+                            <i class="fas fa-shield-alt"></i> Cookie Policy
+                        </h2>
+                        
+                        <p class="lead">
+                            Informativa sull'utilizzo dei cookies da parte di LTC Box Office - Teatro Cambiano
+                        </p>
+
+                        <hr>
+
+                        <h4>1. Cosa sono i Cookies</h4>
+                        <p>
+                            I cookies sono piccoli file di testo che vengono memorizzati sul tuo dispositivo quando visiti un sito web. 
+                            Permettono al sito di riconoscerti durante le visite successive e migliorare la tua esperienza di navigazione.
+                        </p>
+
+                        <h4>2. Come Utilizziamo i Cookies</h4>
+                        <p>LTC Box Office utilizza i cookies per:</p>
+                        <ul>
+                            <li>Mantenere la tua sessione di login attiva</li>
+                            <li>Gestire il carrello delle prenotazioni</li>
+                            <li>Proteggere contro attacchi informatici (CSRF protection)</li>
+                            <li>Memorizzare le tue preferenze</li>
+                            <li>Fornire messaggi di sistema personalizzati</li>
+                        </ul>
+
+                        <h4>3. Tipologie di Cookies</h4>
+                        
+                        <h5>3.1 Cookies Tecnici Essenziali</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Scopo</th>
+                                        <th>Durata</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>sessionid</code></td>
+                                        <td>Mantiene la sessione utente attiva</td>
+                                        <td>60 minuti di inattività</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>csrftoken</code></td>
+                                        <td>Protezione contro attacchi CSRF</td>
+                                        <td>1 anno</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>cart_id</code></td>
+                                        <td>Gestione carrello prenotazioni</td>
+                                        <td>Sessione</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>messages</code></td>
+                                        <td>Visualizzazione messaggi di sistema</td>
+                                        <td>Sessione</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h5>3.2 Cookies Funzionali</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Scopo</th>
+                                        <th>Durata</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>cookie_consent</code></td>
+                                        <td>Memorizza le tue preferenze sui cookies</td>
+                                        <td>1 anno</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>user_preferences</code></td>
+                                        <td>Salva preferenze interfaccia utente</td>
+                                        <td>6 mesi</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>4. Gestione dei Cookies</h4>
+                        <p>
+                            Puoi gestire o eliminare i cookies secondo le tue preferenze. Tuttavia, la disabilitazione 
+                            dei cookies tecnici essenziali impedirà il corretto funzionamento del sistema di prenotazione.
+                        </p>
+
+                        <h5>Come disabilitare i cookies nel tuo browser:</h5>
+                        <ul>
+                            <li><strong>Chrome:</strong> Impostazioni → Privacy e sicurezza → Cookies</li>
+                            <li><strong>Firefox:</strong> Opzioni → Privacy e sicurezza → Cookies e dati dei siti</li>
+                            <li><strong>Safari:</strong> Preferenze → Privacy → Cookies e dati dei siti</li>
+                            <li><strong>Edge:</strong> Impostazioni → Cookie e autorizzazioni siti</li>
+                        </ul>
+
+                        <h4>5. Cookies di Terze Parti</h4>
+                        <p>
+                            LTC Box Office non utilizza cookies di terze parti per tracciamento pubblicitario o profilazione.
+                        </p>
+
+                        <h4>6. Sicurezza</h4>
+                        <p>
+                            Tutti i cookies sono protetti secondo le migliori pratiche di sicurezza:
+                        </p>
+                        <ul>
+                            <li>Cookies di sessione con flag <code>HttpOnly</code> per prevenire XSS</li>
+                            <li>Cookies <code>Secure</code> in produzione (solo HTTPS)</li>
+                            <li>Protezione CSRF attiva su tutti i form</li>
+                            <li>Timeout automatico della sessione dopo 60 minuti di inattività</li>
+                        </ul>
+
+                        <h4>7. Aggiornamenti</h4>
+                        <p>
+                            Questa Cookie Policy può essere aggiornata periodicamente. L'ultima versione è sempre disponibile su questa pagina.
+                        </p>
+                        <p class="text-muted">
+                            <small>Ultimo aggiornamento: {{ now|date:"d F Y" }}</small>
+                        </p>
+
+                        <h4>8. Contatti</h4>
+                        <p>
+                            Per domande sulla nostra Cookie Policy, contatta:<br>
+                            <strong>Teatro Cambiano</strong><br>
+                            Email: info@teatrocambiano.it
+                        </p>
+
+                        <hr>
+
+                        <div class="text-center">
+                            <a href="{% url 'cookie_consent' %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left"></i> Torna al Consenso Cookies
+                            </a>
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="fas fa-home"></i> Torna alla Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

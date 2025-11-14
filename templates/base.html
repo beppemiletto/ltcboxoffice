@@ -79,6 +79,9 @@ $(document).ready(function() {
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+<!-- Cookie Consent Styles -->
+<link href="{% static 'css/cookie-consent.css' %}" rel="stylesheet" type="text/css"/>
+
 </head>
 <body>
 
@@ -90,3 +93,78 @@ $(document).ready(function() {
         {% endblock %}
         
         {% include 'includes/footer.html' %}
+
+<!-- Cookie Consent Banner for non-authenticated users -->
+{% if not user.is_authenticated %}
+<div id="cookieConsentBanner" class="cookie-consent-banner" style="display: none;">
+    <div class="cookie-consent-content">
+        <div style="display: flex; align-items: center;">
+            <span class="cookie-icon">🍪</span>
+            <div class="cookie-consent-text">
+                <h4>Questo sito utilizza i cookies</h4>
+                <p>
+                    Utilizziamo cookies tecnici essenziali per il funzionamento del sito. 
+                    <a href="{% url 'cookie_policy' %}">Maggiori informazioni</a>
+                </p>
+            </div>
+        </div>
+        <div class="cookie-consent-actions">
+            <button id="acceptCookies" class="cookie-consent-btn accept">
+                <i class="fa fa-check"></i> Accetta
+            </button>
+            <button id="cookieSettings" class="cookie-consent-btn settings">
+                <i class="fa fa-cog"></i> Preferenze
+            </button>
+            <button id="declineCookies" class="cookie-consent-btn decline">
+                <i class="fa fa-times"></i> Solo Essenziali
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cookie Settings Modal -->
+<div id="cookieSettingsModal" class="cookie-settings-modal">
+    <div class="cookie-settings-content">
+        <span class="cookie-settings-close">&times;</span>
+        <h3><i class="fa fa-cookie-bite"></i> Preferenze Cookie</h3>
+        
+        <div class="cookie-category">
+            <div class="cookie-toggle">
+                <div>
+                    <h5>🔒 Cookies Essenziali</h5>
+                    <p>Necessari per il funzionamento del sito</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="essentialCookies" checked disabled>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="cookie-category">
+            <div class="cookie-toggle">
+                <div>
+                    <h5>⚙️ Cookies Funzionali</h5>
+                    <p>Migliorano l'esperienza utente memorizzando preferenze</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="functionalCookies">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="saveCookieSettings" class="cookie-consent-btn accept">
+                <i class="fa fa-save"></i> Salva Preferenze
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cookie Consent Script -->
+<script src="{% static 'js/cookie-consent.js' %}" type="text/javascript"></script>
+{% endif %}
+
+</body>
+</html>

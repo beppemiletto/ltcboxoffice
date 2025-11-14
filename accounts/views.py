@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.utils import timezone
 import requests
 from .forms import RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
@@ -96,6 +97,9 @@ def login(request):
             except:
                 pass
             auth.login(request, user)
+            # Clear any existing cookie consent to force new consent on each login
+            if 'cookie_consent_given' in request.session:
+                del request.session['cookie_consent_given']
             messages.success(request, 'Adesso sei loggato come {}'.format(email))
             url = request.META.get('HTTP_REFERER')
             try:
@@ -382,6 +386,38 @@ def change_password(request):
 
 
     return render(request, 'accounts/change_password.html')
+
+def cookie_consent(request):
+    """Handle cookie consent form"""
+    if request.method == 'POST':
+        # Check if user confirmed consent
+        if request.POST.get('confirm_consent'):
+            # Store consent in session
+            request.session['cookie_consent_given'] = True
+            request.session['cookie_consent_date'] = timezone.now().isoformat()
+            request.session['cookie_functional'] = bool(request.POST.get('accept_functional'))
+            
+            # Get the next URL to redirect to
+            next_url = request.session.pop('cookie_consent_next', 'dashboard')
+            
+            messages.success(request, 'Grazie per aver accettato la nostra Cookie Policy!')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Devi confermare di aver letto l\'informativa per continuare.')
+    
+    context = {
+        'now': timezone.now(),
+    }
+    return render(request, 'accounts/cookie_consent.html', context)
+
+
+def cookie_policy(request):
+    """Display cookie policy page"""
+    context = {
+        'now': timezone.now(),
+    }
+    return render(request, 'accounts/cookie_policy.html', context)
+
 
 def updateorder(main_order_id=None):
     order= Order.objects.get(id=main_order_id)

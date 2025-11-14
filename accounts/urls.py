@@ -19,4 +19,6 @@ urlpatterns = [
     path('order_detail/<int:order_id>/', views.order_detail, name='order_detail'),
     path('delete_order/<int:order_id>/', views.delete_order, name='delete_order'),
     path('order_detail_tkts/<str:order_number>/', views.order_detail_tkts, name='order_detail_tkts'),
+    path('cookie-consent/', views.cookie_consent, name='cookie_consent'),
+    path('cookie-policy/', views.cookie_policy, name='cookie_policy'),
 ] 

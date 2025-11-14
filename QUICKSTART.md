@@ -1,3 +1,4 @@
+
 # Quick Start Guide for Developers
 
 This guide will help you get the LTC Box Office project up and running on your local machine.
