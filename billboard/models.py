@@ -59,8 +59,37 @@ class Venue(models.Model):
     capacity                = models.PositiveIntegerField(default=234)
     ba_code_siae            = models.CharField(max_length=13, default="0050450366484" )
     local_code_siae         = models.CharField(max_length=5, default="  045" )
-
+    configuration_file      = models.FileField(
+        upload_to='venue_configs/',
+        blank=True,
+        null=True,
+        help_text="Upload venue seating configuration file (JSON or XML format)"
+    )
 
     def __str__(self) -> str:
         return self.name
+    
+    def get_config_file_path(self):
+        """Returns the path to the uploaded configuration file"""
+        if self.configuration_file:
+            return self.configuration_file.path
+        return None
+    
+    def get_config_file_format(self):
+        """Returns the format of the configuration file (json or xml)"""
+        if self.configuration_file:
+            import os
+            ext = os.path.splitext(self.configuration_file.name)[1].lower()
+            if ext == '.json':
+                return 'json'
+            elif ext == '.xml':
+                return 'xml'
+        return None
+    
+    def save(self, *args, **kwargs):
+        """Save venue instance"""
+        super().save(*args, **kwargs)
+        # Note: Auto-loading configuration will be available
+        # after merging the feature/venue-management branch with
+        # venue FK relationships in Seat and Row models
     
