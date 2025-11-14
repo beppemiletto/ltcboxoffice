@@ -521,11 +521,20 @@ def booking_payments(request, newContext={}):
     #this name must be same as in the htmltemplate being only a placeholder
         barcode:str = orderevent_data['barcode']
 
-        with open(file_path,'rb') as fip:
-            brc = MIMEImage(fip.read(),_subtype='png')
-            brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
-            # img.add_header('Content-Disposition', 'inline', filename=image)
-        send_email.attach(brc)
+        # Check if barcode file exists (may not exist if Ghostscript is not installed)
+        if file_path and os.path.exists(file_path):
+            try:
+                with open(file_path,'rb') as fip:
+                    brc = MIMEImage(fip.read(),_subtype='png')
+                    brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
+                    # img.add_header('Content-Disposition', 'inline', filename=image)
+                send_email.attach(brc)
+            except Exception as e:
+                # Log error but continue with email sending
+                print(f"Warning: Could not attach barcode {barcode}: {e}")
+        else:
+            # Barcode file doesn't exist (Ghostscript not installed)
+            print(f"Warning: Barcode file not found: {file_path}. Install Ghostscript to generate barcodes.")
 
     send_email.send()
 
