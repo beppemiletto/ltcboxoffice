@@ -11,7 +11,7 @@ class Event(models.Model):
     price_full      = models.FloatField()
     price_reduced   = models.FloatField()
     vat_rate        = models.FloatField(default=10)
-    venue           = models.ForeignKey(Venue, on_delete=models.CASCADE, blank=True, null=True, default= 1)
+    venue           = models.ForeignKey(Venue, on_delete=models.CASCADE, blank=True, null=True, default=2)
     event_slug      = models.CharField(max_length=200, blank=True)
     sold_out        = models.BooleanField(default=False)
     
@@ -33,24 +33,11 @@ class Event(models.Model):
         else:
             port_booking: bool = False
         super(Event, self).save(*args, **kwargs)
-        # json_filename = self.event_slug+'.json'
-        # json_filename_fullpath = os.path.join(settings.HALL_STATUS_FILES_ROOT, json_filename)
             
         json_filename_fullpath = self.get_json_path()
-        seats = Seat.objects.filter(active=True)
-        event_hall = {}
-        for seat in seats:
-            seat_status= {
-                "active": True,
-                "id": seat.pk,
-                "name": seat.name,
-                "num_in_row": seat.num_in_row,
-                "number": seat.number,
-                "row": seat.row,
-                "status": 0,
-                "order": None,
-                }
-            event_hall[seat.name] = seat_status
+        
+        # Load seats from venue configuration file instead of database
+        event_hall = self._load_seats_from_venue_config()
         if port_booking:
             from orders.models import OrderEvent
             orderevents = OrderEvent.objects.filter(event_id=self.pk)
@@ -96,6 +83,82 @@ class Event(models.Model):
         json_filename = self.event_slug+'.json'
         json_filename_fullpath = os.path.join(settings.HALL_STATUS_FILES_ROOT, json_filename)
         return json_filename_fullpath
+    
+    def _load_seats_from_venue_config(self):
+        """Load seats from venue configuration file instead of database"""
+        event_hall = {}
+        
+        # Get venue (use default Teatro Cambiano if not set)
+        venue = self.venue
+        if not venue:
+            venue = Venue.objects.filter(slug='teatro-cambiano').first()
+            if not venue:
+                # Fallback to database seats if no venue configured
+                return self._load_seats_from_database()
+        
+        # Get configuration file path
+        config_path = venue.get_config_file_path()
+        if not config_path or not os.path.exists(config_path):
+            # Fallback to database seats if no config file
+            return self._load_seats_from_database()
+        
+        # Load JSON configuration
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
+            
+            # Build event_hall from configuration
+            seat_number = 1
+            for row_data in config_data.get('rows', []):
+                row_name = row_data['name']
+                
+                # Skip inactive rows
+                if not row_data.get('is_active', True):
+                    continue
+                
+                for seat_data in row_data.get('seats', []):
+                    num_in_row = str(seat_data['num']).zfill(2)
+                    seat_name = f'{row_name}{num_in_row}'
+                    
+                    seat_status = {
+                        "active": seat_data.get('active', True),
+                        "id": seat_number,
+                        "name": seat_name,
+                        "num_in_row": num_in_row,
+                        "number": seat_number,
+                        "row": row_name,
+                        "status": 0,
+                        "order": None,
+                    }
+                    event_hall[seat_name] = seat_status
+                    seat_number += 1
+            
+            return event_hall
+            
+        except Exception as e:
+            print(f"Error loading venue config for event {self.event_slug}: {e}")
+            # Fallback to database seats
+            return self._load_seats_from_database()
+    
+    def _load_seats_from_database(self):
+        """Fallback method to load seats from database (legacy)"""
+        event_hall = {}
+        seats = Seat.objects.filter(active=True)
+        
+        for seat in seats:
+            seat_status = {
+                "active": True,
+                "id": seat.pk,
+                "name": seat.name,
+                "num_in_row": seat.num_in_row,
+                "number": seat.number,
+                "row": seat.row,
+                "status": 0,
+                "order": None,
+            }
+            event_hall[seat.name] = seat_status
+        
+        return event_hall
     
     def prices(self):
         return [0.0 , self.price_reduced, self.price_full]
