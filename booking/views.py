@@ -392,10 +392,23 @@ def booking_payments(request, newContext={}):
             items = orderevent.seats_price
             items += ',{}${}'.format(seat, item.ingresso)
             orderevent.seats_price = items
-            # update email data
-            booked_seats[seat] = item.price            
-            email_data[orderevent.orderevent_number]['seats'] = booked_seats
             orderevent.save()
+            
+            # Update email data - get existing seats or create new dict
+            if orderevent.orderevent_number in email_data:
+                booked_seats = email_data[orderevent.orderevent_number]['seats']
+                booked_seats[seat] = item.price
+                email_data[orderevent.orderevent_number]['seats'] = booked_seats
+            else:
+                # OrderEvent exists but not in email_data yet
+                booked_seats = {seat: item.price}
+                email_data[orderevent.orderevent_number] = {
+                    'show': orderevent.event.show.shw_title,
+                    'datetime': orderevent.event.date_time,
+                    'seats': booked_seats,
+                    'barcode': orderevent.barcode_path.split('/')[-1] if orderevent.barcode_path else '',
+                    'barcode_path': orderevent.barcode_path 
+                }
         except:
             items = '{}${}'.format(seat, item.ingresso)
             orderevent = OrderEvent(
