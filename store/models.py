@@ -27,12 +27,31 @@ class Event(models.Model):
 
 
     def save(self, *args, **kwargs):
-        self.event_slug = self.get_unique_id
-        if self.pk:
+        # Track old slug for file renaming if date/show changes
+        old_slug = None
+        old_json_path = None
+        
+        if self.pk:  # Existing event
             port_booking: bool = True
+            try:
+                # Get old event data before saving
+                old_event = Event.objects.get(pk=self.pk)
+                old_slug = old_event.event_slug
+                old_json_path = old_event.get_json_path()
+            except Event.DoesNotExist:
+                pass
         else:
             port_booking: bool = False
+        
+        # Update event_slug based on current show/date
+        self.event_slug = self.get_unique_id
+        
+        # Save to database
         super(Event, self).save(*args, **kwargs)
+        
+        # Handle JSON file renaming if slug changed
+        if old_slug and old_slug != self.event_slug:
+            self._rename_json_file(old_json_path)
             
         json_filename_fullpath = self.get_json_path()
         
@@ -159,6 +178,36 @@ class Event(models.Model):
             event_hall[seat.name] = seat_status
         
         return event_hall
+    
+    def _rename_json_file(self, old_json_path):
+        """Rename JSON file when event slug changes (date/show modified)"""
+        if old_json_path and os.path.exists(old_json_path):
+            new_json_path = self.get_json_path()
+            try:
+                os.rename(old_json_path, new_json_path)
+                print(f'Renamed JSON: {os.path.basename(old_json_path)} → {os.path.basename(new_json_path)}')
+            except Exception as e:
+                print(f"Error renaming JSON file: {e}")
+    
+    def delete_json_file(self):
+        """Delete JSON file associated with this event"""
+        json_path = self.get_json_path()
+        if json_path and os.path.exists(json_path):
+            try:
+                os.remove(json_path)
+                print(f'Deleted JSON file: {os.path.basename(json_path)}')
+                return True
+            except Exception as e:
+                print(f"Error deleting JSON file: {e}")
+                return False
+        return False
+    
+    def delete(self, *args, **kwargs):
+        """Override delete to remove JSON file when event is deleted"""
+        # Delete associated JSON file first
+        self.delete_json_file()
+        # Then delete the event from database
+        super(Event, self).delete(*args, **kwargs)
     
     def prices(self):
         return [0.0 , self.price_reduced, self.price_full]
