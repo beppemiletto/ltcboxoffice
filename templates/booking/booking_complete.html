@@ -84,9 +84,8 @@
                                                 </td>
 
                                                 <td >
-                                                    {% autoescape off %}
-                                                    <img src="/{{orderevent.barcode_path}}" alt="Tickets booking barcode" style="max-height: 100px;" class="center">
-                                                    {% endautoescape %}
+                                                    <img src="/{{orderevent.barcode_path}}" alt="Tickets booking barcode" style="max-height: 100px;" class="center" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                    <div style="display:none; color:red;">Barcode non disponibile</div>
                                                 </td>
                                             </tr>
 

@@ -28,13 +28,12 @@ DATABASES = {
 }
 
 # Email Configuration (Development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.teatrocambiano.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'ltcboxoffice@teatrocambiano.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'ltcboxoffice@teatrocambiano.com')
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_PORT = 2525
+EMAIL_HOST_USER = '460a4a880078c8'
+EMAIL_HOST_PASSWORD = '1d58de165e2dde'
+EMAIL_USE_TLS = True
 
 # Debug toolbar (optional - install django-debug-toolbar)
 # INSTALLED_APPS += ['debug_toolbar']

@@ -95,6 +95,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'ltcboxoffice' / 'static',
+    BASE_DIR / 'static',  # For dynamically generated files like barcodes
 ]
 
 # Media files configurations

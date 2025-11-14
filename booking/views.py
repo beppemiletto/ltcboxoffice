@@ -558,56 +558,13 @@ def booking_complete(request, newContext={}):
     transID = newContext['data']['transID']
     email_data = newContext['data']['email_data']
     
-    import time
-    
+    # Update OrderEvent objects with barcode paths
+    # Note: barcode_printer.py now saves directly to static/images/ and returns relative path
     for number, orderevent in email_data.items():
-        newtarget:os.path = os.path.join(os.getcwd(),'ltcboxoffice/static/images',orderevent['barcode'])
-        
-        # Skip file operations if barcode_path is just a placeholder (Ghostscript not installed)
-        if not orderevent['barcode_path'] or not os.path.isabs(orderevent['barcode_path']):
-            # Barcode not generated (Ghostscript missing), skip file move
-            orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-            orderevent_object.barcode_path = f"static/images/{orderevent['barcode']}"
-            orderevent_object.save()
-            continue
-        
-        if newtarget != orderevent['barcode_path']:
-            # Wait for file to be available with timeout to prevent infinite loop
-            file_available: bool = False
-            max_wait_seconds = 5  # Maximum 5 seconds wait
-            wait_interval = 0.1   # Check every 100ms
-            elapsed_time = 0
-            
-            while not file_available and elapsed_time < max_wait_seconds:
-                file_available: bool = os.path.isfile(orderevent['barcode_path']) and os.access(orderevent['barcode_path'], os.R_OK)
-                if not file_available:
-                    time.sleep(wait_interval)
-                    elapsed_time += wait_interval
-            
-            if file_available:
-                # File exists, move it
-                try:
-                    os.rename(orderevent['barcode_path'], newtarget)
-                    orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-                    orderevent_object.barcode_path = newtarget
-                    orderevent_object.save()
-                except Exception as e:
-                    print(f"Error moving barcode file: {e}")
-                    # Keep original path if move fails
-                    orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-                    orderevent_object.save()
-            else:
-                # Timeout: file not created (Ghostscript issue)
-                print(f"Warning: Barcode file not found after {max_wait_seconds}s: {orderevent['barcode_path']}")
-                orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-                orderevent_object.barcode_path = f"static/images/{orderevent['barcode']}"
-                orderevent_object.save()
-        else:
-            # Path already correct
-            orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-            orderevent_object.save()
-
-    del number, orderevent, newtarget
+        orderevent_object = OrderEvent.objects.get(orderevent_number=number)
+        # barcode_path is already in correct format: "static/images/barcode_img_*.png"
+        orderevent_object.barcode_path = orderevent['barcode_path']
+        orderevent_object.save()
     
 
     try:
