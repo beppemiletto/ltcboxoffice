@@ -1099,10 +1099,10 @@ def remove_seat(request, number = None, seat= None):
 
     seats_price_old = item.seats_price
     seat_patterns = {
-        'begin' : re.compile(f"^{removed_seat}\$[0-2],"),
-        'center' : re.compile(f"^.+,{removed_seat}\$[0-2],"),
-        'only' : re.compile(f"^{removed_seat}\$[0-2]$"),
-        'end' : re.compile(f"^.+,{removed_seat}\$[0-2]$")
+        'begin' : re.compile(rf"^{removed_seat}\$[0-2],"),
+        'center' : re.compile(rf"^.+,{removed_seat}\$[0-2],"),
+        'only' : re.compile(rf"^{removed_seat}\$[0-2]$"),
+        'end' : re.compile(rf"^.+,{removed_seat}\$[0-2]$")
     }
     subs_type = None
 
@@ -1116,7 +1116,7 @@ def remove_seat(request, number = None, seat= None):
         item.seats_price = seats_price_new
         item.save()
     elif subs_type == 'center' or subs_type=='end':
-        pattern = re.compile(f',{removed_seat}\$[0-2]')
+        pattern = re.compile(rf',{removed_seat}\$[0-2]')
         seats_price_new = re.sub(pattern,'',seats_price_old)
         item.seats_price = seats_price_new
         item.save()
@@ -1157,7 +1157,7 @@ def remove_seat(request, number = None, seat= None):
             userevent.ordersevents = orderevents_new
             userevent.save()
         elif orderevent_subs_type == 'center' or orderevent_subs_type=='end':
-            pattern = re.compile(f',{deleted_orderevent}\$[0-2]')
+            pattern = re.compile(rf',{deleted_orderevent}\$[0-2]')
             orderevents_new = re.sub(pattern,'',orderevents_old)
             userevent.ordersevents = orderevents_new
             userevent.save()
@@ -1187,7 +1187,7 @@ def plus_ingresso(request, number = None, seat= None):
     seats_price = item.seats_price
 
 
-    find_pattern = re.compile(f'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-2]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
     if int(price)<2:
@@ -1217,7 +1217,7 @@ def minus_ingresso(request, number = None, seat= None):
     seats_price = item.seats_price
 
 
-    find_pattern = re.compile(f'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-2]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
     if int(price)>0:
@@ -1632,7 +1632,7 @@ def plus_ingr_booking(request, number = None, seat= None):
     item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
     seats_price = item.seats_price
 
-    find_pattern = re.compile(f'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-2]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
     if int(price)<2:
@@ -1658,7 +1658,7 @@ def minus_ingr_booking(request, number = None, seat= None):
     seats_price = item.seats_price
 
 
-    find_pattern = re.compile(f'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-2]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
     if int(price)>0:
@@ -1701,10 +1701,10 @@ def removeseat_booking(request, number = None, seat= None):
 
     seats_price_old = item.seats_price
     seat_patterns = {
-        'begin' : re.compile(f"^{removed_seat}\$[0-2],"),
-        'center' : re.compile(f"^.+,{removed_seat}\$[0-2],"),
-        'only' : re.compile(f"^{removed_seat}\$[0-2]$"),
-        'end' : re.compile(f"^.+,{removed_seat}\$[0-2]$")
+        'begin' : re.compile(rf"^{removed_seat}\$[0-2],"),
+        'center' : re.compile(rf"^.+,{removed_seat}\$[0-2],"),
+        'only' : re.compile(rf"^{removed_seat}\$[0-2]$"),
+        'end' : re.compile(rf"^.+,{removed_seat}\$[0-2]$")
     }
     subs_type = None
 
@@ -1717,7 +1717,7 @@ def removeseat_booking(request, number = None, seat= None):
         item.seats_price = seats_price_new
         item.save()
     elif subs_type == 'center' or subs_type=='end':
-        pattern = re.compile(f',{removed_seat}\$[0-2]')
+        pattern = re.compile(rf',{removed_seat}\$[0-2]')
         seats_price_new = re.sub(pattern,'',seats_price_old)
         item.seats_price = seats_price_new
         item.save()
@@ -2045,4 +2045,5 @@ def list_bookings(request, event_id=None, customer=None):
     }
 
     return render(request, 'boxoffice/event_order_list_xlsx.html', context)
+
 
