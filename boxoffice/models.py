@@ -8,13 +8,18 @@ class SellingSeats(models.Model):
         (0,'Gratuito'),
         (1, 'Ridotto'),
         (2, 'Intero'),
+        (3, 'Abbonamento R4'),
+        (4, 'Abbonamento R8'),
+        (5, 'Abbonamento I4'),
+        (6, 'Abbonamento I8'),
     )
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     orderevent = models.CharField(max_length=25, blank=True, null=True, default="") 
     seat = models.CharField(max_length=3,verbose_name='Posto')
     price = models.IntegerField(choices=PRICES, default=0)
     cost = models.FloatField(default=0.0)
-    ingresso = models.CharField(max_length=12, default="Gratuito")
+    ingresso = models.CharField(max_length=20, default="Gratuito")
+    session_id = models.CharField(max_length=100, blank=True, null=True, default="")  # Isolate concurrent box office sessions
 
 class PaymentMethod(models.Model):
     ACCOUNT_TYPES= (

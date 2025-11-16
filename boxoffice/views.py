@@ -83,6 +83,29 @@ def get_printer():
         return (EscPosDummy(), True)
 
 
+def get_or_create_session_id(request):
+    """
+    Get or create a unique session ID for isolating concurrent box office operations.
+    Each browser session gets a unique ID to prevent cart conflicts between multiple cashiers.
+    """
+    if 'boxoffice_session_id' not in request.session:
+        import uuid
+        request.session['boxoffice_session_id'] = str(uuid.uuid4())
+        request.session.modified = True
+    return request.session['boxoffice_session_id']
+
+
+def clear_session_cart(session_id, event_id=None):
+    """
+    Clear all SellingSeats for a specific session.
+    If event_id is provided, only clear seats for that event.
+    """
+    query = SellingSeats.objects.filter(session_id=session_id)
+    if event_id:
+        query = query.filter(event_id=event_id)
+    query.delete()
+
+
 # Create your views here.
 @login_required(login_url='login')
 def boxoffice(request):
@@ -146,6 +169,8 @@ def event(request, event_id):
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
     
+    session_id = get_or_create_session_id(request)
+    
     if request.method == 'POST':
         go = False
         selected_seats=[]
@@ -155,7 +180,7 @@ def event(request, event_id):
         ingressi  = ['Gratuito','Ridotto' , 'Intero']
         total = 0.0
         try:
-            sellingseats = SellingSeats.objects.all()
+            sellingseats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
             for sellingseat in sellingseats:
                 cart_items.append(sellingseat)
                 go = True
@@ -169,6 +194,7 @@ def event(request, event_id):
                     sellingseat = SellingSeats()
                     sellingseat.seat = seat
                     sellingseat.event = current_event
+                    sellingseat.session_id = session_id
                     if current_event.price_full > 0:
                         sellingseat.price = 2
                     else:
@@ -291,7 +317,8 @@ def event(request, event_id):
 def boxoffice_cart(request, event_id):
     cart_items = []
     current_event = Event.objects.get(id = event_id)
-    sellingseats = SellingSeats.objects.all()
+    session_id = get_or_create_session_id(request)
+    sellingseats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
     total = 0.0
     for sellingseat in sellingseats:
         cart_items.append(sellingseat)
@@ -312,7 +339,8 @@ def boxoffice_cart(request, event_id):
 
 def boxoffice_cart_cancel(request, event_id):
     event = Event.objects.get(id = event_id)
-    sellingseats = SellingSeats.objects.all()
+    session_id = get_or_create_session_id(request)
+    sellingseats = SellingSeats.objects.filter(session_id=session_id, event=event)
     json_file_path= os.path.abspath(event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
@@ -484,7 +512,8 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
     ingressi = INGRESSI_NAMES
 
     show= current_event.show
-    sold_seats = SellingSeats.objects.all()
+    session_id = get_or_create_session_id(request)
+    sold_seats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
 
     # recalculate the total amount for payment
     amount_paid = 0
@@ -690,7 +719,8 @@ def close_transaction(request, event_id=None, context=None):
         status = 'Completed'
     )
 
-    sold_seats = SellingSeats.objects.all()
+    session_id = get_or_create_session_id(request)
+    sold_seats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
     json_file_path= os.path.abspath(current_event.get_json_path())
     with open(json_file_path,'r') as jfp:
         hall_status = json.load(jfp)
@@ -762,8 +792,9 @@ def change_bookings(request, event_id=None):
         costs = current_event.prices()
         ingressi  = ['Gratuito','Ridotto' , 'Intero']
         total = 0.0
+        session_id = get_or_create_session_id(request)
         try:
-            sellingseats = SellingSeats.objects.all()
+            sellingseats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
             for sellingseat in sellingseats:
                 cart_items.append(sellingseat)
                 go = True
@@ -777,6 +808,7 @@ def change_bookings(request, event_id=None):
                     sellingseat = SellingSeats()
                     sellingseat.seat = seat
                     sellingseat.event = current_event
+                    sellingseat.session_id = session_id
                     if current_event.price_full > 0:
                         sellingseat.price = 2
                     else:
@@ -872,6 +904,7 @@ def sell_booking(request, order = None, mode=None):
     costs = order_event.event.prices()
     costs_extended = extend_price_array(costs)
     booked_seats_price = order_event.seats_price
+    session_id = get_or_create_session_id(request)
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
         price_idx = int(ordered_price)
@@ -881,10 +914,11 @@ def sell_booking(request, order = None, mode=None):
             seat = ordered_seat,
             price = price_idx,
             cost = safe_price_access(costs_extended, price_idx),
-            ingresso = safe_price_access(costs_extended, price_idx)
+            ingresso = safe_price_access(costs_extended, price_idx),
+            session_id = session_id
         )
         ordered_sellingseat.save()
-    sellingseats = SellingSeats.objects.all()
+    sellingseats = SellingSeats.objects.filter(session_id=session_id, event=order_event.event)
 
     cart_items = []
     current_event = order_event.event
