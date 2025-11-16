@@ -1,70 +1,24 @@
 {% autoescape off %}
-
-<html>
-    <body>
-        <img src="cid:logo.png" />
-        <br>
-        <br>
-        
-        Salve {{user.first_name}},
-        <br>
-        Il tuo ordine <b>{{ number }}</b> è stato cancellato.
-        <br>
-        BoxOffice ha cancellato la prenotazione dei posti per te ad un evento al Teatro Comunale di Cambiano.
-        <br>
-        {%for number, orderevent in  email_data.items %}
-        <h3> Prenotazione Evento Codice {{number}}: </h3>
-
-        I tuoi posti per lo spettacolo: 
-        <b>
-                {{ orderevent.show }} 
-        </b>
-        <br>
-        <p>
-            Replica del <b>{{ orderevent.datetime|date:'l, d-m-Y'}}</b> alle {{ orderevent.datetime|time:'H:i' }}
-        </p>
-        <br>
-        I posti prenotati erano:
-        <br>
-        <ol>
-        {% for seat, price in orderevent.seats.items %}
-                <li>
-                   Poltrona {{seat}}.
-                </li>
-                {%endfor%}
-        </ol>
-        <br>
+<img src="cid:logo.png" alt="Logo">
+<p>Salve {{user.first_name}},</p>
+<p>Il tuo ordine {{ number }} e' stato cancellato.</p>
+<p>BoxOffice ha cancellato la prenotazione dei posti per te ad un evento al Teatro Comunale di Cambiano.</p>
+{%for number, orderevent in  email_data.items %}
+<p>Prenotazione Evento Codice {{number}}:</p>
+<p>I tuoi posti per lo spettacolo: {{ orderevent.show }}</p>
+<p>Replica del {{ orderevent.datetime|date:'l, d-m-Y'}} alle {{ orderevent.datetime|time:'H:i' }}</p>
+<p>I posti prenotati erano:</p>
+<ol>
+{% for seat, seat_info in orderevent.seats.items %}
+<li>Poltrona {{seat}} {% if seat_info.is_subscription %}con {{seat_info.ingresso_type}}{% endif %}</li>
 {%endfor%}
-
-
-
-        <br>
-        I tuoi dati che abbiamo registrato inerenti al tuo ordine sono:
-        <br>
-        nome: {{ customer.first_name }}, cognome: {{ customer.last_name }}  
-        <br>
-        telefono: {{ customer.phone }}, email: {{ customer.email }} ,
-        <br>
-
-        <br>
-Speriamo di averti nostro ospite in un'altra occasione al botteghino del Teatro Comunale di Cambiano,
-<br>
-in via Lame 4 a Cambiano.
-<br>
-A presto.
-<br>
-<br>
-Lo staff di LTCBoxOffice.
-
-<small>
-        <p><b>Laboratorio Teatrale di Cambiano APS</b></p>
-        <p><i>Sede legale:</i> Via Lame, 4 - 10020 Cambiano (TO)</p>
-        <p><i>P.I. e C.F.:</i> 09762270016</p> 
-        <p><i>CODICE DESTINATARIO:</i> <b>G4AI1U8</b></p> 
-        <p><i>MAIL:</i> info@teatrocambiano.com</p>
-</small>
-</body>
-</html>
-
-
+</ol>
+{%endfor%}
+<p>I tuoi dati che abbiamo registrato inerenti al tuo ordine sono:</p>
+<p>Nome: {{ customer.first_name }}</p>
+<p>Cognome: {{ customer.last_name }}</p>
+<p>Telefono: {{ customer.phone_number }}</p>
+<p>Email: {{ customer.email }}</p>
+<p>Speriamo di averti nostro ospite in un'altra occasione al botteghino del Teatro Comunale di Cambiano, in via Lame 4 a Cambiano.</p>
+<p>A presto, Lo staff di LTCBoxOffice.</p>
 {% endautoescape %}
