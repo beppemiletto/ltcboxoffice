@@ -15,9 +15,12 @@ from wsgiref.util import FileWrapper
 from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction, CustomerProfile, BoxOfficeBookingEvent
 from .forms import Barcode_Reader, OrderEventForm, CustomerProfileForm, CustomerShortForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
+from .price_utils import extend_price_array, safe_price_access, INGRESSI_NAMES, get_price_name, is_subscription
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
 from orders.models import OrderEvent, UserEvent, Order, Payment
+from subscriptions.models import SubscriptionUsage
+from subscriptions.utils import is_subscription_price_code, get_subscription_by_price_code
 from tickets.models import Ticket
 from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
@@ -32,7 +35,52 @@ from PIL import Image, ImageFilter
 from collections import OrderedDict
 import re
 from ltcboxoffice.settings import MEDIA_ROOT
+from django.conf import settings
 from openpyxl import Workbook
+
+
+def get_printer():
+    """
+    Get the configured printer based on settings.
+    Returns: (printer_object, recovery_mode)
+    """
+    printer_type = getattr(settings, 'PRINTER_TYPE', 'dummy')
+    
+    if printer_type == 'network':
+        try:
+            host = getattr(settings, 'PRINTER_NETWORK_HOST', '192.168.1.100')
+            port = getattr(settings, 'PRINTER_NETWORK_PORT', 9100)
+            timeout = getattr(settings, 'PRINTER_NETWORK_TIMEOUT', 60)
+            printer = EscPosNetwork(host=host, port=port, timeout=timeout)
+            print(f'Stampante di rete connessa: {host}:{port}')
+            return (printer, False)
+        except Exception as e:
+            print(f'Errore connessione stampante di rete: {e}')
+            return (EscPosDummy(), True)
+    
+    elif printer_type == 'usb':
+        try:
+            vendor = getattr(settings, 'PRINTER_USB_VENDOR', 0x0483)
+            product = getattr(settings, 'PRINTER_USB_PRODUCT', 0x5840)
+            timeout = getattr(settings, 'PRINTER_USB_TIMEOUT', 0)
+            in_ep = getattr(settings, 'PRINTER_USB_IN_EP', 0x81)
+            out_ep = getattr(settings, 'PRINTER_USB_OUT_EP', 0x03)
+            printer = EscPosPrinter(
+                idVendor=vendor,
+                idProduct=product,
+                timeout=timeout,
+                in_ep=in_ep,
+                out_ep=out_ep
+            )
+            print('Stampante USB connessa')
+            return (printer, False)
+        except (USBNotFoundError, Exception) as e:
+            print(f'Errore stampante USB: {e}')
+            return (EscPosDummy(), True)
+    
+    else:  # dummy mode
+        print('Modalità stampante dummy (emulazione)')
+        return (EscPosDummy(), True)
 
 
 # Create your views here.
@@ -257,6 +305,7 @@ def boxoffice_cart(request, event_id):
         'total' : total,
         'taxable': taxable,
         'tax': tax,
+        'vat_rate': tax,
         'payments_methods': payment_methods,
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
@@ -347,15 +396,19 @@ def boxoffice_plus_price(request, item_id = None):
     item = SellingSeats.objects.get(id=item_id)
     current_event = item.event
     costs = current_event.prices()
-    ingressi  = ['Gratuito','Ridotto' , 'Intero']
+    # Extend costs array to support subscription codes (3-6 = €0.00)
+    costs_extended = extend_price_array(costs)
+    ingressi = INGRESSI_NAMES
+    
     price_old = item.price
-    if price_old < 2:
+    if price_old < 6:
         price_new = price_old + 1
     else:
-        price_new = 2
+        price_new = 0
+    
     item.price = price_new
-    item.cost = costs[price_new]
-    item.ingresso = ingressi[price_new]
+    item.cost = safe_price_access(costs_extended, price_new)
+    item.ingresso = ingressi[price_new] if price_new < len(ingressi) else f"Codice {price_new}"
     item.save()
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
@@ -365,36 +418,51 @@ def boxoffice_minus_price(request, item_id = None):
     item = SellingSeats.objects.get(id=item_id)
     current_event = item.event
     costs = current_event.prices()
-    ingressi  = ['Gratuito','Ridotto' , 'Intero']
+    # Extend costs array to support subscription codes (3-6 = €0.00)
+    costs_extended = extend_price_array(costs)
+    ingressi = INGRESSI_NAMES
+    
     price_old = item.price
     if price_old > 0:
         price_new = price_old - 1
     else:
-        price_new = 0
+        price_new = 6  # Wrap around to max
+    
     item.price = price_new
-    item.cost = costs[price_new]
-    item.ingresso = ingressi[price_new]
+    item.cost = safe_price_access(costs_extended, price_new)
+    item.ingresso = get_price_name(price_new)
+    item.save()
+
+    return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
+
+def boxoffice_set_price(request, item_id=None, price_code=0):
+    """
+    Directly set the price code for a boxoffice item (called from dropdown).
+    """
+    item = SellingSeats.objects.get(id=item_id)
+    current_event = item.event
+    costs = current_event.prices()
+    # Extend costs array to support subscription codes (3-6 = €0.00)
+    costs_extended = extend_price_array(costs)
+    ingressi = INGRESSI_NAMES
+    
+    price_new = int(price_code)
+    
+    # Validate the price code is in valid range
+    if price_new < 0 or price_new > 6:
+        return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
+    
+    item.price = price_new
+    item.cost = safe_price_access(costs_extended, price_new)
+    item.ingresso = ingressi[price_new] if price_new < len(ingressi) else f"Codice {price_new}"
     item.save()
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
 
 def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_id=None):
-    printer_dummy = Dummy()
-    # printer_net = EscPosNetwork(host='localhost', port= 9100)
-    try:
-        printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
-        recovery: bool = False
-        # printer_usb = Usb(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
-    except USBNotFoundError:
-        print('Manca la stampnate USB')
-        printer_usb = printer_dummy
-        recovery = True
-        # with open('templates/boxoffice/usbnotfound.html', 'r') as html_fp:
-        #     html = html_fp.read()
-        # html = render_to_string('boxoffice/usbnotfound.html')
-        # return HttpResponse(html)
-
-
+    # Get configured printer
+    printer, recovery = get_printer()
+    
     boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
     current_event = Event.objects.get(id = event_id)
     payment_method = PaymentMethod.objects.get(id = method_id)
@@ -411,7 +479,9 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         user = boxoffice_user
 
     costs = current_event.prices()
-    ingressi = ['Gratuito','Ridotto', 'Intero']
+    # Extend arrays to support subscription codes (3-6)
+    costs_extended = extend_price_array(costs)
+    ingressi = INGRESSI_NAMES
 
     show= current_event.show
     sold_seats = SellingSeats.objects.all()
@@ -444,6 +514,9 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         'show' : show.shw_title,
     }
 
+    # Printer emulation data
+    emulated_print_data = []
+    
     tickets_list = []
     seats_number = sold_seats.count()
     for idx, sold_seat in enumerate(sold_seats):
@@ -464,14 +537,28 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         data = {}
         data['seat'] = sold_seat.seat
         ticket.price = sold_seat.price
-        data['ingresso'] = ingressi[sold_seat.price]
-        data['costo'] = costs[sold_seat.price]
+        data['ingresso'] = ingressi[sold_seat.price] if sold_seat.price < len(ingressi) else f"Codice {sold_seat.price}"
+        data['costo'] = safe_price_access(costs_extended, sold_seat.price)
         ticket.orderevent = orderevent.pk
         ticket.user = user
         ticket.payment = payment
         data['numero']= ticket.number
 
         ticket.save()
+
+        # Track subscription usage when selling with subscription code
+        if is_subscription_price_code(sold_seat.price):
+            subscription = get_subscription_by_price_code(user, sold_seat.price)
+            if subscription and subscription.can_use():
+                # Create usage record
+                SubscriptionUsage.objects.create(
+                    subscription=subscription,
+                    event=current_event,
+                    seat=sold_seat.seat
+                )
+                # Increment counter
+                subscription.events_used += 1
+                subscription.save()
 
         # # aggiorna il OrderEvent della Cassa per questo Evento
         # #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
@@ -522,25 +609,18 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         # ticket_image_l_rotated = ticket_image_l_rotated.filter(ImageFilter.CONTOUR)
         if not recovery:
             if idx == 0:
-                printer_usb.print_list_header(header=header)
-            printer_usb.print_list_item(data=data)
+                printer.print_list_header(header=header)
+            printer.print_list_item(data=data)
             if idx == (seats_number -1):
-                printer_usb.print_list_footer(data=data)
-
-
-
-            # ticket_image_l_scaled.save('the_ticket.png', 'PNG')
-            # time.sleep(0.25)
-
-            # printer_usb.print_ticket_image('the_ticket.png')  
+                printer.print_list_footer(data=data)
         else:
-            pass
-            # if os.name == 'posix':
-            #     cmd_str = f'cp {filename} media/tickets/recovery/.'
-            # else:
-            #     cmd_str = f'copy {filename} media/tickets/recovery/.'
-            
-            # os.system(cmd_str)
+            # Emulation mode - collect data for display
+            emulated_print_data.append({
+                'seat': data['seat'],
+                'ingresso': data['ingresso'],
+                'costo': data['costo'],
+                'numero': data['numero'],
+            })
 
     
         hall_status[ticket.seat]['status'] = 5
@@ -551,6 +631,9 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
        'event': current_event,
        'tickets_list':tickets_list,
        'payment_method': payment_method,
+       'recovery_mode': recovery,
+       'emulated_print_data': emulated_print_data if recovery else None,
+       'print_header': header if recovery else None,
 
         }
     
@@ -562,14 +645,22 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         json.dump(hall_status,jfp, indent=2)
    
 
-    response = close_transaction(request, context)
+    response = close_transaction(request, context=context)
     return response
     # return render(request, 'boxoffice/ticket_printed.html', context)
 
-def close_transaction(request, context={}):
+def close_transaction(request, event_id=None, context=None):
+    if context is None:
+        context = {}
+    
+    # If event_id is provided directly (from URL), get the event
+    if event_id and 'event' not in context:
+        context['event'] = Event.objects.get(id=event_id)
 
     current_event = context['event']
     costs = current_event.prices()
+    # Extend costs array to support subscription codes (3-6 = €0.00)
+    costs_extended = extend_price_array(costs)
     ingressi = ['Gratuito','Ridotto', 'Intero']
     show= current_event.show
     boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
@@ -579,12 +670,22 @@ def close_transaction(request, context={}):
         serial_number:int = payments.count() + 1
     except:
         serial_number:int = 1 
+    
+    # Get payment_method from context or use default
+    payment_method = context.get('payment_method')
+    if payment_method is None:
+        # Try to get first available payment method as default
+        try:
+            payment_method = PaymentMethod.objects.first()
+        except:
+            payment_method = None
+    
     transaction = BoxOfficeTransaction(
         user = boxoffice_user,
         event = current_event,
         seats_sold = '',
         payment_id = f'{current_event.pk:05d}.{serial_number:03d}',
-        payment_method = context['payment_method'],
+        payment_method = payment_method,
         amount_paid = "total",
         status = 'Completed'
     )
@@ -600,7 +701,7 @@ def close_transaction(request, context={}):
         ticket = Ticket.objects.get(event=current_event, seat = sold_seat.seat)
         if ticket.status == 'New':
             ticket.status = 'Obliterated'
-        totale += costs[ticket.price]
+        totale += safe_price_access(costs_extended, ticket.price)
         ticket.save()
         seats_list.append(f'{sold_seat.seat}${ticket.price}')
         sold_seat.delete()
@@ -608,6 +709,10 @@ def close_transaction(request, context={}):
     transaction.seats_sold = ','.join(seats_list)
     transaction.amount_paid = "{:5.2f}".format(totale)
     transaction.save()
+    
+    # If in recovery mode, show emulated print instead of redirecting
+    if context.get('recovery_mode', False):
+        return render(request, 'boxoffice/ticket_printed.html', context)
     
     return  redirect(reverse('event', kwargs={"event_id": current_event.pk}))
 
@@ -765,16 +870,18 @@ def sell_booking(request, order = None, mode=None):
 
     ingressi= ['Gratuito', 'Ridotto', 'Intero']
     costs = order_event.event.prices()
+    costs_extended = extend_price_array(costs)
     booked_seats_price = order_event.seats_price
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
+        price_idx = int(ordered_price)
         ordered_sellingseat = SellingSeats(
             event = order_event.event,
             orderevent = order_number,
             seat = ordered_seat,
-            price = int(ordered_price),
-            cost = costs[int(ordered_price)],
-            ingresso = costs[int(ordered_price)]
+            price = price_idx,
+            cost = safe_price_access(costs_extended, price_idx),
+            ingresso = safe_price_access(costs_extended, price_idx)
         )
         ordered_sellingseat.save()
     sellingseats = SellingSeats.objects.all()
@@ -914,15 +1021,13 @@ def erase_order(request, userorder_id, order_id):
     return redirect(event_list)
 
 def printer_ready():
+    """Check if the configured printer is ready."""
     try:
-        printer_usb = EscPosPrinter(idVendor=0x0483, idProduct=0x5840,timeout=0,in_ep=0x81, out_ep=0x03)
-        printer_ready: bool = True
-        del printer_usb
-    except USBNotFoundError:
-        print('Manca la stampnate USB')
-        printer_ready: bool = False
-
-    return printer_ready
+        printer, recovery = get_printer()
+        return not recovery
+    except Exception as e:
+        print(f'Errore controllo stampante: {e}')
+        return False
 
 
 def obliterate(request, ticket_number):
@@ -1012,13 +1117,15 @@ def auto_obliterate( request, ticket_number):
         ticket.status= 'Obliterated'
         ticket.save()
         prices = ticket.event.prices()
+        # Extend prices array to support subscription codes (3-6 = €0.00)
+        prices_extended = extend_price_array(prices)
         sell_mode_code = ticket_number[0]
         sell_modes = { 'W':'Web','C':'Cassa','P': 'Prenotazione' }
         ingresso = Ingresso(
                 ticket_number = ticket.number,
                 seat = ticket.seat,
                 event = ticket.event,
-                price = prices[ticket.price],
+                price = safe_price_access(prices_extended, ticket.price),
                 sell_mode = sell_modes[sell_mode_code],
         )
         ingresso.save()
@@ -1305,17 +1412,29 @@ def hall_detail(request, event_slug=None, number=None):
 def send_updatemail(request, number):
     # Send order update email to customer
    # prepare a dictionary for email data
+    from subscriptions.utils import is_subscription_price_code
+    
     email_data = {}
     orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
     event= orderevent.event
 
     prices = event.prices()
+    # Extend prices array to support subscription codes (3-6 = €0.00)
+    prices_extended = extend_price_array(prices)
+    ingressi_names = INGRESSI_NAMES
     booked_seats = {}
 
     for item in orderevent.seats_price.split(','):
         seat, price = item.split('$')
-
-        booked_seats[seat] = prices[int(price)]
+        price_code = int(price)
+        
+        # Build seat info dict similar to booking flow
+        is_subscription = is_subscription_price_code(price_code)
+        booked_seats[seat] = {
+            'price': safe_price_access(prices_extended, price_code),
+            'is_subscription': is_subscription,
+            'ingresso_type': ingressi_names[price_code] if price_code < len(ingressi_names) else f"Codice {price_code}"
+        }
 
     email_data[orderevent.booking_number] = {
     'show':orderevent.event.show.shw_title,
@@ -1368,17 +1487,29 @@ def send_updatemail(request, number):
 def send_cancelemail(request, number):
     # Send order update email to customer
    # prepare a dictionary for email data
+    from subscriptions.utils import is_subscription_price_code
+    
     email_data = {}
     orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
     event= orderevent.event
 
     prices = event.prices()
+    # Extend prices array to support subscription codes (3-6 = €0.00)
+    prices_extended = extend_price_array(prices)
+    ingressi_names = INGRESSI_NAMES
     booked_seats = {}
 
     for item in orderevent.seats_price.split(','):
         seat, price = item.split('$')
-
-        booked_seats[seat] = prices[int(price)]
+        price_code = int(price)
+        
+        # Build seat info dict similar to booking flow
+        is_subscription = is_subscription_price_code(price_code)
+        booked_seats[seat] = {
+            'price': safe_price_access(prices_extended, price_code),
+            'is_subscription': is_subscription,
+            'ingresso_type': ingressi_names[price_code] if price_code < len(ingressi_names) else f"Codice {price_code}"
+        }
 
     email_data[orderevent.booking_number] = {
     'show':orderevent.event.show.shw_title,
@@ -1575,11 +1706,14 @@ def edit_booking(request, boxofficebookingevent_number=None):
 
     cart_items = boxofficebookingevent_edit.seats_dicts()
     prices = event.prices()
+    # Extend prices array to support subscription codes (3-6 = €0.00)
+    prices_extended = extend_price_array(prices)
     taxable:float = 0.0
     tax:float = event.vat_rate
     total:float = 0.0
     for key, item in cart_items.items():
-        item['ingresso_str'] = prices[int(item['ingresso'])]
+        ingresso_code = int(item['ingresso'])
+        item['ingresso_str'] = safe_price_access(prices_extended, ingresso_code)
         total += float(item['ingresso_str']) 
     taxable=total/(1+tax/100)
     
@@ -1632,10 +1766,10 @@ def plus_ingr_booking(request, number = None, seat= None):
     item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
     seats_price = item.seats_price
 
-    find_pattern = re.compile(rf'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-6]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
-    if int(price)<2:
+    if int(price)<6:
         price_int = int(price)
         price_int += 1
         seat_price_new = f'{seat}${price_int}'
@@ -1658,7 +1792,7 @@ def minus_ingr_booking(request, number = None, seat= None):
     seats_price = item.seats_price
 
 
-    find_pattern = re.compile(rf'{seat}\$[0-2]')
+    find_pattern = re.compile(rf'{seat}\$[0-6]')
     seat_price_old = find_pattern.findall(seats_price)[0]
     place, price = seat_price_old.split('$')
     if int(price)>0:
@@ -1671,6 +1805,32 @@ def minus_ingr_booking(request, number = None, seat= None):
                 
     if change:
         seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
+        item.seats_price = seats_price_new
+        item.save()
+
+    return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": item.booking_number}))
+
+
+def set_ingr_booking(request, number=None, seat=None, price_code=0):
+    """
+    Directly set the price code for a booking seat (called from dropdown).
+    """
+    item = get_object_or_404(BoxOfficeBookingEvent, booking_number=number)
+    seats_price = item.seats_price
+    
+    price_new = int(price_code)
+    
+    # Validate the price code is in valid range
+    if price_new < 0 or price_new > 6:
+        return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": item.booking_number}))
+    
+    # Find and replace the seat price
+    find_pattern = re.compile(rf'{seat}\$[0-6]')
+    seat_price_old = find_pattern.findall(seats_price)
+    
+    if seat_price_old:
+        seat_price_new = f'{seat}${price_new}'
+        seats_price_new = re.sub(find_pattern, seat_price_new, seats_price)
         item.seats_price = seats_price_new
         item.save()
 
