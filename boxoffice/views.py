@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
+from django.db import transaction
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.mail import EmailMultiAlternatives
 from django.utils.formats import localize
@@ -189,28 +190,41 @@ def event(request, event_id):
         if len(selected_seats_str):
             selected_seats = selected_seats_str.strip().split(',')
             try:
-                for seat in selected_seats:
-                    hall_status[seat]['status'] = 4
-                    sellingseat = SellingSeats()
-                    sellingseat.seat = seat
-                    sellingseat.event = current_event
-                    sellingseat.session_id = session_id
-                    if current_event.price_full > 0:
-                        sellingseat.price = 2
-                    else:
-                        sellingseat.price = 0
-                    sellingseat.cost=costs[sellingseat.price]
-                    sellingseat.ingresso=ingressi[sellingseat.price]
-                    total += sellingseat.cost
-                    sellingseat.save()
-                    cart_items.append(sellingseat)
-                    go=True
+                # Lock atomico per prevenire double-booking dello stesso posto da cassieri diversi
+                with transaction.atomic():
+                    # Rileggi JSON dentro la transazione per avere stato aggiornato
+                    with open(json_file_path,'r') as jfp:
+                        hall_status = json.load(jfp)
+                    
+                    for seat in selected_seats:
+                        # Verifica che il posto sia ancora disponibile
+                        if hall_status[seat]['status'] not in [0, 1]:  # 0=free, 1=selected by user
+                            messages.warning(request, f"Il posto {seat} è già stato venduto da un altro operatore.")
+                            continue
+                        
+                        hall_status[seat]['status'] = 4
+                        sellingseat = SellingSeats()
+                        sellingseat.seat = seat
+                        sellingseat.event = current_event
+                        sellingseat.session_id = session_id
+                        if current_event.price_full > 0:
+                            sellingseat.price = 2
+                        else:
+                            sellingseat.price = 0
+                        sellingseat.cost=costs[sellingseat.price]
+                        sellingseat.ingresso=ingressi[sellingseat.price]
+                        total += sellingseat.cost
+                        sellingseat.save()
+                        cart_items.append(sellingseat)
+                        go=True
 
-                with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp, indent=2)
+                    # Scrivi JSON aggiornato dentro la transazione
+                    with open(json_file_path,'w') as jfp:
+                        json.dump(hall_status,jfp, indent=2)
 
-            except:
-                print('Something wrong!')
+            except Exception as e:
+                print(f'Errore durante selezione posti in event(): {e}')
+                messages.error(request, "Errore durante la selezione dei posti. Riprova.")
 
         context = {
             'hall_status': hall_status,
@@ -809,28 +823,41 @@ def change_bookings(request, event_id=None):
         if len(selected_seats_str):
             selected_seats = selected_seats_str.strip().split(',')
             try:
-                for seat in selected_seats:
-                    hall_status[seat]['status'] = 4
-                    sellingseat = SellingSeats()
-                    sellingseat.seat = seat
-                    sellingseat.event = current_event
-                    sellingseat.session_id = session_id
-                    if current_event.price_full > 0:
-                        sellingseat.price = 2
-                    else:
-                        sellingseat.price = 0
-                    sellingseat.cost=costs[sellingseat.price]
-                    sellingseat.ingresso=ingressi[sellingseat.price]
-                    total += sellingseat.cost
-                    sellingseat.save()
-                    cart_items.append(sellingseat)
-                    go=True
+                # Lock atomico per prevenire double-booking dello stesso posto da cassieri diversi
+                with transaction.atomic():
+                    # Rileggi JSON dentro la transazione per avere stato aggiornato
+                    with open(json_file_path,'r') as jfp:
+                        hall_status = json.load(jfp)
+                    
+                    for seat in selected_seats:
+                        # Verifica che il posto sia ancora disponibile
+                        if hall_status[seat]['status'] not in [0, 1]:  # 0=free, 1=selected by user
+                            messages.warning(request, f"Il posto {seat} è già stato venduto da un altro operatore.")
+                            continue
+                        
+                        hall_status[seat]['status'] = 4
+                        sellingseat = SellingSeats()
+                        sellingseat.seat = seat
+                        sellingseat.event = current_event
+                        sellingseat.session_id = session_id
+                        if current_event.price_full > 0:
+                            sellingseat.price = 2
+                        else:
+                            sellingseat.price = 0
+                        sellingseat.cost=costs[sellingseat.price]
+                        sellingseat.ingresso=ingressi[sellingseat.price]
+                        total += sellingseat.cost
+                        sellingseat.save()
+                        cart_items.append(sellingseat)
+                        go=True
 
-                with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp, indent=2)
+                    # Scrivi JSON aggiornato dentro la transazione
+                    with open(json_file_path,'w') as jfp:
+                        json.dump(hall_status,jfp, indent=2)
 
-            except:
-                print('Something wrong!')
+            except Exception as e:
+                print(f'Errore durante selezione posti in change_bookings(): {e}')
+                messages.error(request, "Errore durante la selezione dei posti. Riprova.")
 
         context = {
             'hall_status': hall_status,
