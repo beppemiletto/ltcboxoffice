@@ -493,7 +493,13 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
     
     boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
     current_event = Event.objects.get(id = event_id)
-    payment_method = PaymentMethod.objects.get(id = method_id)
+    
+    # Handle free transactions (method_id=0 means no payment required)
+    if method_id == 0 or method_id == '0':
+        payment_method = None  # Will be set to first available or handled as free
+    else:
+        payment_method = PaymentMethod.objects.get(id = method_id)
+    
     if orderevent_id is not None:
         if mode_id=='1':
             orderevent = OrderEvent.objects.get(id=orderevent_id)
@@ -533,7 +539,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         payment.payer_given_name = user.first_name
         payment.payer_surname = user.last_name
         payment.payer_mail = user.email
-    payment.payment_method = payment_method.slug
+    payment.payment_method = payment_method.slug if payment_method else 'free'
     payment.amount_paid=amount_paid
     payment.status='COMPLETED'
     payment.save()

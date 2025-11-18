@@ -1,6 +1,7 @@
 {%extends 'boxoffice_base.html'%}
 {%load static%}
 {%load index%}
+{%load boxoffice_filters%}
 
 {% block content%}
 <section class="section-content padding-y bg">
@@ -40,15 +41,17 @@
         <td> 
             <!-- col.// -->
              {%if event.price_full > 0 %}
-                <div class="input-group-sm input-spinner">
-                    <div class="input-group-prepend">
-                    <a href="{%url 'boxoffice_minus_price' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                    </div>
-                    <input type="text" class="form-control"  value="{{item.price}}">
-                    <div class="input-group-append">
-                    <a href="{%url 'boxoffice_plus_price' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                    </div>
-                </div> <!-- input-group.// -->
+                <select class="form-control form-control-sm" onchange="window.location.href=this.value" style="max-width: 200px;">
+                    <option value="{%url 'boxoffice_set_price' item.id 0%}" {% if item.price == 0 %}selected{% endif %}>Gratuito</option>
+                    <option value="{%url 'boxoffice_set_price' item.id 1%}" {% if item.price == 1 %}selected{% endif %}>Ridotto</option>
+                    <option value="{%url 'boxoffice_set_price' item.id 2%}" {% if item.price == 2 %}selected{% endif %}>Intero</option>
+                    <optgroup label="Abbonamenti">
+                        <option value="{%url 'boxoffice_set_price' item.id 3%}" {% if item.price == 3 %}selected{% endif %}>Abbonamento R4</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 4%}" {% if item.price == 4 %}selected{% endif %}>Abbonamento R8</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 5%}" {% if item.price == 5 %}selected{% endif %}>Abbonamento I4</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 6%}" {% if item.price == 6 %}selected{% endif %}>Abbonamento I8</option>
+                    </optgroup>
+                </select>
             {%else%}
                 <div class="text-dark">
                     <p><small>Gratuito</small></p>
@@ -57,9 +60,13 @@
         </td>
         <td> 
             <div class="price-wrap"> 
-                {{item.ingresso}}
+                {{item.price|ingresso_display}}
                 <br>
-                <var class="price">{{item.cost}}</var> 
+                {% if item.price|is_subscription %}
+                    <var class="price"><strong>Abbonamento</strong></var>
+                {% else %}
+                    <var class="price">€ {{item.cost|stringformat:".2f"}}</var> 
+                {% endif %}
             </div> <!-- price-wrap .// -->
         </td>
         <td class="text-right"> 
@@ -89,15 +96,29 @@
                   <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
                 <dl  class="dlist-align">
-                    {%if orderevent %}
-                        {%for method in payments_methods %}
-                            <a href="{%url 'boxoffice_print' event_id=event.id method_id=method.id orderevent_id=orderevent.id mode_id=mode%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
-                        {%endfor%}
-                    {%else%}
-                        {%for method in payments_methods %}
-                            <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
-                        {%endfor%}
-                    {%endif%}
+                    {% if total == 0 %}
+                        <!-- Transazione gratuita: nessun pagamento richiesto -->
+                        {%if orderevent %}
+                            <a href="{%url 'boxoffice_print' event_id=event.id method_id=0 orderevent_id=orderevent.id mode_id=mode%}">
+                                <button type="button" class="btn btn-success btn-sm btn-block">PROCEDI (Gratuito)</button>
+                            </a>
+                        {%else%}
+                            <a href="{%url 'boxoffice_print' event.id 0%}">
+                                <button type="button" class="btn btn-success btn-sm btn-block">PROCEDI (Gratuito)</button>
+                            </a>
+                        {%endif%}
+                    {% else %}
+                        <!-- Transazione a pagamento: scegli metodo -->
+                        {%if orderevent %}
+                            {%for method in payments_methods %}
+                                <a href="{%url 'boxoffice_print' event_id=event.id method_id=method.id orderevent_id=orderevent.id mode_id=mode%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                            {%endfor%}
+                        {%else%}
+                            {%for method in payments_methods %}
+                                <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                            {%endfor%}
+                        {%endif%}
+                    {% endif %}
 
                 </dl>
                 <dl  class="dlist-align">
