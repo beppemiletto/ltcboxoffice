@@ -138,7 +138,12 @@ if crontab is not None:
         'task-number-one': {
             'task': 'tickets.tasks.scheduledTask',
             'schedule': crontab(minute='*/5')
-        }
+        },
+        'cleanup-abandoned-carts': {
+            'task': 'boxoffice.cleanup_abandoned_carts',
+            'schedule': crontab(minute='*/15'),  # Ogni 15 minuti
+            'kwargs': {'timeout_minutes': 15},
+        },
     }
 else:
     CELERY_BEAT_SCHEDULE = {}

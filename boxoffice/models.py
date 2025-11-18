@@ -20,6 +20,7 @@ class SellingSeats(models.Model):
     cost = models.FloatField(default=0.0)
     ingresso = models.CharField(max_length=20, default="Gratuito")
     session_id = models.CharField(max_length=100, blank=True, null=True, default="")  # Isolate concurrent box office sessions
+    created_at = models.DateTimeField(auto_now_add=True)  # Track when seat was added to cart
 
 class PaymentMethod(models.Model):
     ACCOUNT_TYPES= (
