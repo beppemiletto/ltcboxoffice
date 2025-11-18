@@ -97,6 +97,28 @@
                 <a href="{%url 'store'%}" class="btn btn-light btn-block">Continua acquisti</a>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
+            
+            {% if subscription_options %}
+            <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">I tuoi abbonamenti</h5>
+                <p class="small text-muted">Usa i pulsanti +/- nella colonna "Tipo Ingresso" per selezionare un abbonamento.</p>
+                <hr>
+                {% for option in subscription_options %}
+                <dl class="dlist-align">
+                  <dt>{{ option.name }}:</dt>
+                  <dd class="text-right">
+                    {% if option.remaining > 0 %}
+                        <span class="badge badge-success">{{ option.remaining }} eventi disponibili</span>
+                    {% else %}
+                        <span class="badge badge-warning">Esaurito</span>
+                    {% endif %}
+                  </dd>
+                </dl>
+                {% endfor %}
+            </div> <!-- card-body.// -->
+            </div> <!-- card.// -->
+            {% endif %}
     
     </aside> <!-- col.// -->
     

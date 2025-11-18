@@ -42,3 +42,6 @@ EMAIL_USE_TLS = True
 
 # Development-specific settings
 CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+
+# Printer Configuration - Development (Emulation Mode)
+PRINTER_TYPE = 'dummy'  # Use dummy printer for development (shows emulated output)

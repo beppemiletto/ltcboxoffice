@@ -45,15 +45,23 @@
         </td>
         <td> 
                 {%if item.event.price_full > 0 %}
-                <div class="input-group-sm input-spinner">
-                    <div class="input-group-prepend">
-                    <a href="{%url 'minus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                    </div>
-                    <input type="text" class="form-control"  value="{{item.ingresso}}">
-                    <div class="input-group-append">
-                    <a href="{%url 'plus_ing_booking' item.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                    </div>
-                </div>
+                <select class="form-control form-control-sm" onchange="window.location.href=this.value" style="max-width: 200px;">
+                    <option value="{%url 'set_ing_booking' item.id 0%}" {% if item.ingresso == 0 %}selected{% endif %}>Gratuito</option>
+                    <option value="{%url 'set_ing_booking' item.id 1%}" {% if item.ingresso == 1 %}selected{% endif %}>Ridotto</option>
+                    <option value="{%url 'set_ing_booking' item.id 2%}" {% if item.ingresso == 2 %}selected{% endif %}>Intero</option>
+                    {% if subscription_options %}
+                    <optgroup label="Abbonamenti">
+                        {% for sub_code, sub_info in subscription_options.items %}
+                        <option value="{%url 'set_ing_booking' item.id sub_code%}" 
+                                {% if item.ingresso == sub_code %}selected{% endif %}
+                                {% if sub_info.event_id == item.event.id and sub_info.already_used %}disabled{% endif %}>
+                            {{ sub_info.name }} 
+                            {% if sub_info.remaining > 0 %}({{ sub_info.remaining }} rimasti){% else %}(esaurito){% endif %}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+                </select>
                 {%else%}
                 <div class="text-dark">
                     <p><small>Gratuito</small></p>
@@ -101,6 +109,29 @@
                 <a href="{%url 'checkout_booking'%}" class="btn btn-primary btn-block">Conferma le prenotazioni</a>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
+            
+            {% if subscription_options %}
+            <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">I tuoi abbonamenti</h5>
+                <p class="small text-muted">Usa i pulsanti +/- nella colonna "Tipo Ingresso" per selezionare un abbonamento.</p>
+                <p class="small text-warning"><strong>Attenzione:</strong> Puoi usare un solo ingresso con abbonamento per evento.</p>
+                <hr>
+                {% for option in subscription_options %}
+                <dl class="dlist-align">
+                  <dt>{{ option.name }}:</dt>
+                  <dd class="text-right">
+                    {% if option.remaining > 0 %}
+                        <span class="badge badge-success">{{ option.remaining }} eventi disponibili</span>
+                    {% else %}
+                        <span class="badge badge-warning">Esaurito</span>
+                    {% endif %}
+                  </dd>
+                </dl>
+                {% endfor %}
+            </div> <!-- card-body.// -->
+            </div> <!-- card.// -->
+            {% endif %}
     
     </aside> <!-- col.// -->
     

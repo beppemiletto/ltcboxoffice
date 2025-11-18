@@ -51,15 +51,17 @@
         </td>
         <td> 
             {%if event.price_full > 0 %}
-            <div class="input-group-sm input-spinner">
-                <div class="input-group-prepend">
-                <a href="{%url 'minus_ingr_booking' number key %}" class="btn btn-light" type="button" id="button-plus"> <i class="fa fa-minus"></i> </a>
-                </div>
-                <input type="text" class="form-control"  value="{{item.ingresso}}">
-                <div class="input-group-append">
-                <a href="{%url 'plus_ingr_booking' number key %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
-                </div>
-            </div> 
+            <select class="form-control form-control-sm" onchange="window.location.href=this.value" style="max-width: 200px;">
+                <option value="{%url 'set_ingr_booking' number key 0%}" {% if item.ingresso == '0' %}selected{% endif %}>Gratuito</option>
+                <option value="{%url 'set_ingr_booking' number key 1%}" {% if item.ingresso == '1' %}selected{% endif %}>Ridotto</option>
+                <option value="{%url 'set_ingr_booking' number key 2%}" {% if item.ingresso == '2' %}selected{% endif %}>Intero</option>
+                <optgroup label="Abbonamenti">
+                    <option value="{%url 'set_ingr_booking' number key 3%}" {% if item.ingresso == '3' %}selected{% endif %}>Abbonamento R4</option>
+                    <option value="{%url 'set_ingr_booking' number key 4%}" {% if item.ingresso == '4' %}selected{% endif %}>Abbonamento R8</option>
+                    <option value="{%url 'set_ingr_booking' number key 5%}" {% if item.ingresso == '5' %}selected{% endif %}>Abbonamento I4</option>
+                    <option value="{%url 'set_ingr_booking' number key 6%}" {% if item.ingresso == '6' %}selected{% endif %}>Abbonamento I8</option>
+                </optgroup>
+            </select>
             {%else%}
             <div class="text-dark">
                 <p><small>Gratuito</small></p>

@@ -92,13 +92,17 @@ class Subscription(models.Model):
     
     def remaining_events(self):
         """Calcola eventi rimanenti"""
+        if self.events_included is None or self.events_used is None:
+            return 0
         return self.events_included - self.events_used
     
     def is_valid(self):
         """Verifica se l'abbonamento è valido e utilizzabile"""
         if self.status != 'ACTIVE':
             return False
-        if self.valid_to < timezone.now().date():
+        if not self.valid_to or self.valid_to < timezone.now().date():
+            return False
+        if self.events_included is None or self.events_used is None:
             return False
         if self.events_used >= self.events_included:
             return False

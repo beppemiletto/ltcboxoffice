@@ -18,7 +18,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     search_fields = ['subscription_number', 'user__email', 'user__first_name', 'user__last_name']
     readonly_fields = ['subscription_number', 'created_at', 'updated_at', 'events_used', 'remaining_display']
     list_per_page = 30
-    date_hierarchy = 'created_at'
+    # date_hierarchy = 'created_at'  # Disabled due to MySQL timezone issues
     
     fieldsets = (
         ('Informazioni Generali', {
@@ -44,6 +44,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
     )
     
     def remaining_display(self, obj):
+        if not obj.pk:  # Nuovo oggetto non salvato
+            return '-'
         remaining = obj.remaining_events()
         if remaining == 0:
             return f'✗ {remaining} (Esaurito)'
@@ -61,7 +63,7 @@ class SubscriptionUsageAdmin(admin.ModelAdmin):
     search_fields = ['subscription__subscription_number', 'event__show__shw_title', 'seat']
     readonly_fields = ['used_at']
     list_per_page = 50
-    date_hierarchy = 'used_at'
+    # date_hierarchy = 'used_at'  # Disabled due to MySQL timezone issues
     
     fieldsets = (
         ('Abbonamento e Evento', {

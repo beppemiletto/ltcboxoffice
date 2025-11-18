@@ -11,6 +11,8 @@ from orders.models import Order, Payment, OrderEvent, UserEvent
 from orders.forms import OrderForm
 from accounts.models import UserProfile
 from carts.models import Cart, CartItem
+from subscriptions.models import SubscriptionUsage
+from subscriptions.utils import is_subscription_price_code, get_subscription_by_price_code, get_subscription_price_options
 import os, json
 import datetime
 from .barcode_printer import OrderBarCodePrinter
@@ -99,12 +101,47 @@ def remove_booking(request, item_id):
 def plus_ing_booking(request, item_id = None):
     item = CartItem.objects.get(id=item_id)
     ingresso_old = item.ingresso
-    if ingresso_old < 2:
+    # Allow cycling through 0-6 (including subscription codes)
+    if ingresso_old < 6:
         ingresso_new = ingresso_old + 1
     else:
-        ingresso_new = 2
+        ingresso_new = 0
+    
+    # Check if trying to set subscription code
+    if is_subscription_price_code(ingresso_new):
+        should_skip = False
+        
+        if not request.user.is_authenticated:
+            should_skip = True  # Non-authenticated users can't use subscriptions
+        else:
+            # Check if user has any valid subscriptions
+            subscription_options = get_subscription_price_options(request.user)
+            if not subscription_options:
+                should_skip = True  # No valid subscriptions available
+            else:
+                # Check if subscription already used for this event in cart
+                existing_subscription = CartItem.objects.filter(
+                    user=request.user,
+                    event=item.event,
+                    is_active=True
+                ).exclude(id=item.id).filter(
+                    ingresso__in=[3, 4, 5, 6]  # Any subscription code
+                ).exists()
+                
+                if existing_subscription:
+                    should_skip = True  # Already used for this event
+        
+        if should_skip:
+            # Skip all subscription codes (3-6), jump to 0
+            ingresso_new = 0
+    
     item.ingresso = ingresso_new
-    if ingresso_new == 0:
+    
+    # Set price based on ingresso code
+    if is_subscription_price_code(ingresso_new):
+        # Subscription codes (3-6) have no direct price
+        item.price = 0.0
+    elif ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
         item.price = item.event.price_reduced
@@ -123,9 +160,43 @@ def minus_ing_booking(request, item_id = None):
     if ingresso_old > 0:
         ingresso_new = ingresso_old - 1
     else:
-        ingresso_new = 0
+        ingresso_new = 6  # Wrap around to max value
+    
+    # Check if trying to set subscription code
+    if is_subscription_price_code(ingresso_new):
+        should_skip = False
+        
+        if not request.user.is_authenticated:
+            should_skip = True  # Non-authenticated users can't use subscriptions
+        else:
+            # Check if user has any valid subscriptions
+            subscription_options = get_subscription_price_options(request.user)
+            if not subscription_options:
+                should_skip = True  # No valid subscriptions available
+            else:
+                # Check if subscription already used for this event in cart
+                existing_subscription = CartItem.objects.filter(
+                    user=request.user,
+                    event=item.event,
+                    is_active=True
+                ).exclude(id=item.id).filter(
+                    ingresso__in=[3, 4, 5, 6]  # Any subscription code
+                ).exists()
+                
+                if existing_subscription:
+                    should_skip = True  # Already used for this event
+        
+        if should_skip:
+            # Skip all subscription codes (3-6), jump to 2
+            ingresso_new = 2
+    
     item.ingresso = ingresso_new
-    if ingresso_new == 0:
+    
+    # Set price based on ingresso code
+    if is_subscription_price_code(ingresso_new):
+        # Subscription codes (3-6) have no direct price
+        item.price = 0.0
+    elif ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
         item.price = item.event.price_reduced
@@ -136,9 +207,66 @@ def minus_ing_booking(request, item_id = None):
     # return HttpResponse('<H1>CartItem number {} move ingresso from {} to {}</H1>'.format(item_id, ingresso_old, ingresso_new))
     return redirect('bookings')
 
+def set_ing_booking(request, item_id=None, ingresso_code=0):
+    """
+    Directly set the ingresso code for a booking item (called from dropdown).
+    """
+    item = CartItem.objects.get(id=item_id)
+    ingresso_new = int(ingresso_code)
+    
+    # Validate the ingresso code is in valid range
+    if ingresso_new < 0 or ingresso_new > 6:
+        return redirect('bookings')
+    
+    # Check if trying to set subscription code
+    if is_subscription_price_code(ingresso_new):
+        # Verify user is authenticated
+        if not request.user.is_authenticated:
+            return redirect('bookings')
+        
+        # Check if user has valid subscriptions
+        subscription_options = get_subscription_price_options(request.user)
+        if not subscription_options:
+            return redirect('bookings')
+        
+        # Check if this specific subscription code is available
+        if ingresso_new not in subscription_options:
+            return redirect('bookings')
+        
+        # Check if subscription already used for this event in cart
+        existing_subscription = CartItem.objects.filter(
+            user=request.user,
+            event=item.event,
+            is_active=True
+        ).exclude(id=item.id).filter(
+            ingresso__in=[3, 4, 5, 6]  # Any subscription code
+        ).exists()
+        
+        if existing_subscription:
+            # Already using a subscription for this event
+            return redirect('bookings')
+    
+    item.ingresso = ingresso_new
+    
+    # Set price based on ingresso code
+    if is_subscription_price_code(ingresso_new):
+        item.price = 0.0
+    elif ingresso_new == 0:
+        item.price = 0.0
+    elif ingresso_new == 1:
+        item.price = item.event.price_reduced
+    elif ingresso_new == 2:
+        item.price = item.event.price_full
+    
+    item.save()
+    return redirect('bookings')
+
 def bookings(request, total=0, cart_items=None):
     prices=[]
     vat_rate = 0.0
+    subscription_options = []
+    subscription_already_used = False
+    
     try: 
         if request.user.is_authenticated:
             cart_items = CartItem.objects.filter(user=request.user, is_active=True)
@@ -146,6 +274,15 @@ def bookings(request, total=0, cart_items=None):
                 cart = cart_items[0].cart
             else:
                 cart = None
+            
+            # Get subscription options for authenticated users
+            subscription_options = get_subscription_price_options(request.user)
+            
+            # Check if subscription is already used in this cart for any event
+            events_with_subscription = set()
+            for item in cart_items:
+                if is_subscription_price_code(item.ingresso):
+                    events_with_subscription.add(item.event.id)
 
         else:
             cart = Cart.objects.get(cart_id=_cart_id(request))
@@ -154,8 +291,12 @@ def bookings(request, total=0, cart_items=None):
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         for item in cart_items:
             vat_rate = item.event.vat_rate
-            prices = [0.00, item.event.price_reduced, item.event.price_full]
-            total += (prices[item.ingresso])
+            prices = [0.00, item.event.price_reduced, item.event.price_full, 0.00, 0.00, 0.00, 0.00]
+            # Index: 0=Gratuito, 1=Ridotto, 2=Intero, 3-6=Abbonamenti (€0.00)
+            if item.ingresso < len(prices):
+                total += prices[item.ingresso]
+            else:
+                total += item.price  # Fallback to item.price
         taxable = int(total / (1 + vat_rate / 100) *100)/100
         tax = int((total - taxable) *100)/100
 
@@ -167,6 +308,8 @@ def bookings(request, total=0, cart_items=None):
             'tax': tax,
             'vat_rate': vat_rate,
             'prices': prices,
+            'subscription_options': subscription_options,
+            'events_with_subscription': events_with_subscription if request.user.is_authenticated else set(),
         }
     except ObjectDoesNotExist:
         context = {}
@@ -397,11 +540,19 @@ def booking_payments(request, newContext={}):
             # Update email data - get existing seats or create new dict
             if orderevent.orderevent_number in email_data:
                 booked_seats = email_data[orderevent.orderevent_number]['seats']
-                booked_seats[seat] = item.price
+                booked_seats[seat] = {
+                    'price': item.price,
+                    'is_subscription': is_subscription_price_code(item.ingresso),
+                    'ingresso_type': item.ingresso_str()
+                }
                 email_data[orderevent.orderevent_number]['seats'] = booked_seats
             else:
                 # OrderEvent exists but not in email_data yet
-                booked_seats = {seat: item.price}
+                booked_seats = {seat: {
+                    'price': item.price,
+                    'is_subscription': is_subscription_price_code(item.ingresso),
+                    'ingresso_type': item.ingresso_str()
+                }}
                 email_data[orderevent.orderevent_number] = {
                     'show': orderevent.event.show.shw_title,
                     'datetime': orderevent.event.date_time,
@@ -431,7 +582,11 @@ def booking_payments(request, newContext={}):
             orderevent.barcode_path = barcode_image_path
             orderevent.save()
             booked_seats = {}
-            booked_seats[seat] = item.price
+            booked_seats[seat] = {
+                'price': item.price,
+                'is_subscription': is_subscription_price_code(item.ingresso),
+                'ingresso_type': item.ingresso_str()
+            }
 
             email_data[orderevent.orderevent_number] = {
             'show':orderevent.event.show.shw_title,
@@ -453,6 +608,22 @@ def booking_payments(request, newContext={}):
                 json.dump(event_hall,fp,indent=4, separators=(',', ': '))
         else:
             print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
+
+        # Handle subscription usage if this is a subscription-based ticket
+        if is_subscription_price_code(item.ingresso):
+            subscription = get_subscription_by_price_code(current_user, item.ingresso)
+            if subscription:
+                # Create SubscriptionUsage record
+                usage = SubscriptionUsage(
+                    subscription=subscription,
+                    event=event,
+                    seat=seat,
+                )
+                usage.save()
+                
+                # Increment events_used counter
+                subscription.events_used += 1
+                subscription.save()
 
         # Manage the UserEvent record (cross table connecting all orders of one user to one event
         # collecting all setas and prices of User for One event)

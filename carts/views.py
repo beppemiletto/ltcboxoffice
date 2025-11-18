@@ -6,6 +6,7 @@ from store.models import Event
 from orders.models import Order
 from accounts.models import UserProfile
 from .models import Cart, CartItem
+from subscriptions.utils import is_subscription_price_code, get_subscription_price_options
 import os, json
 
 # Create your views here.
@@ -92,12 +93,37 @@ def remove_cart(request, item_id):
 def plus_ingresso(request, item_id = None):
     item = CartItem.objects.get(id=item_id)
     ingresso_old = item.ingresso
-    if ingresso_old < 2:
+    # Allow cycling through 0-6 (including subscription codes)
+    if ingresso_old < 6:
         ingresso_new = ingresso_old + 1
     else:
-        ingresso_new = 2
+        ingresso_new = 0
+    
+    # Check if trying to set subscription code
+    if is_subscription_price_code(ingresso_new) and request.user.is_authenticated:
+        # Check if subscription already used for this event in cart
+        existing_subscription = CartItem.objects.filter(
+            user=request.user,
+            event=item.event,
+            is_active=True
+        ).exclude(id=item.id).filter(
+            ingresso__in=[3, 4, 5, 6]  # Any subscription code
+        ).exists()
+        
+        if existing_subscription:
+            # Skip subscription codes, continue to next
+            if ingresso_new < 6:
+                ingresso_new = ingresso_new + 1
+            else:
+                ingresso_new = 0
+    
     item.ingresso = ingresso_new
-    if ingresso_new == 0:
+    
+    # Set price based on ingresso code
+    if is_subscription_price_code(ingresso_new):
+        # Subscription codes (3-6) have no direct price
+        item.price = 0.0
+    elif ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
         item.price = item.event.price_reduced
@@ -116,9 +142,33 @@ def minus_ingresso(request, item_id = None):
     if ingresso_old > 0:
         ingresso_new = ingresso_old - 1
     else:
-        ingresso_new = 0
+        ingresso_new = 6  # Wrap around to max value
+    
+    # Check if trying to set subscription code
+    if is_subscription_price_code(ingresso_new) and request.user.is_authenticated:
+        # Check if subscription already used for this event in cart
+        existing_subscription = CartItem.objects.filter(
+            user=request.user,
+            event=item.event,
+            is_active=True
+        ).exclude(id=item.id).filter(
+            ingresso__in=[3, 4, 5, 6]  # Any subscription code
+        ).exists()
+        
+        if existing_subscription:
+            # Skip subscription codes, continue to previous
+            if ingresso_new > 0:
+                ingresso_new = ingresso_new - 1
+            else:
+                ingresso_new = 6
+    
     item.ingresso = ingresso_new
-    if ingresso_new == 0:
+    
+    # Set price based on ingresso code
+    if is_subscription_price_code(ingresso_new):
+        # Subscription codes (3-6) have no direct price
+        item.price = 0.0
+    elif ingresso_new == 0:
         item.price = 0.0
     elif ingresso_new == 1:
         item.price = item.event.price_reduced
@@ -135,6 +185,8 @@ def cart(request, total=0, cart_items=None):
     return redirect('bookings')
     prices=[]
     vat_rate = 0.0
+    subscription_options = []
+    
     try: 
         if request.user.is_authenticated:
             cart_items = CartItem.objects.filter(user=request.user, is_active=True)
@@ -142,6 +194,8 @@ def cart(request, total=0, cart_items=None):
                 cart = cart_items[0].cart
             else:
                 cart = None
+            # Get subscription options for authenticated users
+            subscription_options = get_subscription_price_options(request.user)
 
         else:
             cart = Cart.objects.get(cart_id=_cart_id(request))
@@ -163,6 +217,7 @@ def cart(request, total=0, cart_items=None):
             'tax': tax,
             'vat_rate': vat_rate,
             'prices': prices,
+            'subscription_options': subscription_options,
         }
     except ObjectDoesNotExist:
         context = {}

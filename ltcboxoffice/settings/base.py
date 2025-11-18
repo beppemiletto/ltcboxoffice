@@ -4,7 +4,11 @@ Common settings shared across all environments.
 """
 import os
 from pathlib import Path
-from celery.schedules import crontab
+
+try:
+    from celery.schedules import crontab
+except ImportError:
+    crontab = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -128,12 +132,16 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/Rome'
-CELERY_BEAT_SCHEDULE = {
-    'task-number-one': {
-        'task': 'tickets.tasks.scheduledTask',
-        'schedule': crontab(minute='*/5')
+
+if crontab is not None:
+    CELERY_BEAT_SCHEDULE = {
+        'task-number-one': {
+            'task': 'tickets.tasks.scheduledTask',
+            'schedule': crontab(minute='*/5')
+        }
     }
-}
+else:
+    CELERY_BEAT_SCHEDULE = {}
 
 # Logging Configuration
 LOGGING = {
@@ -181,3 +189,18 @@ LOGGING = {
         },
     },
 }
+
+# Printer Configuration - Default values (override in environment-specific settings)
+PRINTER_TYPE = 'dummy'  # Options: 'usb', 'network', 'dummy'
+
+# USB Printer Settings (for environments that need it)
+PRINTER_USB_VENDOR = 0x0483
+PRINTER_USB_PRODUCT = 0x5840
+PRINTER_USB_TIMEOUT = 0
+PRINTER_USB_IN_EP = 0x81
+PRINTER_USB_OUT_EP = 0x03
+
+# Network Printer Settings (override in production.py)
+PRINTER_NETWORK_HOST = '192.168.1.100'
+PRINTER_NETWORK_PORT = 9100
+PRINTER_NETWORK_TIMEOUT = 60

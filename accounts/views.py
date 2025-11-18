@@ -9,6 +9,7 @@ from .models import Account, UserProfile
 from carts.models import Cart, CartItem
 from carts.views import _cart_id
 from orders.models import Order, OrderEvent, UserEvent
+from subscriptions.models import Subscription
 from store.models import Event
 import random
 import string
@@ -230,12 +231,15 @@ def my_orders(request):
                 future_orders.append(order_event)
             else:
                 past_orders.append(order_event)
-
+    
+    # Get user's subscriptions
+    subscriptions = Subscription.objects.filter(user=request.user).select_related('subscription_type').order_by('-created_at')
 
     context = {
         'orders':orders,
         'future_orders': future_orders,
         'past_orders': past_orders,
+        'subscriptions': subscriptions,
     }
     return render(request, 'accounts/my_orders.html', context)
         

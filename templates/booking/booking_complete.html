@@ -76,9 +76,14 @@
                                                     </p>
                                                 </td>
                                                 <td class="text-left">
-                                                    {% for seat,price in orderevent.seats.items %}
+                                                    {% for seat, seat_info in orderevent.seats.items %}
                                                     <p class="text-black-50">
-                                                        Posto {{seat}} al prezzo di Euro {{price}}
+                                                        Posto {{seat}} 
+                                                        {% if seat_info.is_subscription %}
+                                                        con <b>{{seat_info.ingresso_type}}</b>
+                                                        {% else %}
+                                                        al prezzo di Euro {{seat_info.price}}
+                                                        {% endif %}
                                                     </p> 
                                                     {% endfor %}
                                                 </td>

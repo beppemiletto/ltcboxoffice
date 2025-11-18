@@ -8,6 +8,10 @@ ingressi_strings = [
     'Gratuito', # for index == 0
     'Ridotto', # for index == 1
     'Intero', # for index == 2
+    'Abbonamento R4', # for index == 3
+    'Abbonamento R8', # for index == 4
+    'Abbonamento I4', # for index == 5
+    'Abbonamento I8', # for index == 6
 ]
 
 
@@ -20,7 +24,15 @@ class Cart(models.Model):
         return self.cart_id
 
 class CartItem(models.Model):
-    INGRESSI = ((0,'Gratuito'), (1,'Ridotto'), (2,'Intero'),)
+    INGRESSI = (
+        (0,'Gratuito'), 
+        (1,'Ridotto'), 
+        (2,'Intero'),
+        (3,'Abbonamento R4'),
+        (4,'Abbonamento R8'),
+        (5,'Abbonamento I4'),
+        (6,'Abbonamento I8'),
+    )
     user            = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     event           = models.ForeignKey(Event, on_delete=models.CASCADE)
     cart            = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)

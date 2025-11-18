@@ -10,6 +10,62 @@
             <div class="row">
                 {% include 'includes/dashboard_sidebar.html' %}
                 <main class="col-md-9">
+                    <!-- Subscriptions Section -->
+                    {% if subscriptions %}
+                    <article class="card mb-3">
+                        <header class="card-header">
+                            <strong class="d-inline-block mr-3">I tuoi abbonamenti:</strong>
+                        </header>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Numero Abbonamento</th>
+                                                <th scope="col">Tipo</th>
+                                                <th scope="col">Stato</th>
+                                                <th scope="col">Validità</th>
+                                                <th scope="col">Eventi Utilizzati</th>
+                                                <th scope="col">Eventi Rimanenti</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for subscription in subscriptions %}
+                                            <tr>
+                                                <th scope="row">{{ subscription.subscription_number }}</th>
+                                                <td>{{ subscription.subscription_type.name }}</td>
+                                                <td>
+                                                    {% if subscription.status == 'ACTIVE' %}
+                                                        <span class="badge badge-success">Attivo</span>
+                                                    {% elif subscription.status == 'EXPIRED' %}
+                                                        <span class="badge badge-warning">Scaduto</span>
+                                                    {% elif subscription.status == 'EXHAUSTED' %}
+                                                        <span class="badge badge-secondary">Esaurito</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">{{ subscription.get_status_display }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ subscription.valid_from|date:"d/m/Y" }} - {{ subscription.valid_to|date:"d/m/Y" }}</td>
+                                                <td>{{ subscription.events_used }} / {{ subscription.events_included }}</td>
+                                                <td>
+                                                    {% if subscription.remaining_events > 0 %}
+                                                        <span class="badge badge-success">{{ subscription.remaining_events }}</span>
+                                                    {% else %}
+                                                        <span class="badge badge-secondary">0</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    {% endif %}
+                    
+                    <!-- Orders Section -->
                     <article class="card">
                         <header class="card-header">
                             <strong class="d-inline-block mr-3">I tuoi ordini precedenti:</strong>

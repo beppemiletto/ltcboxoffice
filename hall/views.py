@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from store.models import Event
 from .models import Row
+from subscriptions.utils import get_subscription_price_options
 import json, os, datetime
 
 # Create your views here.
@@ -45,13 +46,17 @@ def hall_detail(request, event_slug=None):
             row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
         rows[row_label]=row  # last row closure
 
-
+        # Check user's active subscriptions
+        subscription_options = []
+        if request.user.is_authenticated:
+            subscription_options = get_subscription_price_options(request.user)
 
         context = {
             'hall_status': hall_status,
             'rows': rows,
             'json_file' : json_file_path,
             'event': event,
+            'subscription_options': subscription_options,
         }
 
         return render(request, 'hall/hall_detail.html', context)

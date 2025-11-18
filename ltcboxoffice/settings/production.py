@@ -66,3 +66,9 @@ CACHES = {
         'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
     }
 }
+
+# Printer Configuration - Production (Network Printer)
+PRINTER_TYPE = 'network'  # Use network printer in production
+PRINTER_NETWORK_HOST = os.environ.get('PRINTER_HOST', '192.168.1.100')  # Set via environment variable
+PRINTER_NETWORK_PORT = int(os.environ.get('PRINTER_PORT', '9100'))
+PRINTER_NETWORK_TIMEOUT = 60
