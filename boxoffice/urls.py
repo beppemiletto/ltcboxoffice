@@ -5,6 +5,19 @@ from . import views
 urlpatterns = [
     path('', views.boxoffice, name='boxoffice'),
     path('user_not_allowed/', views.user_not_allowed, name='user_not_allowed'),
+    
+    # Gestione Abbonamenti
+    path('subscriptions/', views.subscriptions_main, name='subscriptions_main'),
+    path('subscriptions/sell/', views.sell_subscription, name='sell_subscription'),
+    path('subscriptions/verify/', views.verify_subscription, name='verify_subscription'),
+    path('subscriptions/search/', views.search_subscription, name='search_subscription'),
+    path('subscriptions/detail/<int:subscription_id>/', views.subscription_detail, name='subscription_detail'),
+    path('subscriptions/edit/<int:subscription_id>/', views.edit_subscription, name='edit_subscription'),
+    path('subscriptions/add_usage/<int:subscription_id>/', views.add_manual_usage, name='add_manual_usage'),
+    path('subscriptions/delete_usage/<int:usage_id>/', views.delete_usage, name='delete_usage'),
+    path('subscriptions/print/<int:subscription_id>/', views.print_subscription, name='print_subscription'),
+    path('subscriptions/export_excel/', views.export_subscriptions_excel, name='export_subscriptions_excel'),
+    
     path('event/<int:event_id>/', views.event, name='event'),
     path('boxoffice_cart/<int:event_id>/', views.boxoffice_cart, name='boxoffice_cart'),
     path('boxoffice_plus_price/<int:item_id>/', views.boxoffice_plus_price, name='boxoffice_plus_price'),
@@ -12,6 +25,9 @@ urlpatterns = [
     path('boxoffice_set_price/<int:item_id>/<int:price_code>/', views.boxoffice_set_price, name='boxoffice_set_price'),
     path('boxoffice_remove_cart/<int:item_id>/', views.boxoffice_remove_cart, name='boxoffice_remove_cart'),
     path('boxoffice_cart_cancel/<int:event_id>/', views.boxoffice_cart_cancel, name='boxoffice_cart_cancel'),
+    path('verify_subscription_code/', views.verify_subscription_code_ajax, name='verify_subscription_code_ajax'),
+    path('attach_subscription/<int:item_id>/', views.attach_subscription_to_seat, name='attach_subscription_to_seat'),
+    path('search_subscriptions/', views.search_subscriptions_autocomplete, name='search_subscriptions_autocomplete'),
     path('boxoffice_print/<int:event_id>/<int:method_id>/', views.boxoffice_print, name='boxoffice_print'),
     path('boxoffice_print/<int:event_id>/<int:method_id>/<int:orderevent_id>/<str:mode_id>/', views.boxoffice_print, name='boxoffice_print'),
     path('close_transaction/<int:event_id>/', views.close_transaction, name='close_transaction'),
@@ -28,7 +44,9 @@ urlpatterns = [
     path('obliterate/<str:ticket_number>/', views.obliterate, name='obliterate'),
     path('erase_order/<int:userorder_id>/<int:order_id>/', views.erase_order, name='erase_order'),
     path('erase_booking/<int:customerbooking_id>/', views.erase_booking, name='erase_booking'),
-    # path('sell_booking/<int:order>/', views.sell_booking, name='sell_booking'),
+    path('select_booking_seats/<int:booking_id>/<str:mode>/', views.select_booking_seats, name='select_booking_seats'),
+    path('confirm_booking_selection/<int:event_id>/<int:orderevent_id>/<str:mode>/', views.confirm_booking_selection, name='confirm_booking_selection'),
+    # path('sell_booking/<int:order>/', views.sell_booking, name='sell_booking')
     path('sell_booking/<int:order>/<str:mode>/', views.sell_booking, name='sell_booking'),
     path('event_list/', views.event_list, name='event_list'),
     path('barcode_read/<int:event_id>', views.barcode_read, name='barcode_read'),

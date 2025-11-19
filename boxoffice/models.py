@@ -21,6 +21,7 @@ class SellingSeats(models.Model):
     ingresso = models.CharField(max_length=20, default="Gratuito")
     session_id = models.CharField(max_length=100, blank=True, null=True, default="")  # Isolate concurrent box office sessions
     created_at = models.DateTimeField(auto_now_add=True)  # Track when seat was added to cart
+    subscription_code = models.CharField(max_length=50, null=True, blank=True, verbose_name="Codice Abbonamento")
 
 class PaymentMethod(models.Model):
     ACCOUNT_TYPES= (

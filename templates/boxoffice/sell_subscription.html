@@ -1,0 +1,113 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3><i class="fas fa-plus-circle"></i> Vendi Nuovo Abbonamento</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3">1. Dati Cliente</h5>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Nome *</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Cognome *</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-8">
+                                <label>Email *</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>Telefono</label>
+                                <input type="tel" name="phone" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">2. Tipo Abbonamento</h5>
+                        <div class="row">
+                            {% for sub_type in subscription_types %}
+                            <div class="col-md-6 mb-3">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" 
+                                           id="sub{{ sub_type.id }}" 
+                                           name="subscription_type" 
+                                           value="{{ sub_type.id }}" 
+                                           class="custom-control-input subscription-radio"
+                                           data-price="{{ sub_type.price }}"
+                                           required>
+                                    <label class="custom-control-label" for="sub{{ sub_type.id }}">
+                                        <div class="card" style="cursor: pointer;">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ sub_type.name }}</h6>
+                                                <p class="mb-1"><strong>{{ sub_type.max_events }} ingressi</strong></p>
+                                                <p class="mb-1 text-muted">{{ sub_type.get_type_display }}</p>
+                                                <h4 class="text-primary mb-0">€ {{ sub_type.price }}</h4>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">3. Metodo di Pagamento</h5>
+                        <div class="form-group">
+                            <select name="payment_method" class="form-control" required>
+                                <option value="">Seleziona metodo...</option>
+                                {% for method in payment_methods %}
+                                <option value="{{ method.id }}">{{ method.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'subscriptions_main' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annulla
+                            </a>
+                            <div>
+                                <h4 class="mb-2">Totale: <span class="text-success" id="total-price">€ 0.00</span></h4>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check"></i> Conferma e Stampa Ricevuta
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.subscription-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const price = this.dataset.price;
+        document.getElementById('total-price').textContent = '€ ' + parseFloat(price).toFixed(2);
+        
+        // Highlight selected card
+        document.querySelectorAll('.subscription-radio').forEach(r => {
+            r.closest('.card').style.border = '1px solid #dee2e6';
+        });
+        this.closest('.card').style.border = '3px solid #28a745';
+    });
+});
+</script>
+{% endblock %}

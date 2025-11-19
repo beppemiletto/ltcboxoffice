@@ -1,0 +1,100 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h3><i class="fas fa-edit"></i> Modifica Abbonamento {{ subscription.subscription_number }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <h5>Dati Cliente</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Nome *</label>
+                                    <input type="text" class="form-control" name="first_name" value="{{ subscription.user.first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Cognome *</label>
+                                    <input type="text" class="form-control" name="last_name" value="{{ subscription.user.last_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Email *</label>
+                                    <input type="email" class="form-control" name="email" value="{{ subscription.user.email }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Telefono</label>
+                                    <input type="text" class="form-control" name="phone_number" value="{{ subscription.user.phone_number|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h5>Validità Abbonamento</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Valido Dal</label>
+                                    <input type="date" class="form-control" name="valid_from" value="{{ subscription.valid_from|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Valido Fino</label>
+                                    <input type="date" class="form-control" name="valid_to" value="{{ subscription.valid_to|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Stato</label>
+                                    <select class="form-control" name="status">
+                                        <option value="ACTIVE" {% if subscription.status == 'ACTIVE' %}selected{% endif %}>Attivo</option>
+                                        <option value="EXPIRED" {% if subscription.status == 'EXPIRED' %}selected{% endif %}>Scaduto</option>
+                                        <option value="EXHAUSTED" {% if subscription.status == 'EXHAUSTED' %}selected{% endif %}>Esaurito</option>
+                                        <option value="CANCELLED" {% if subscription.status == 'CANCELLED' %}selected{% endif %}>Annullato</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Note</label>
+                            <textarea class="form-control" name="notes" rows="3">{{ subscription.notes }}</textarea>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'subscription_detail' subscription.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annulla
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Salva Modifiche
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

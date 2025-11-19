@@ -1,0 +1,44 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3><i class="fas fa-search"></i> Cerca Abbonamento</h3>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'search_subscription' %}">
+                        <div class="form-group">
+                            <label>Cerca per codice abbonamento, nome, cognome o email</label>
+                            <div class="input-group input-group-lg">
+                                <input type="text" 
+                                       name="q" 
+                                       class="form-control" 
+                                       placeholder="Es: R4123456 oppure Rossi..." 
+                                       autofocus
+                                       required>
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i> Cerca
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'subscriptions_main' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Torna Indietro
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

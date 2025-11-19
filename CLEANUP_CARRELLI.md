@@ -46,8 +46,10 @@ python manage.py cleanup_abandoned_carts --event-id 42
 
 ### 2. Task Celery Automatico
 
-**Configurazione:**
-Il task è già configurato in `settings/base.py`:
+**⚠️ NOTA PYTHON 3.13:** Celery 5.3.6 non è ancora compatibile con Python 3.13 a causa di una dipendenza (`billiard`) che usa API deprecate. Fino all'aggiornamento, usare **Windows Task Scheduler** o **cron** (vedi `WINDOWS_TASK_SCHEDULER.md`).
+
+**Configurazione (quando compatibile):**
+Il task è configurato in `settings/base.py` (attualmente commentato):
 
 ```python
 CELERY_BEAT_SCHEDULE = {
@@ -57,6 +59,14 @@ CELERY_BEAT_SCHEDULE = {
         'kwargs': {'timeout_minutes': 15},
     },
 }
+```
+
+**Alternativa Immediata - Windows Task Scheduler:**
+Vedi documentazione completa in `WINDOWS_TASK_SCHEDULER.md`
+
+```powershell
+# Script già pronto in scripts/cleanup_carts_scheduled.ps1
+# Configurare in Task Scheduler per eseguire ogni 15 minuti
 ```
 
 **Avvio Celery Beat:**

@@ -1,0 +1,63 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3><i class="fas fa-search"></i> Risultati Ricerca: "{{ query }}"</h3>
+    <a href="{% url 'verify_subscription' %}" class="btn btn-secondary mb-3">
+        <i class="fas fa-arrow-left"></i> Nuova Ricerca
+    </a>
+    
+    {% if subscriptions %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Codice</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Ingressi Usati/Totali</th>
+                    <th>Valido fino</th>
+                    <th>Stato</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subscriptions %}
+                <tr>
+                    <td><strong>{{ sub.subscription_number }}</strong></td>
+                    <td>{{ sub.user.get_full_name }}<br><small>{{ sub.user.email }}</small></td>
+                    <td>{{ sub.subscription_type.name }}</td>
+                    <td>
+                        <div class="progress" style="height: 25px;">
+                            {% widthratio sub.events_used sub.events_included 100 as percentage %}
+                            <div class="progress-bar" style="width: {{ percentage }}%">
+                                {{ sub.events_used }} / {{ sub.events_included }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ sub.valid_to|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if sub.status == 'ACTIVE' %}
+                            <span class="badge badge-success badge-lg">✓ Attivo</span>
+                        {% else %}
+                            <span class="badge badge-warning">{{ sub.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'subscription_detail' sub.id %}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Dettagli
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> Nessun abbonamento trovato per "{{ query }}"
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

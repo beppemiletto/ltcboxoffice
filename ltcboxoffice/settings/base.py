@@ -139,11 +139,12 @@ if crontab is not None:
             'task': 'tickets.tasks.scheduledTask',
             'schedule': crontab(minute='*/5')
         },
-        'cleanup-abandoned-carts': {
-            'task': 'boxoffice.cleanup_abandoned_carts',
-            'schedule': crontab(minute='*/15'),  # Ogni 15 minuti
-            'kwargs': {'timeout_minutes': 15},
-        },
+        # NOTA: Celery non compatibile con Python 3.13 - usare cron + comando management
+        # 'cleanup-abandoned-carts': {
+        #     'task': 'boxoffice.cleanup_abandoned_carts',
+        #     'schedule': crontab(minute='*/15'),
+        #     'kwargs': {'timeout_minutes': 15},
+        # },
     }
 else:
     CELERY_BEAT_SCHEDULE = {}

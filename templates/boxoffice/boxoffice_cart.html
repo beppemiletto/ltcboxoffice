@@ -4,8 +4,39 @@
 {%load boxoffice_filters%}
 
 {% block content%}
+<style>
+.subscription-input-row {
+    background-color: #fff3cd;
+}
+.subscription-verified {
+    background-color: #d4edda !important;
+}
+.subscription-error {
+    color: #dc3545;
+    font-size: 0.85rem;
+}
+.subscription-info {
+    color: #28a745;
+    font-size: 0.85rem;
+}
+</style>
+
 <section class="section-content padding-y bg">
     <div class="container">
+    
+    {% if subscription_warnings %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong><i class="fas fa-exclamation-triangle"></i> Attenzione!</strong>
+        <ul class="mb-0">
+            {% for warning in subscription_warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+    {% endif %}
     
     <!-- ============================ COMPONENT 1 ================================= -->
     {%if not cart_items%}
@@ -29,7 +60,7 @@
     </thead>
     <tbody>
         {%for item in cart_items %}
-    <tr>
+    <tr class="{% if item.price|is_subscription %}{% if item.subscription_code %}subscription-verified{% else %}subscription-input-row{% endif %}{% endif %}">
         <td>
             <figure class="itemside align-items-center">
                 <div class="aside"><img src="{%static 'images/poltrona_blu.png'%}" class="img-sm"></div>
@@ -41,17 +72,50 @@
         <td> 
             <!-- col.// -->
              {%if event.price_full > 0 %}
-                <select class="form-control form-control-sm" onchange="window.location.href=this.value" style="max-width: 200px;">
+                <select class="form-control form-control-sm" onchange="handlePriceChange(this, {{item.id}})" style="max-width: 200px;">
                     <option value="{%url 'boxoffice_set_price' item.id 0%}" {% if item.price == 0 %}selected{% endif %}>Gratuito</option>
                     <option value="{%url 'boxoffice_set_price' item.id 1%}" {% if item.price == 1 %}selected{% endif %}>Ridotto</option>
                     <option value="{%url 'boxoffice_set_price' item.id 2%}" {% if item.price == 2 %}selected{% endif %}>Intero</option>
                     <optgroup label="Abbonamenti">
-                        <option value="{%url 'boxoffice_set_price' item.id 3%}" {% if item.price == 3 %}selected{% endif %}>Abbonamento R4</option>
-                        <option value="{%url 'boxoffice_set_price' item.id 4%}" {% if item.price == 4 %}selected{% endif %}>Abbonamento R8</option>
-                        <option value="{%url 'boxoffice_set_price' item.id 5%}" {% if item.price == 5 %}selected{% endif %}>Abbonamento I4</option>
-                        <option value="{%url 'boxoffice_set_price' item.id 6%}" {% if item.price == 6 %}selected{% endif %}>Abbonamento I8</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 3%}" data-subscription="true" {% if item.price == 3 %}selected{% endif %}>Abbonamento R4</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 4%}" data-subscription="true" {% if item.price == 4 %}selected{% endif %}>Abbonamento R8</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 5%}" data-subscription="true" {% if item.price == 5 %}selected{% endif %}>Abbonamento I4</option>
+                        <option value="{%url 'boxoffice_set_price' item.id 6%}" data-subscription="true" {% if item.price == 6 %}selected{% endif %}>Abbonamento I8</option>
                     </optgroup>
                 </select>
+                
+                {% if item.price|is_subscription %}
+                <div class="mt-2" id="subscription-input-{{item.id}}">
+                    {% if not item.subscription_code %}
+                    <form method="post" action="{% url 'attach_subscription_to_seat' item.id %}" onsubmit="return validateSubscription(event, {{item.id}}, {{item.price}})">
+                        {% csrf_token %}
+                        <div class="input-group input-group-sm">
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="subscription_code" 
+                                   id="sub-code-{{item.id}}"
+                                   list="subscriptions-list-{{item.id}}"
+                                   placeholder="Inserisci codice abbonamento"
+                                   oninput="searchSubscriptions({{item.id}}, {{item.price}})"
+                                   autocomplete="off"
+                                   required>
+                            <datalist id="subscriptions-list-{{item.id}}"></datalist>
+                            <div class="input-group-append">
+                                <button class="btn btn-success" type="submit">
+                                    <i class="fas fa-check"></i> Verifica
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sub-error-{{item.id}}" class="subscription-error"></div>
+                        <div id="sub-info-{{item.id}}" class="subscription-info"></div>
+                    </form>
+                    {% else %}
+                    <div class="subscription-info">
+                        <i class="fas fa-check-circle"></i> <strong>{{item.subscription_code}}</strong> verificato
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             {%else%}
                 <div class="text-dark">
                     <p><small>Gratuito</small></p>
@@ -69,7 +133,7 @@
                 {% endif %}
             </div> <!-- price-wrap .// -->
         </td>
-        <td class="text-right"> 
+        <td class="text-right">
         <a href="{%url 'boxoffice_remove_cart' item.id%}" class="btn btn-danger"> Elimina</a>
         </td>
     </tr>
@@ -95,35 +159,66 @@
                   <dt>Totale:</dt>
                   <dd class="text-right text-dark b"><strong>€ {{total|stringformat:".2f"}}</strong></dd>
                 </dl>
-                <dl  class="dlist-align">
+                <hr>
+                <div class="d-grid gap-2">
                     {% if total == 0 %}
                         <!-- Transazione gratuita: nessun pagamento richiesto -->
                         {%if orderevent %}
-                            <a href="{%url 'boxoffice_print' event_id=event.id method_id=0 orderevent_id=orderevent.id mode_id=mode%}">
-                                <button type="button" class="btn btn-success btn-sm btn-block">PROCEDI (Gratuito)</button>
+                            <a href="{%url 'boxoffice_print' event_id=event.id method_id=0 orderevent_id=orderevent.id mode_id=mode%}" class="btn btn-success btn-block mb-2">
+                                <i class="fas fa-check"></i> PROCEDI (Gratuito)
                             </a>
                         {%else%}
-                            <a href="{%url 'boxoffice_print' event.id 0%}">
-                                <button type="button" class="btn btn-success btn-sm btn-block">PROCEDI (Gratuito)</button>
+                            <a href="{%url 'boxoffice_print' event.id 0%}" class="btn btn-success btn-block mb-2">
+                                <i class="fas fa-check"></i> PROCEDI (Gratuito)
                             </a>
                         {%endif%}
                     {% else %}
                         <!-- Transazione a pagamento: scegli metodo -->
                         {%if orderevent %}
                             {%for method in payments_methods %}
-                                <a href="{%url 'boxoffice_print' event_id=event.id method_id=method.id orderevent_id=orderevent.id mode_id=mode%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                                <a href="{%url 'boxoffice_print' event_id=event.id method_id=method.id orderevent_id=orderevent.id mode_id=mode%}" class="btn btn-primary btn-block mb-2">
+                                    {% if 'contant' in method.slug|lower or 'cash' in method.slug|lower or 'cassa' in method.slug|lower %}
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    {% elif 'satispay' in method.slug|lower %}
+                                        <i class="fas fa-mobile-alt"></i>
+                                    {% elif 'bonific' in method.slug|lower or 'bank' in method.slug|lower %}
+                                        <i class="fas fa-university"></i>
+                                    {% elif 'debit' in method.slug|lower or 'bancomat' in method.slug|lower %}
+                                        <i class="fas fa-credit-card"></i>
+                                    {% elif 'credit' in method.slug|lower or 'carta' in method.slug|lower %}
+                                        <i class="far fa-credit-card"></i>
+                                    {% else %}
+                                        <i class="fas fa-wallet"></i>
+                                    {% endif %}
+                                    {{method.name}}
+                                </a>
                             {%endfor%}
                         {%else%}
                             {%for method in payments_methods %}
-                                <a href="{%url 'boxoffice_print' event.id method.id%}"><button type="button" class="btn btn-primary btn-sm btn-block"> {{method.name}}</button> </a>
+                                <a href="{%url 'boxoffice_print' event.id method.id%}" class="btn btn-primary btn-block mb-2">
+                                    {% if 'contant' in method.slug|lower or 'cash' in method.slug|lower or 'cassa' in method.slug|lower %}
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    {% elif 'satispay' in method.slug|lower %}
+                                        <i class="fas fa-mobile-alt"></i>
+                                    {% elif 'bonific' in method.slug|lower or 'bank' in method.slug|lower %}
+                                        <i class="fas fa-university"></i>
+                                    {% elif 'debit' in method.slug|lower or 'bancomat' in method.slug|lower %}
+                                        <i class="fas fa-credit-card"></i>
+                                    {% elif 'credit' in method.slug|lower or 'carta' in method.slug|lower %}
+                                        <i class="far fa-credit-card"></i>
+                                    {% else %}
+                                        <i class="fas fa-wallet"></i>
+                                    {% endif %}
+                                    {{method.name}}
+                                </a>
                             {%endfor%}
                         {%endif%}
                     {% endif %}
-
-                </dl>
-                <dl  class="dlist-align">
-                        <a href="{%url 'boxoffice_cart_cancel' event.id %}"><button type="button" class="btn btn-danger btn-sm btn-block"> CANCEL</button> </a>
-                    </dl>
+                    <hr>
+                    <a href="{%url 'boxoffice_cart_cancel' event.id %}" class="btn btn-danger btn-block">
+                        <i class="fas fa-times"></i> ANNULLA
+                    </a>
+                </div>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
     
@@ -136,4 +231,83 @@
     </div> <!-- container .//  -->
     </section>
     <!-- ========================= SECTION CONTENT END// ========================= -->
+
+<script>
+let searchTimeout = null;
+
+function searchSubscriptions(itemId, priceCode) {
+    clearTimeout(searchTimeout);
+    
+    const input = document.getElementById('sub-code-' + itemId);
+    const query = input.value.trim();
+    
+    if (query.length < 2) {
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch('/boxoffice/search_subscriptions/?q=' + encodeURIComponent(query) + '&price_code=' + priceCode)
+            .then(response => response.json())
+            .then(data => {
+                const datalist = document.getElementById('subscriptions-list-' + itemId);
+                datalist.innerHTML = '';
+                
+                data.results.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = item.label;
+                    datalist.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Autocomplete error:', error);
+            });
+    }, 300);
+}
+
+function handlePriceChange(selectElement, itemId) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const isSubscription = selectedOption.getAttribute('data-subscription');
+    
+    if (isSubscription) {
+        alert('Selezionato abbonamento. Inserire il codice abbonamento nel campo sotto.');
+    }
+    
+    window.location.href = selectElement.value;
+}
+
+function validateSubscription(event, itemId, priceCode) {
+    event.preventDefault();
+    
+    const code = document.getElementById('sub-code-' + itemId).value.trim();
+    const errorDiv = document.getElementById('sub-error-' + itemId);
+    const infoDiv = document.getElementById('sub-info-' + itemId);
+    
+    if (!code) {
+        errorDiv.textContent = 'Inserire un codice abbonamento';
+        return false;
+    }
+    
+    fetch('/boxoffice/verify_subscription_code/?code=' + encodeURIComponent(code) + '&price_code=' + priceCode)
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                infoDiv.innerHTML = '<i class="fas fa-check-circle"></i> <strong>' + data.customer + '</strong> - ' + 
+                                   data.type + ' (' + data.remaining + ' ingressi rimanenti)';
+                errorDiv.textContent = '';
+                event.target.submit();
+            } else {
+                errorDiv.textContent = data.error;
+                infoDiv.textContent = '';
+            }
+        })
+        .catch(error => {
+            errorDiv.textContent = 'Errore di connessione';
+            console.error('Error:', error);
+        });
+    
+    return false;
+}
+</script>
+
 {%endblock%}

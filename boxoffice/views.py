@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist, MultipleObjectsReturned
-from django.db import transaction
+from django.db import transaction, models
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.mail import EmailMultiAlternatives
 from django.utils.formats import localize
@@ -340,6 +340,13 @@ def boxoffice_cart(request, event_id):
     tax = current_event.vat_rate
     taxable =int( (total / (100 + tax) )* 10000) / 100
     payment_methods = PaymentMethod.objects.all()
+    
+    # Check for any subscription issues
+    subscription_warnings = []
+    for item in cart_items:
+        if is_subscription(item.price) and not item.subscription_code:
+            subscription_warnings.append(f"Posto {item.seat}: inserire codice abbonamento")
+    
     context = {
         'event' : current_event,
         'cart_items' : cart_items,
@@ -348,6 +355,7 @@ def boxoffice_cart(request, event_id):
         'tax': tax,
         'vat_rate': tax,
         'payments_methods': payment_methods,
+        'subscription_warnings': subscription_warnings,
     }
     return render(request,'boxoffice/boxoffice_cart.html', context)
 
@@ -596,18 +604,21 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         ticket.save()
 
         # Track subscription usage when selling with subscription code
-        if is_subscription_price_code(sold_seat.price):
-            subscription = get_subscription_by_price_code(user, sold_seat.price)
-            if subscription and subscription.can_use():
-                # Create usage record
-                SubscriptionUsage.objects.create(
-                    subscription=subscription,
-                    event=current_event,
-                    seat=sold_seat.seat
-                )
-                # Increment counter
-                subscription.events_used += 1
-                subscription.save()
+        if is_subscription_price_code(sold_seat.price) and sold_seat.subscription_code:
+            from subscriptions.models import Subscription
+            try:
+                subscription = Subscription.objects.get(subscription_number=sold_seat.subscription_code)
+                if subscription.is_valid():
+                    # Create usage record with actual subscription owner
+                    SubscriptionUsage.objects.create(
+                        subscription=subscription,
+                        event=current_event,
+                        seat=sold_seat.seat,
+                        used_by=request.user if request.user.is_authenticated else boxoffice_user,
+                    )
+                    # Counter incremented automatically by SubscriptionUsage.save()
+            except Subscription.DoesNotExist:
+                pass  # Should not happen, already verified
 
         # # aggiorna il OrderEvent della Cassa per questo Evento
         # #OrderEvent di apertura della cassa con utente 'cassa' , 'laboratorio', username 'amministrazione@teatrocambiano.com'
@@ -924,6 +935,189 @@ def change_bookings(request, event_id=None):
 
 
         return render(request, 'boxoffice/change_bookings.html', context)
+
+def select_booking_seats(request, booking_id, mode):
+    """
+    Permette di selezionare quali posti della prenotazione vendere.
+    Utile per ritiri parziali (es: gruppo di 4, poi 3, poi 6 da prenotazione di 13 posti)
+    """
+    if mode == '1':
+        booking = OrderEvent.objects.get(id=booking_id)
+        booking_number = booking.orderevent_number
+        customer_name = f"{booking.user.first_name} {booking.user.last_name}"
+    elif mode == '2':
+        booking = BoxOfficeBookingEvent.objects.get(id=booking_id)
+        booking_number = booking.booking_number
+        customer_name = f"{booking.customer.first_name} {booking.customer.last_name}"
+    
+    # Parse seats from booking
+    seats_data = []
+    costs_extended = extend_price_array(booking.event.prices())
+    
+    for seat_price in booking.seats_price.split(','):
+        seat, price_code = seat_price.split('$')
+        price_code = int(price_code)
+        
+        seats_data.append({
+            'seat': seat,
+            'price_code': price_code,
+            'price_name': get_price_name(price_code),
+            'cost': safe_price_access(costs_extended, price_code),
+        })
+    
+    print(f"DEBUG: booking.seats_price = {booking.seats_price}")
+    print(f"DEBUG: seats_data = {seats_data}")
+    
+    if request.method == 'POST':
+        # Get selected seats from form
+        selected_seats = request.POST.getlist('selected_seats')
+        
+        if not selected_seats:
+            messages.warning(request, "Seleziona almeno un posto da vendere.")
+            return redirect('select_booking_seats', booking_id=booking_id, mode=mode)
+        
+        # Create SellingSeats for selected seats only
+        session_id = get_or_create_session_id(request)
+        costs_extended = extend_price_array(booking.event.prices())
+        
+        # Prima elimina eventuali posti già presenti nel carrello per questa prenotazione
+        # per evitare duplicati se l'utente torna indietro e riseleziona
+        SellingSeats.objects.filter(
+            session_id=session_id,
+            event=booking.event,
+            orderevent=booking_number
+        ).delete()
+        
+        for seat_price in booking.seats_price.split(','):
+            seat, price_code = seat_price.split('$')
+            
+            # Only add to cart if seat was selected
+            if seat in selected_seats:
+                price_idx = int(price_code)
+                ordered_sellingseat = SellingSeats(
+                    event=booking.event,
+                    orderevent=booking_number,
+                    seat=seat,
+                    price=price_idx,
+                    cost=safe_price_access(costs_extended, price_idx),
+                    ingresso=get_price_name(price_idx),
+                    session_id=session_id
+                )
+                ordered_sellingseat.save()
+        
+        # Get cart items
+        sellingseats = SellingSeats.objects.filter(session_id=session_id, event=booking.event)
+        cart_items = list(sellingseats)
+        total = sum(s.cost for s in cart_items)
+        
+        tax = booking.event.vat_rate
+        taxable = int((total / (100 + tax)) * 10000) / 100
+        
+        # Check if all seats were selected
+        all_seats_selected = len(selected_seats) == len(booking.seats_price.split(','))
+        
+        # Mark booking as expired only if all seats were taken
+        if all_seats_selected:
+            booking.expired = True
+            booking.save()
+            messages.success(request, f"Tutti i posti della prenotazione sono stati venduti. Prenotazione chiusa.")
+        else:
+            # Update booking removing sold seats
+            remaining_seats = []
+            for seat_price in booking.seats_price.split(','):
+                seat, price = seat_price.split('$')
+                if seat not in selected_seats:
+                    remaining_seats.append(seat_price)
+            
+            booking.seats_price = ','.join(remaining_seats)
+            booking.save()
+            messages.info(request, f"Venduti {len(selected_seats)} posti. Rimangono {len(remaining_seats)} posti nella prenotazione.")
+        
+        payment_methods = PaymentMethod.objects.all()
+        context = {
+            'event': booking.event,
+            'cart_items': cart_items,
+            'total': total,
+            'taxable': taxable,
+            'tax': tax,
+            'payments_methods': payment_methods,
+            'orderevent': booking,
+            'mode': mode,
+        }
+        return render(request, 'boxoffice/boxoffice_cart.html', context)
+    
+    # GET request - show selection form
+    context = {
+        'booking': booking,
+        'booking_number': booking_number,
+        'customer_name': customer_name,
+        'seats_data': seats_data,
+        'event': booking.event,
+        'mode': mode,
+        'total_seats': len(seats_data),
+    }
+    return render(request, 'boxoffice/select_booking_seats.html', context)
+
+def confirm_booking_selection(request, event_id, orderevent_id, mode):
+    """
+    Rimuove dal carrello i posti NON selezionati e li rimette nella prenotazione.
+    I posti selezionati rimangono nel carrello per procedere al pagamento.
+    """
+    if request.method != 'POST':
+        return redirect('event', event_id=event_id)
+    
+    # Get selected seat IDs from form
+    selected_seats_ids = request.POST.get('selected_seats', '').split(',')
+    selected_seats_ids = [int(sid) for sid in selected_seats_ids if sid]
+    
+    if not selected_seats_ids:
+        messages.warning(request, "Nessun posto selezionato!")
+        return redirect('event', event_id=event_id)
+    
+    # Get booking
+    if mode == '1':
+        booking = OrderEvent.objects.get(id=orderevent_id)
+    elif mode == '2':
+        booking = BoxOfficeBookingEvent.objects.get(id=orderevent_id)
+    
+    # Get all seats in cart for this event and session
+    session_id = get_or_create_session_id(request)
+    all_cart_seats = SellingSeats.objects.filter(session_id=session_id, event_id=event_id)
+    
+    # Find seats to remove (not selected)
+    seats_to_remove = []
+    for seat in all_cart_seats:
+        if seat.id not in selected_seats_ids:
+            seats_to_remove.append(seat)
+    
+    # Add removed seats back to booking
+    if seats_to_remove:
+        current_seats = booking.seats_price.split(',') if booking.seats_price else []
+        
+        for seat in seats_to_remove:
+            # Add back to booking: format "seat$price_code"
+            seat_entry = f"{seat.seat}${seat.price}"
+            current_seats.append(seat_entry)
+            # Delete from cart
+            seat.delete()
+        
+        # Update booking seats_price
+        booking.seats_price = ','.join(current_seats)
+        booking.save()
+        
+        messages.info(request, f"Rimossi {len(seats_to_remove)} posti dal carrello. Rimangono nella prenotazione.")
+    
+    # If all seats were removed, don't expire booking
+    remaining_in_cart = SellingSeats.objects.filter(session_id=session_id, event_id=event_id).count()
+    
+    if remaining_in_cart == 0:
+        messages.warning(request, "Tutti i posti sono stati rimossi! Prenotazione mantenuta attiva.")
+        return redirect('event', event_id=event_id)
+    
+    messages.success(request, f"Confermati {remaining_in_cart} posti per la vendita.")
+    
+    # Redirect back to cart to proceed with payment
+    return redirect('boxoffice_cart', event_id=event_id)
 
 def sell_booking(request, order = None, mode=None):
     if mode == '1':
@@ -2272,5 +2466,561 @@ def list_bookings(request, event_id=None, customer=None):
     }
 
     return render(request, 'boxoffice/event_order_list_xlsx.html', context)
+
+
+# ==================== GESTIONE ABBONAMENTI ====================
+
+@login_required(login_url='login')
+def subscriptions_main(request):
+    """
+    Menu principale gestione abbonamenti
+    """
+    from subscriptions.models import Subscription, SubscriptionType
+    
+    # Statistiche rapide
+    active_subscriptions = Subscription.objects.filter(status='ACTIVE').count()
+    expired_subscriptions = Subscription.objects.filter(status='EXPIRED').count()
+    
+    # Ultimi abbonamenti venduti
+    recent_subscriptions = Subscription.objects.select_related('user', 'subscription_type').all().order_by('-created_at')[:5]
+    
+    # Tipi di abbonamento disponibili
+    subscription_types = SubscriptionType.objects.filter(is_active=True)
+    
+    context = {
+        'active_subscriptions': active_subscriptions,
+        'expired_subscriptions': expired_subscriptions,
+        'recent_subscriptions': recent_subscriptions,
+        'subscription_types': subscription_types,
+    }
+    
+    return render(request, 'boxoffice/subscriptions_main.html', context)
+
+
+@login_required(login_url='login')
+def sell_subscription(request):
+    """
+    Vendita nuovo abbonamento
+    """
+    from subscriptions.models import Subscription, SubscriptionType
+    from datetime import date, timedelta
+    import random
+    import string
+    
+    if request.method == 'POST':
+        # Get form data
+        subscription_type_id = request.POST.get('subscription_type')
+        user_id = request.POST.get('user_id')
+        payment_method_id = request.POST.get('payment_method')
+        
+        # Get or create user
+        if user_id:
+            user = Account.objects.get(id=user_id)
+        else:
+            # Create new customer
+            email = request.POST.get('email')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            phone = request.POST.get('phone', '')
+            
+            user, created = Account.objects.get_or_create(
+                email=email,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'phone_number': phone,
+                    'username': email,
+                }
+            )
+        
+        subscription_type = SubscriptionType.objects.get(id=subscription_type_id)
+        payment_method = PaymentMethod.objects.get(id=payment_method_id)
+        
+        # Calculate validity
+        valid_from = date.today()
+        valid_to = valid_from + timedelta(days=subscription_type.valid_days)
+        
+        # Create subscription (subscription_number will be auto-generated in model.save())
+        subscription = Subscription.objects.create(
+            user=user,
+            subscription_type=subscription_type,
+            valid_from=valid_from,
+            valid_to=valid_to,
+            events_included=subscription_type.max_events,
+            events_used=0,
+            status='ACTIVE',
+        )
+        
+        messages.success(request, f"Abbonamento {subscription.subscription_number} creato con successo! <a href='/boxoffice/subscriptions/print/{subscription.id}/' target='_blank' class='btn btn-sm btn-primary ml-2'><i class='fas fa-print'></i> Stampa Ricevuta</a>")
+        return redirect('subscriptions_main')
+    
+    # GET request
+    from subscriptions.models import SubscriptionType
+    subscription_types = SubscriptionType.objects.filter(is_active=True)
+    payment_methods = PaymentMethod.objects.all()
+    
+    context = {
+        'subscription_types': subscription_types,
+        'payment_methods': payment_methods,
+    }
+    
+    return render(request, 'boxoffice/sell_subscription.html', context)
+
+
+@login_required(login_url='login')
+def verify_subscription(request):
+    """
+    Pagina di ricerca abbonamento
+    """
+    return render(request, 'boxoffice/verify_subscription.html')
+
+
+@login_required(login_url='login')
+def search_subscription(request):
+    """
+    Ricerca abbonamento per codice o cliente
+    """
+    from subscriptions.models import Subscription
+    
+    query = request.GET.get('q', '')
+    
+    if not query:
+        return redirect('verify_subscription')
+    
+    # Search by subscription number or user name/email
+    subscriptions = Subscription.objects.filter(
+        models.Q(subscription_number__icontains=query) |
+        models.Q(user__first_name__icontains=query) |
+        models.Q(user__last_name__icontains=query) |
+        models.Q(user__email__icontains=query)
+    ).select_related('user', 'subscription_type')
+    
+    context = {
+        'query': query,
+        'subscriptions': subscriptions,
+    }
+    
+    return render(request, 'boxoffice/search_subscription_results.html', context)
+
+
+@login_required(login_url='login')
+def subscription_detail(request, subscription_id):
+    """
+    Dettaglio abbonamento con storico utilizzi
+    """
+    from subscriptions.models import Subscription, SubscriptionUsage
+    
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    
+    # Get usage history
+    usages = SubscriptionUsage.objects.filter(
+        subscription=subscription
+    ).select_related('event').order_by('-used_at')
+    
+    context = {
+        'subscription': subscription,
+        'usages': usages,
+        'remaining': subscription.events_included - subscription.events_used,
+    }
+    
+    return render(request, 'boxoffice/subscription_detail.html', context)
+
+
+@login_required(login_url='login')
+def edit_subscription(request, subscription_id):
+    """
+    Modifica dati abbonamento (anagrafica cliente, date validità, note)
+    """
+    from subscriptions.models import Subscription
+    
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    
+    if request.method == 'POST':
+        # Update customer data
+        subscription.user.first_name = request.POST.get('first_name', '').strip()
+        subscription.user.last_name = request.POST.get('last_name', '').strip()
+        subscription.user.email = request.POST.get('email', '').strip()
+        subscription.user.phone_number = request.POST.get('phone_number', '').strip()
+        subscription.user.save()
+        
+        # Update subscription data
+        from datetime import datetime
+        valid_from_str = request.POST.get('valid_from')
+        valid_to_str = request.POST.get('valid_to')
+        
+        if valid_from_str:
+            subscription.valid_from = datetime.strptime(valid_from_str, '%Y-%m-%d').date()
+        if valid_to_str:
+            subscription.valid_to = datetime.strptime(valid_to_str, '%Y-%m-%d').date()
+        
+        subscription.notes = request.POST.get('notes', '').strip()
+        subscription.status = request.POST.get('status', subscription.status)
+        
+        subscription.save()
+        
+        messages.success(request, "Abbonamento aggiornato con successo!")
+        return redirect('subscription_detail', subscription_id=subscription.id)
+    
+    context = {
+        'subscription': subscription,
+    }
+    
+    return render(request, 'boxoffice/edit_subscription.html', context)
+
+
+@login_required(login_url='login')
+def add_manual_usage(request, subscription_id):
+    """
+    Aggiungi utilizzo manuale all'abbonamento
+    """
+    from subscriptions.models import Subscription, SubscriptionUsage
+    from store.models import Event
+    
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    
+    if request.method == 'POST':
+        event_id = request.POST.get('event_id')
+        seat = request.POST.get('seat', '').strip()
+        
+        if not event_id or not seat:
+            messages.error(request, "Evento e posto sono obbligatori")
+            return redirect('subscription_detail', subscription_id=subscription.id)
+        
+        try:
+            event = Event.objects.get(id=event_id)
+            
+            # Crea utilizzo manuale
+            SubscriptionUsage.objects.create(
+                subscription=subscription,
+                event=event,
+                seat=seat,
+                used_by=request.user,
+                notes="Inserimento manuale"
+            )
+            
+            messages.success(request, f"Utilizzo registrato: {event.show.shw_title} - Posto {seat}")
+            
+        except Event.DoesNotExist:
+            messages.error(request, "Evento non trovato")
+        except Exception as e:
+            messages.error(request, f"Errore: {str(e)}")
+        
+        return redirect('subscription_detail', subscription_id=subscription.id)
+    
+    # GET: mostra form
+    from store.models import Event
+    from datetime import datetime, timedelta
+    
+    # Eventi futuri o recenti (ultimi 30 giorni)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    events = Event.objects.filter(date_time__gte=thirty_days_ago).order_by('-date_time')[:50]
+    
+    context = {
+        'subscription': subscription,
+        'events': events,
+    }
+    
+    return render(request, 'boxoffice/add_manual_usage.html', context)
+
+
+@login_required(login_url='login')
+def delete_usage(request, usage_id):
+    """
+    Elimina utilizzo abbonamento
+    """
+    from subscriptions.models import SubscriptionUsage
+    
+    usage = get_object_or_404(SubscriptionUsage, id=usage_id)
+    subscription_id = usage.subscription.id
+    
+    if request.method == 'POST':
+        # Decrementa contatore prima di eliminare
+        subscription = usage.subscription
+        if subscription.events_used > 0:
+            subscription.events_used -= 1
+            # Riattiva se era esaurito
+            if subscription.status == 'EXHAUSTED' and subscription.events_used < subscription.events_included:
+                subscription.status = 'ACTIVE'
+            subscription.save()
+        
+        usage.delete()
+        messages.success(request, "Utilizzo eliminato con successo")
+        
+    return redirect('subscription_detail', subscription_id=subscription_id)
+
+
+@login_required(login_url='login')
+def print_subscription(request, subscription_id):
+    """
+    Stampa ricevuta abbonamento
+    """
+    from subscriptions.models import Subscription
+    
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    
+    context = {
+        'subscription': subscription,
+    }
+    
+    return render(request, 'boxoffice/print_subscription.html', context)
+
+
+# ==================== VERIFICA ABBONAMENTO PER VENDITA ====================
+
+@login_required(login_url='login')
+def verify_subscription_code_ajax(request):
+    """
+    Verifica validità codice abbonamento via AJAX
+    Returns JSON con info abbonamento o errore
+    """
+    from django.http import JsonResponse
+    from subscriptions.models import Subscription
+    
+    code = request.GET.get('code', '').strip()
+    price_code = int(request.GET.get('price_code', 0))
+    
+    if not code:
+        return JsonResponse({'valid': False, 'error': 'Codice mancante'})
+    
+    try:
+        subscription = Subscription.objects.select_related('user', 'subscription_type').get(
+            subscription_number=code,
+            status='ACTIVE'
+        )
+        
+        # Verifica validità
+        if not subscription.is_valid():
+            if subscription.status == 'EXPIRED':
+                return JsonResponse({'valid': False, 'error': 'Abbonamento scaduto'})
+            elif subscription.status == 'EXHAUSTED':
+                return JsonResponse({'valid': False, 'error': 'Abbonamento esaurito'})
+            else:
+                return JsonResponse({'valid': False, 'error': 'Abbonamento non valido'})
+        
+        # Verifica corrispondenza tipo
+        from subscriptions.utils import PRICE_CODE_TO_SUBSCRIPTION
+        expected_prefix = PRICE_CODE_TO_SUBSCRIPTION.get(price_code)
+        if expected_prefix and subscription.subscription_type.code_prefix != expected_prefix:
+            return JsonResponse({
+                'valid': False, 
+                'error': f'Codice non corrisponde: questo è {subscription.subscription_type.code_prefix}, selezionato {expected_prefix}'
+            })
+        
+        return JsonResponse({
+            'valid': True,
+            'customer': f"{subscription.user.first_name} {subscription.user.last_name}",
+            'type': subscription.subscription_type.name,
+            'remaining': subscription.remaining_events(),
+            'code': subscription.subscription_number,
+        })
+        
+    except Subscription.DoesNotExist:
+        return JsonResponse({'valid': False, 'error': 'Abbonamento non trovato'})
+    except Exception as e:
+        return JsonResponse({'valid': False, 'error': str(e)})
+
+
+@login_required(login_url='login')
+def attach_subscription_to_seat(request, item_id):
+    """
+    Associa codice abbonamento verificato a SellingSeats
+    """
+    if request.method == 'POST':
+        subscription_code = request.POST.get('subscription_code', '').strip()
+        
+        try:
+            selling_seat = SellingSeats.objects.get(id=item_id)
+            selling_seat.subscription_code = subscription_code
+            selling_seat.save()
+            
+            messages.success(request, f"Abbonamento {subscription_code} associato al posto {selling_seat.seat}")
+            return redirect('boxoffice_cart', event_id=selling_seat.event.id)
+            
+        except SellingSeats.DoesNotExist:
+            messages.error(request, "Posto non trovato")
+            return redirect('boxoffice')
+    
+    return redirect('boxoffice')
+
+
+@login_required(login_url='login')
+def search_subscriptions_autocomplete(request):
+    """
+    Autocomplete per ricerca abbonamenti attivi
+    Returns JSON con lista abbonamenti che matchano query
+    """
+    from django.http import JsonResponse
+    from subscriptions.models import Subscription
+    
+    query = request.GET.get('q', '').strip()
+    price_code = request.GET.get('price_code', '')
+    
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    # Filtra abbonamenti attivi
+    subscriptions = Subscription.objects.filter(
+        status='ACTIVE',
+        subscription_number__icontains=query
+    ).select_related('user', 'subscription_type')
+    
+    # Filtra per tipo se specificato
+    if price_code:
+        from subscriptions.utils import PRICE_CODE_TO_SUBSCRIPTION
+        expected_prefix = PRICE_CODE_TO_SUBSCRIPTION.get(int(price_code))
+        if expected_prefix:
+            subscriptions = subscriptions.filter(subscription_type__code_prefix=expected_prefix)
+    
+    # Limita risultati
+    subscriptions = subscriptions[:10]
+    
+    results = []
+    for sub in subscriptions:
+        if sub.is_valid():
+            results.append({
+                'code': sub.subscription_number,
+                'label': f"{sub.subscription_number} - {sub.user.first_name} {sub.user.last_name} ({sub.remaining_events()} ingressi)",
+                'customer': f"{sub.user.first_name} {sub.user.last_name}",
+                'remaining': sub.remaining_events(),
+                'type': sub.subscription_type.name,
+            })
+    
+    return JsonResponse({'results': results})
+
+
+@login_required(login_url='login')
+def export_subscriptions_excel(request):
+    """
+    Esporta tutti gli abbonamenti in formato Excel con dettaglio utilizzi
+    """
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+    from subscriptions.models import Subscription, SubscriptionUsage
+    from datetime import datetime
+    
+    # Crea workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Abbonamenti"
+    
+    # Header styling
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Headers base
+    headers = [
+        'Codice Abbonamento',
+        'Cliente',
+        'Email',
+        'Telefono',
+        'Tipo Abbonamento',
+        'Prezzo',
+        'Ingressi Inclusi',
+        'Ingressi Usati',
+        'Ingressi Rimanenti',
+        'Valido Dal',
+        'Valido Fino',
+        'Stato',
+        'Data Acquisto',
+    ]
+    
+    # Aggiungi headers per utilizzi (massimo 8 utilizzi per abbonamento)
+    max_usages = 8
+    for i in range(1, max_usages + 1):
+        headers.extend([
+            f'Utilizzo {i} - Data',
+            f'Utilizzo {i} - Evento',
+            f'Utilizzo {i} - Posto',
+        ])
+    
+    # Scrivi headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+    
+    # Get all subscriptions con utilizzi
+    subscriptions = Subscription.objects.select_related('user', 'subscription_type').prefetch_related('usages__event').order_by('-created_at')
+    
+    # Status mapping
+    status_map = {
+        'ACTIVE': 'Attivo',
+        'EXPIRED': 'Scaduto',
+        'EXHAUSTED': 'Esaurito',
+        'CANCELLED': 'Annullato',
+    }
+    
+    # Data rows
+    for row_num, sub in enumerate(subscriptions, 2):
+        col = 1
+        
+        # Dati base abbonamento
+        ws.cell(row=row_num, column=col).value = sub.subscription_number
+        col += 1
+        ws.cell(row=row_num, column=col).value = f"{sub.user.first_name} {sub.user.last_name}"
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.user.email
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.user.phone_number or ''
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.subscription_type.name
+        col += 1
+        ws.cell(row=row_num, column=col).value = float(sub.subscription_type.price)
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.events_included
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.events_used
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.events_included - sub.events_used
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.valid_from.strftime('%d/%m/%Y')
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.valid_to.strftime('%d/%m/%Y')
+        col += 1
+        ws.cell(row=row_num, column=col).value = status_map.get(sub.status, sub.status)
+        col += 1
+        ws.cell(row=row_num, column=col).value = sub.created_at.strftime('%d/%m/%Y %H:%M')
+        col += 1
+        
+        # Utilizzi dell'abbonamento
+        usages = sub.usages.all().order_by('used_at')
+        for usage in usages[:max_usages]:  # Limita a max_usages
+            ws.cell(row=row_num, column=col).value = usage.used_at.strftime('%d/%m/%Y %H:%M')
+            col += 1
+            ws.cell(row=row_num, column=col).value = usage.event.show.shw_title if usage.event and usage.event.show else ''
+            col += 1
+            ws.cell(row=row_num, column=col).value = usage.seat
+            col += 1
+    
+    # Auto-adjust column widths per le prime 13 colonne
+    for i in range(1, 14):
+        column = ws[openpyxl.utils.get_column_letter(i)]
+        max_length = 0
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = adjusted_width
+    
+    # Larghezza fissa per colonne utilizzi
+    for i in range(14, len(headers) + 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = 15
+    
+    # Prepare response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"abbonamenti_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
 
 

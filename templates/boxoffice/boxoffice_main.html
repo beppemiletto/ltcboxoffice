@@ -96,8 +96,8 @@
                                                 </small></p>
                                             </td>
                                             <td>
-                                                <a href="{%url 'sell_booking' order=id mode=1%}" >
-                                                    <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
+                                                <a href="{%url 'select_booking_seats' booking_id=id mode='1'%}" >
+                                                    <button type="button" class="btn btn-success btn-sm" title="Seleziona posti da vendere"><i class='fas fa-euro-sign'></i></button>
                                                 </a>
                                             </td>
 
@@ -136,8 +136,8 @@
                              </td>
 
                             <td>
-                                <a href="{%url 'sell_booking' order=boxofficebooking.pk mode=2 %}" >
-                                    <button type="button" class="btn btn-primary btn-sm"><i class='fas fa-euro-sign'></i></i></button>
+                                <a href="{%url 'select_booking_seats' booking_id=boxofficebooking.pk mode='2'%}" >
+                                    <button type="button" class="btn btn-success btn-sm" title="Seleziona posti da vendere"><i class='fas fa-euro-sign'></i></button>
                                 </a>
                             </td>
                         </tr>

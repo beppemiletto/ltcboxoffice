@@ -1,43 +1,237 @@
 {% extends 'boxoffice_base.html' %}
 {% load static %}
 {% block content %}
-<!-- ========================= SECTION MAIN ========================= -->
-<section class="section-intro padding-y-sm">
-<div class="container">
 
-<div class="intro-banner-wrap">
-	<img src="{% static 'images/banners/banner-CassaBoxOffice_1200x300.png' %}" class="img-fluid rounded">
+<style>
+.boxoffice-menu {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 40px 0;
+}
+
+.menu-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 50px;
+}
+
+.menu-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    margin-bottom: 10px;
+}
+
+.menu-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.menu-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.menu-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    text-decoration: none;
+    color: #333;
+}
+
+.menu-card.primary::before {
+    background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+}
+
+.menu-card.success::before {
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.menu-card.warning::before {
+    background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+}
+
+.menu-card.info::before {
+    background: linear-gradient(90deg, #30cfd0 0%, #330867 100%);
+}
+
+.menu-icon {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-card.primary .menu-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-card.success .menu-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-card.warning .menu-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-card.info .menu-icon {
+    background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #2d3748;
+}
+
+.menu-description {
+    font-size: 0.95rem;
+    color: #718096;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+.menu-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #48bb78;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.default-event {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.default-event h3 {
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.default-event p {
+    color: #4a5568;
+    font-size: 1.1rem;
+    margin: 0;
+}
+</style>
+
+<div class="boxoffice-menu">
+    <div class="container">
+        <div class="menu-header">
+            <h1><i class="fas fa-cash-register"></i> Gestione Box Office</h1>
+            <p>Seleziona l'operazione da eseguire</p>
+        </div>
+
+        {% if next_close_event %}
+        <div class="default-event">
+            <h3><i class="fas fa-star"></i> Evento Prossimo</h3>
+            <p><strong>{{next_close_event.show.shw_title}}</strong> - {{next_close_event.date_time|date:"d/m/Y H:i"}}</p>
+        </div>
+        {% endif %}
+
+        <div class="menu-grid">
+            <!-- Apri Cassa -->
+            <a href="{%url 'event' next_close_event.pk%}" class="menu-card primary">
+                <span class="menu-badge">Default</span>
+                <div class="menu-icon">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+                <h3 class="menu-title">Apri Sessione di Cassa</h3>
+                <p class="menu-description">
+                    Inizia una nuova sessione di vendita per l'evento in programma. 
+                    Vendi biglietti, gestisci prenotazioni e incassa pagamenti.
+                </p>
+            </a>
+
+            <!-- Gestione Prenotazioni -->
+            <a href="{%url 'event_list'%}" class="menu-card success">
+                <div class="menu-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 class="menu-title">Gestione Prenotazioni</h3>
+                <p class="menu-description">
+                    Visualizza e gestisci tutte le prenotazioni per gli eventi futuri. 
+                    Consulta le prevendite e modifica le prenotazioni esistenti.
+                </p>
+            </a>
+
+            <!-- Gestione Abbonamenti -->
+            <a href="{% url 'subscriptions_main' %}" class="menu-card warning">
+                <div class="menu-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <h3 class="menu-title">Gestione Abbonamenti</h3>
+                <p class="menu-description">
+                    Vendi nuovi abbonamenti, verifica abbonamenti esistenti, 
+                    scala ingressi e gestisci le tessere stagionali.
+                </p>
+            </a>
+
+            <!-- Gestione Fiscale -->
+            <a href="{%url 'fiscalmgm:fiscalmgm_main' %}" class="menu-card info">
+                <div class="menu-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3 class="menu-title">Gestione Fiscale (SIAE)</h3>
+                <p class="menu-description">
+                    Accedi ai rendiconti SIAE, genera reports fiscali 
+                    e consulta i dati degli eventi passati.
+                </p>
+            </a>
+        </div>
+    </div>
 </div>
-
-</div> <!-- container //  -->
-</section>
-<!-- ========================= SECTION MAIN END// ========================= -->
-
-<!-- ========================= SECTION  ========================= -->
-<section class="section-name padding-y-sm">
-<div class="container">
-	<div class="row">
-		<h1>Menu iniziale <span class="badge alert-success"> Scegli </span></h1>
-	</div>
-	<div class="row">
-		
-		<a href="{%url 'event' next_close_event.pk%}">
-			<button type="button" class="btn btn-primary btn-lg btn-block">Apri sessione di cassa default: '{{next_close_event.show.shw_title}} del {{next_close_event.date_time}}'</button>
-		</a>
-		<a href="{%url 'event_list'%}">
-			<button type="button" class="btn btn-secondary btn-lg btn-block">Gestione prenotazioni / prevedite per tutti gli eventi</button>
-		</a>
-		<br>
-	</div>
-	<div class="row">
-		
-		<a href="{%url 'fiscalmgm:fiscalmgm_main' %}">
-			<button type="button" class="btn btn-primary btn-lg btn-block">Apri gestione fiscale (SIAE) / rendiconti eventi passati</button>
-		</a>		
-	</div>
-</div><!-- container // -->
-</section>
-<!-- ========================= SECTION  END// ========================= -->
 
 </body>
 </html>

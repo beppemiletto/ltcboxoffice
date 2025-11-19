@@ -27,8 +27,11 @@
               In caso persistano problemi contattaci alla mail </small></p>
               <p><small><a href="mailto:LTCBoxOffice@teatrocambiano.com">LTCBoxOffice@teatrocambiano.com</a></small></p>
           {%include 'includes/alerts.html'%}
-          <form action="{%url 'login'%}" method="POST">
+          <form action="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" method="POST">
             {%csrf_token%}
+            {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
             <div class="form-group">
                  <input type="email" class="form-control" placeholder="Email Address" name="email" >
                 </div> <!-- form-group// -->

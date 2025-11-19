@@ -1,0 +1,114 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3>Selezione Posti - Prenotazione #{{ booking_number }}</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Cliente:</strong> {{ customer_name }}</p>
+            <p><strong>Evento:</strong> {{ event.title }} - {{ event.show_date|date:"d/m/Y H:i" }}</p>
+            <p><strong>Posti totali:</strong> {{ total_seats }}</p>
+            
+            <hr>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="selectAll()">Seleziona Tutti</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="deselectAll()">Deseleziona Tutti</button>
+                </div>
+                
+                <p><strong>Selezionati: <span id="selected-count">0</span> posti - Totale: €<span id="selected-total">0.00</span></strong></p>
+                
+                <div class="row">
+                    {% if seats_data %}
+                        {% for seat in seats_data %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>
+                                        <input type="checkbox" 
+                                               name="selected_seats" 
+                                               value="{{ seat.seat }}"
+                                               class="seat-checkbox"
+                                               data-cost="{{ seat.cost }}"
+                                               onchange="updateTotal()"
+                                               checked>
+                                        {{ seat.seat }}
+                                    </h5>
+                                    <p class="mb-0">{{ seat.price_name }}</p>
+                                    <p class="mb-0">€{{ seat.cost }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <strong>ERRORE:</strong> Nessun posto trovato!<br>
+                                seats_price = "{{ booking.seats_price }}"
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'event' event.id %}" class="btn btn-secondary">Annulla</a>
+                    <button type="submit" class="btn btn-success btn-lg" id="confirm-btn">Aggiungi al Carrello</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectAll() {
+    console.log('selectAll called');
+    const checkboxes = document.querySelectorAll('.seat-checkbox');
+    console.log('Found checkboxes:', checkboxes.length);
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    updateTotal();
+}
+
+function deselectAll() {
+    console.log('deselectAll called');
+    document.querySelectorAll('.seat-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    updateTotal();
+}
+
+function updateTotal() {
+    console.log('updateTotal called');
+    const checkboxes = document.querySelectorAll('.seat-checkbox:checked');
+    const count = checkboxes.length;
+    let total = 0;
+    
+    checkboxes.forEach(cb => {
+        total += parseFloat(cb.dataset.cost);
+    });
+    
+    console.log('Selected:', count, 'Total:', total);
+    
+    document.getElementById('selected-count').textContent = count;
+    document.getElementById('selected-total').textContent = total.toFixed(2);
+    document.getElementById('confirm-btn').disabled = (count === 0);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    const checkboxes = document.querySelectorAll('.seat-checkbox');
+    console.log('Total checkboxes found:', checkboxes.length);
+    updateTotal();
+});
+</script>
+{% endblock %}

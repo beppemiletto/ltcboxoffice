@@ -102,14 +102,12 @@ def login(request):
             if 'cookie_consent_given' in request.session:
                 del request.session['cookie_consent_given']
             messages.success(request, 'Adesso sei loggato come {}'.format(email))
-            url = request.META.get('HTTP_REFERER')
-            try:
-                query = requests.utils.urlparse(url).query
-                params = dict(x.split('=') for x in query.split('&'))
-                if 'next' in params:
-                    nextPage = params['next']
-                    return redirect(nextPage)
-            except:
+            
+            # Redirect to 'next' parameter if present, otherwise go to dashboard
+            next_url = request.GET.get('next') or request.POST.get('next')
+            if next_url:
+                return redirect(next_url)
+            else:
                 return redirect('dashboard')
         else:
             messages.error(request, 'Le credenziali fornite non sono valide')
@@ -440,5 +438,29 @@ def updateorder(main_order_id=None):
     tax += total * orderevent.event.vat_rate / 100.0
     order.order_total = total
     order.tax = tax
+
+@login_required(login_url='login')
+def subscriptions(request):
+    """
+    Gestione Abbonamenti - mostra abbonamenti attivi e permette di acquistarne di nuovi
+    """
+    user = request.user
+    
+    # Get user's active subscriptions (status = 'active')
+    user_subscriptions = Subscription.objects.filter(
+        user=user,
+        status='active'
+    ).order_by('-created_at')
+    
+    # Get available subscription types (from events or a dedicated model)
+    # TODO: Creare un modello SubscriptionType per definire i tipi di abbonamento disponibili
+    
+    context = {
+        'user_subscriptions': user_subscriptions,
+        'subscriptions_count': user_subscriptions.count(),
+    }
+    
+    return render(request, 'accounts/subscriptions.html', context)
+
     order.save()
     return (total, tax) 

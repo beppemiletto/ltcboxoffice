@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ricevuta Abbonamento {{ subscription.subscription_number }}</title>
+    <style>
+        @page {
+            size: A5;
+            margin: 15mm;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12pt;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 18pt;
+        }
+        
+        .header h2 {
+            margin: 5px 0 0 0;
+            font-size: 14pt;
+            font-weight: normal;
+        }
+        
+        .section {
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 5px;
+        }
+        
+        .row {
+            margin-bottom: 3px;
+        }
+        
+        .label {
+            display: inline-block;
+            width: 150px;
+        }
+        
+        .value {
+            font-weight: bold;
+        }
+        
+        .code-box {
+            border: 3px solid #000;
+            padding: 15px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24pt;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+        
+        .footer {
+            border-top: 2px solid #000;
+            padding-top: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10pt;
+        }
+        
+        .barcode-placeholder {
+            text-align: center;
+            margin: 15px 0;
+            padding: 20px;
+            border: 1px dashed #666;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>TEATRO COMUNALE</h1>
+        <h2>Laboratorio Teatrale di Cambiano APS</h2>
+        <p style="margin: 5px 0;">Via Lame 4 - 10020 Cambiano</p>
+        <p style="margin: 5px 0;">P.I. / C.F. 09762270016</p>
+        <div style="border-top: 2px solid #000; margin-top: 10px; padding-top: 10px; font-size: 14pt; font-weight: normal;">
+            RICEVUTA ABBONAMENTO
+        </div>
+    </div>
+    
+    <div class="code-box">
+        {{ subscription.subscription_number }}
+    </div>
+    
+    <div class="section">
+        <div class="section-title">CLIENTE</div>
+        <div class="row">
+            <span class="label">Nome:</span>
+            <span class="value">{{ subscription.user.first_name }} {{ subscription.user.last_name }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Email:</span>
+            <span class="value">{{ subscription.user.email }}</span>
+        </div>
+        {% if subscription.user.phone_number %}
+        <div class="row">
+            <span class="label">Telefono:</span>
+            <span class="value">{{ subscription.user.phone_number }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <div class="section-title">ABBONAMENTO</div>
+        <div class="row">
+            <span class="label">Tipo:</span>
+            <span class="value">{{ subscription.subscription_type.name }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Ingressi Inclusi:</span>
+            <span class="value">{{ subscription.events_included }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Valido dal:</span>
+            <span class="value">{{ subscription.valid_from|date:"d/m/Y" }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Valido fino al:</span>
+            <span class="value">{{ subscription.valid_to|date:"d/m/Y" }}</span>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">PAGAMENTO</div>
+        <div class="row">
+            <span class="label">Metodo:</span>
+            <span class="value">{{ subscription.payment.method }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Importo:</span>
+            <span class="value">€ {{ subscription.subscription_type.price }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Data Emissione:</span>
+            <span class="value">{{ subscription.valid_from|date:"d/m/Y" }}</span>
+        </div>
+    </div>
+    
+    <div class="barcode-placeholder">
+        <p style="margin: 0; font-size: 10pt; color: #666;">
+            [BARCODE: {{ subscription.subscription_number }}]
+        </p>
+    </div>
+    
+    <div class="footer">
+        <p style="margin: 5px 0;">Conservare questa ricevuta</p>
+        <p style="margin: 5px 0;">Presentare il codice abbonamento ad ogni ingresso</p>
+        <p style="margin: 5px 0;">www.teatrolatosca.it</p>
+    </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'subscriptions_main' %}" style="display: inline-block; padding: 10px 30px; font-size: 14pt; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px; text-decoration: none; margin-right: 10px;">
+            <i class="fas fa-arrow-left"></i> Torna al Menu Abbonamenti
+        </a>
+        <button onclick="window.print()" style="padding: 10px 30px; font-size: 14pt; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px;">
+            <i class="fas fa-print"></i> Stampa Ricevuta
+        </button>
+    </div>
+</body>
+</html>
