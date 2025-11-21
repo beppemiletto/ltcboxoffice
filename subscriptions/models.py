@@ -120,19 +120,24 @@ class Subscription(models.Model):
         # Formato: {PREFIX}-{progressive:04d}  Es: R4-0001, I8-0012
         if not self.subscription_number:
             prefix = self.subscription_type.code_prefix
-            last_sub = Subscription.objects.filter(
-                subscription_type=self.subscription_type
-            ).order_by('-subscription_number').first()
             
-            if last_sub and last_sub.subscription_number:
+            # Trova tutti gli abbonamenti dello stesso tipo e estrae il numero massimo
+            existing_subs = Subscription.objects.filter(
+                subscription_type=self.subscription_type,
+                subscription_number__startswith=f'{prefix}-'
+            ).values_list('subscription_number', flat=True)
+            
+            max_num = 0
+            for sub_num in existing_subs:
                 try:
-                    last_num = int(last_sub.subscription_number.split('-')[1])
-                    new_num = last_num + 1
+                    # Estrae il numero dopo il trattino
+                    num = int(sub_num.split('-')[1])
+                    if num > max_num:
+                        max_num = num
                 except (IndexError, ValueError):
-                    new_num = 1
-            else:
-                new_num = 1
+                    continue
             
+            new_num = max_num + 1
             self.subscription_number = f'{prefix}-{new_num:04d}'
         
         # Auto-calcola valid_to se non impostato

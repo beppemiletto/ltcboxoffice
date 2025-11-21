@@ -14,6 +14,11 @@ class Event(models.Model):
     venue           = models.ForeignKey(Venue, on_delete=models.CASCADE, blank=True, null=True, default=2)
     event_slug      = models.CharField(max_length=200, blank=True)
     sold_out        = models.BooleanField(default=False)
+    booking_deadline_hours = models.PositiveIntegerField(
+        default=3,
+        verbose_name="Ore limite prenotazione",
+        help_text="Numero di ore prima dell'evento entro cui è possibile prenotare (da 1 a 24 ore)"
+    )
     
     def __str__(self) -> str:
         return f'{self.show.slug} - {self.date_time}'
@@ -24,6 +29,30 @@ class Event(models.Model):
         b = self.date_time.strftime('%Y%m%d')     #Day of the month as string
         c = self.show.shw_code
         return c+'_'+b+'_'+ a 
+
+    def get_booking_deadline(self):
+        """Calcola il timestamp limite per le prenotazioni basato su booking_deadline_hours"""
+        from datetime import timedelta
+        import pytz
+        
+        deadline_hours = self.booking_deadline_hours if self.booking_deadline_hours is not None else 3
+        deadline = self.date_time - timedelta(hours=deadline_hours)
+        
+        # Assicura che abbia timezone
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=pytz.utc)
+        
+        return deadline
+    
+    def is_bookable(self):
+        """Verifica se l'evento è ancora prenotabile in base al deadline"""
+        from datetime import datetime
+        import pytz
+        
+        now = datetime.now(pytz.utc)
+        deadline = self.get_booking_deadline()
+        
+        return now < deadline and not self.sold_out 
 
 
     def save(self, *args, **kwargs):

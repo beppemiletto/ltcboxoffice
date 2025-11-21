@@ -5,7 +5,7 @@ from billboard.models import Show, Venue
 # Register your models here.
 class EventAdmin(admin.ModelAdmin):
     my_slug = 'my_calculated_slug_string'
-    list_display = ('show', 'event_slug', 'date_time', 'venue') 
+    list_display = ('show', 'event_slug', 'date_time', 'booking_deadline_hours', 'venue') 
     list_filter = ('venue', 'date_time')
     search_fields = ('show__shw_title', 'event_slug')
     
@@ -15,6 +15,10 @@ class EventAdmin(admin.ModelAdmin):
         }),
         ('Pricing', {
             'fields': ('price_full', 'price_reduced', 'vat_rate')
+        }),
+        ('Booking Settings', {
+            'fields': ('booking_deadline_hours',),
+            'description': 'Configura quante ore prima dello spettacolo chiudere le prenotazioni online (1-24 ore)'
         }),
         ('Status', {
             'fields': ('sold_out',)

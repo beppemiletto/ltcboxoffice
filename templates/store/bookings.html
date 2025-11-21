@@ -51,12 +51,12 @@
                     <option value="{%url 'set_ing_booking' item.id 2%}" {% if item.ingresso == 2 %}selected{% endif %}>Intero</option>
                     {% if subscription_options %}
                     <optgroup label="Abbonamenti">
-                        {% for sub_code, sub_info in subscription_options.items %}
-                        <option value="{%url 'set_ing_booking' item.id sub_code%}" 
-                                {% if item.ingresso == sub_code %}selected{% endif %}
-                                {% if sub_info.event_id == item.event.id and sub_info.already_used %}disabled{% endif %}>
-                            {{ sub_info.name }} 
-                            {% if sub_info.remaining > 0 %}({{ sub_info.remaining }} rimasti){% else %}(esaurito){% endif %}
+                        {% for option in subscription_options %}
+                        <option value="{%url 'set_ing_booking' item.id option.code%}" 
+                                {% if item.ingresso == option.code %}selected{% endif %}
+                                {% if option.remaining == 0 %}disabled{% endif %}>
+                            {{ option.name }} 
+                            {% if option.remaining > 0 %}({{ option.remaining }} rimasti){% else %}(esaurito){% endif %}
                         </option>
                         {% endfor %}
                     </optgroup>

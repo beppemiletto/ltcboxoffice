@@ -16,28 +16,30 @@ def home(request):
         evidence_show_found: bool = False
         evidence_show = shows.last()
         for show in shows:
-            shw_events = Event.objects.filter(show=show.pk) 
+            shw_events = Event.objects.filter(show=show.pk).order_by('date_time')
             if shw_events.count():
-                from_date = datetime.now()+relativedelta(hours=3) 
-                from_date = from_date.replace(tzinfo=pytz.utc)
+                now = datetime.now(pytz.utc)
                 for event in shw_events:
-                    time_gap = event.date_time - from_date
-                    if time_gap > zero_timedelta and time_gap < evidence_timedelta:
-                        evidence_timedelta = time_gap
-                        evidence_show = show
-                        evidence_show_url = show.get_url()
-                        date_start = event.date_time
-                        evidence_show_found = True
+                    # Usa il metodo is_bookable() per controllare la deadline dinamica
+                    if event.is_bookable():
+                        time_gap = event.date_time - now
+                        if time_gap > zero_timedelta and time_gap < evidence_timedelta:
+                            evidence_timedelta = time_gap
+                            evidence_show = show
+                            evidence_show_url = show.get_url()
+                            date_start = event.date_time
+                            evidence_show_found = True
+                            break  # Prendi il primo evento prenotabile per questo show
 
         if not evidence_show_found:
-            shw_events = Event.objects.filter(show=show.pk)
+            # Fallback: prende l'ultimo show comunque
+            shw_events = Event.objects.filter(show=evidence_show.pk).order_by('date_time')
+            now = datetime.now(pytz.utc)
             for event in shw_events:
-                time_gap = event.date_time - from_date
-                if time_gap < evidence_timedelta:
-                    evidence_timedelta = time_gap
-                    evidence_show = show
-                    evidence_show_url = show.get_url()
+                if event.is_bookable():
+                    evidence_show_url = evidence_show.get_url()
                     date_start = event.date_time
+                    break
                 
         billboard[evidence_show.pk]= {
         'title': evidence_show.shw_title,

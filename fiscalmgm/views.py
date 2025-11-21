@@ -6,11 +6,14 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.utils import timezone
 from django.utils.formats import date_format
 from datetime import datetime, timedelta
+from django.db.models import Count, Sum
+from calendar import monthrange
 import pytz
 from store.models import Event
 from tickets.models import Ticket
 from .models import Ingresso, Report, EventFiscalData
 from .forms import FiscalDataForm
+from subscriptions.models import Subscription, SubscriptionType
 
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
@@ -49,26 +52,26 @@ def siae(request, event_id):
         past_events = Event.objects.filter(date_time__lte=now).filter(show__is_active=True).order_by('-date_time')
         del now
         # print("{} - number {} will be the one for SIAE reports".format(curr_event,event_id))
-        save_path = 'media/siae_reports'
+        save_path = os.path.join('media', 'siae_reports')
+        os.makedirs(save_path, exist_ok=True)
         evnt_date_code = curr_event.date_time.strftime('%Y%m%d')
         evnt_show_slug = curr_event.show.slug
         evnt_show_code = curr_event.show.shw_code
 
 
-        # Retrieve if exist the record of fiscl data - UNIQUE for Event
+        # Retrieve if exist the record of fiscal data - UNIQUE for Event
         # Otherwise create it taking most updated values as default.
         try:
             fiscal_data = EventFiscalData.objects.get(event_id = curr_event.pk)
         except:
-            fiscal_data_old = EventFiscalData.objects.last()
+            fiscal_data_old = EventFiscalData.objects.filter(printed=True).order_by('-updated_at').first()
             fiscal_data = EventFiscalData()
             fiscal_data.event = curr_event
 
-
-            # calcola l'incasso da prevendita
+            # Calcola l'incasso da prevendita (vendite web)
             full_price:float = curr_event.price_full
             redu_price:float = curr_event.price_reduced
-            prices = [0.0 , redu_price, full_price] 
+            prices = [0.0, redu_price, full_price] 
             all_tickets = Ticket.objects.filter(event_id = curr_event.pk)
             presold_tickets = all_tickets.filter(sell_mode = "W")
             presold_income: float = 0.0 
@@ -76,7 +79,13 @@ def siae(request, event_id):
                 presold_income += prices[presold_ticket.price]
 
             fiscal_data.collection_presell = presold_income
+            
             if fiscal_data_old is not None:
+                # AUTO-POPOLAMENTO CASSIERI dall'ultimo evento
+                fiscal_data.casher_01 = fiscal_data_old.casher_01
+                fiscal_data.casher_02 = fiscal_data_old.casher_02
+                
+                # CASSA INIZIO = CASSA FINE evento precedente
                 fiscal_data.cash_begin_200euro = fiscal_data_old.cash_end_200euro
                 fiscal_data.cash_begin_100euro = fiscal_data_old.cash_end_100euro
                 fiscal_data.cash_begin_50euro = fiscal_data_old.cash_end_50euro
@@ -88,25 +97,59 @@ def siae(request, event_id):
                 fiscal_data.cash_begin_50cent = fiscal_data_old.cash_end_50cent
                 fiscal_data.cash_begin_20cent = fiscal_data_old.cash_end_20cent
                 fiscal_data.cash_begin_10cent = fiscal_data_old.cash_end_10cent
-                if fiscal_data_old.intero_ticket_serie_2 != 'nd':
+                
+                # SERIE BIGLIETTI INTERI - continua numerazione
+                if fiscal_data_old.intero_ticket_serie_2 and fiscal_data_old.intero_ticket_serie_2 != 'nd' and fiscal_data_old.intero_ticket_end_number_2:
                     fiscal_data.intero_ticket_serie_1 = fiscal_data_old.intero_ticket_serie_2
                     fiscal_data.intero_ticket_start_number_1 = fiscal_data_old.intero_ticket_end_number_2 + 1
-                else:
+                elif fiscal_data_old.intero_ticket_serie_1 and fiscal_data_old.intero_ticket_end_number_1:
                     fiscal_data.intero_ticket_serie_1 = fiscal_data_old.intero_ticket_serie_1
                     fiscal_data.intero_ticket_start_number_1 = fiscal_data_old.intero_ticket_end_number_1 + 1
-                if fiscal_data_old.ridotto_ticket_serie_2 != 'nd':
+                
+                # SERIE BIGLIETTI RIDOTTI - continua numerazione
+                if fiscal_data_old.ridotto_ticket_serie_2 and fiscal_data_old.ridotto_ticket_serie_2 != 'nd' and fiscal_data_old.ridotto_ticket_end_number_2:
                     fiscal_data.ridotto_ticket_serie_1 = fiscal_data_old.ridotto_ticket_serie_2
                     fiscal_data.ridotto_ticket_start_number_1 = fiscal_data_old.ridotto_ticket_end_number_2 + 1
-                else:
+                elif fiscal_data_old.ridotto_ticket_serie_1 and fiscal_data_old.ridotto_ticket_end_number_1:
                     fiscal_data.ridotto_ticket_serie_1 = fiscal_data_old.ridotto_ticket_serie_1
                     fiscal_data.ridotto_ticket_start_number_1 = fiscal_data_old.ridotto_ticket_end_number_1 + 1
-                if fiscal_data_old.gratuito_ticket_serie_2 != 'nd':
+                
+                # SERIE BIGLIETTI GRATUITI - continua numerazione
+                if fiscal_data_old.gratuito_ticket_serie_2 and fiscal_data_old.gratuito_ticket_serie_2 != 'nd' and fiscal_data_old.gratuito_ticket_end_number_2:
                     fiscal_data.gratuito_ticket_serie_1 = fiscal_data_old.gratuito_ticket_serie_2
                     fiscal_data.gratuito_ticket_start_number_1 = fiscal_data_old.gratuito_ticket_end_number_2 + 1
-                else:
+                elif fiscal_data_old.gratuito_ticket_serie_1 and fiscal_data_old.gratuito_ticket_end_number_1:
                     fiscal_data.gratuito_ticket_serie_1 = fiscal_data_old.gratuito_ticket_serie_1
                     fiscal_data.gratuito_ticket_start_number_1 = fiscal_data_old.gratuito_ticket_end_number_1 + 1
+                
+                # SERIE BIGLIETTI ABBONAMENTO - continua numerazione dall'ultima serie utilizzata
+                if fiscal_data_old.abbonamento_ticket_serie_4 and fiscal_data_old.abbonamento_ticket_serie_4 != 'nd' and fiscal_data_old.abbonamento_ticket_end_number_4:
+                    fiscal_data.abbonamento_ticket_serie_1 = fiscal_data_old.abbonamento_ticket_serie_4
+                    fiscal_data.abbonamento_ticket_start_number_1 = fiscal_data_old.abbonamento_ticket_end_number_4 + 1
+                elif fiscal_data_old.abbonamento_ticket_serie_3 and fiscal_data_old.abbonamento_ticket_serie_3 != 'nd' and fiscal_data_old.abbonamento_ticket_end_number_3:
+                    fiscal_data.abbonamento_ticket_serie_1 = fiscal_data_old.abbonamento_ticket_serie_3
+                    fiscal_data.abbonamento_ticket_start_number_1 = fiscal_data_old.abbonamento_ticket_end_number_3 + 1
+                elif fiscal_data_old.abbonamento_ticket_serie_2 and fiscal_data_old.abbonamento_ticket_serie_2 != 'nd' and fiscal_data_old.abbonamento_ticket_end_number_2:
+                    fiscal_data.abbonamento_ticket_serie_1 = fiscal_data_old.abbonamento_ticket_serie_2
+                    fiscal_data.abbonamento_ticket_start_number_1 = fiscal_data_old.abbonamento_ticket_end_number_2 + 1
+                elif fiscal_data_old.abbonamento_ticket_serie_1 and fiscal_data_old.abbonamento_ticket_end_number_1:
+                    fiscal_data.abbonamento_ticket_serie_1 = fiscal_data_old.abbonamento_ticket_serie_1
+                    fiscal_data.abbonamento_ticket_start_number_1 = fiscal_data_old.abbonamento_ticket_end_number_1 + 1
+                    
             fiscal_data.save()
+        
+        # Ricalcola sempre la prevendita (potrebbe essere cambiata)
+        full_price:float = curr_event.price_full
+        redu_price:float = curr_event.price_reduced
+        prices = [0.0, redu_price, full_price] 
+        all_tickets = Ticket.objects.filter(event_id = curr_event.pk)
+        presold_tickets = all_tickets.filter(sell_mode = "W")
+        presold_income: float = 0.0 
+        for presold_ticket in presold_tickets:
+            presold_income += prices[presold_ticket.price]
+        fiscal_data.collection_presell = presold_income
+        fiscal_data.save()
+        
         report_done: bool = fiscal_data.printed
 
 
@@ -289,17 +332,85 @@ def siae(request, event_id):
                     titolo_gratuito_2['num'] = 0
                 titoli.append(titolo_gratuito_2)
 
-            
+            # BIGLIETTI ABBONAMENTO - Serie 1
+            if fiscal_data.abbonamento_ticket_start_number_1 and fiscal_data.abbonamento_ticket_start_number_1 != 0:
+                titolo_abbonamento_1 = {
+                    'tipo' : 'ABBONAMENTO',
+                    'serie_lettera' : re.findall('[a-zA-Z]+', fiscal_data.abbonamento_ticket_serie_1) if fiscal_data.abbonamento_ticket_serie_1 else ['n.d.'],
+                    'serie_numero' : re.findall('[0-9]+', fiscal_data.abbonamento_ticket_serie_1) if fiscal_data.abbonamento_ticket_serie_1 else ['n.d.'],
+                    'importo' : 0.0,  # Biglietto SIAE per abbonato, non genera incasso
+                    'da' : fiscal_data.abbonamento_ticket_start_number_1,
+                    'a' : fiscal_data.abbonamento_ticket_end_number_1,
+                }
+                if titolo_abbonamento_1['a'] >= titolo_abbonamento_1['da']:
+                    titolo_abbonamento_1['num'] = titolo_abbonamento_1['a'] - titolo_abbonamento_1['da'] + 1
+                else:
+                    titolo_abbonamento_1['num'] = 0
+                titoli.append(titolo_abbonamento_1)
+
+            # BIGLIETTI ABBONAMENTO - Serie 2
+            if fiscal_data.abbonamento_ticket_start_number_2 and fiscal_data.abbonamento_ticket_start_number_2 != 0:
+                titolo_abbonamento_2 = {
+                    'tipo' : 'ABBONAMENTO',
+                    'serie_lettera' : re.findall('[a-zA-Z]+', fiscal_data.abbonamento_ticket_serie_2) if fiscal_data.abbonamento_ticket_serie_2 else ['n.d.'],
+                    'serie_numero' : re.findall('[0-9]+', fiscal_data.abbonamento_ticket_serie_2) if fiscal_data.abbonamento_ticket_serie_2 else ['n.d.'],
+                    'importo' : 0.0,
+                    'da' : fiscal_data.abbonamento_ticket_start_number_2,
+                    'a' : fiscal_data.abbonamento_ticket_end_number_2,
+                }
+                if titolo_abbonamento_2['a'] >= titolo_abbonamento_2['da']:
+                    titolo_abbonamento_2['num'] = titolo_abbonamento_2['a'] - titolo_abbonamento_2['da'] + 1
+                else:
+                    titolo_abbonamento_2['num'] = 0
+                titoli.append(titolo_abbonamento_2)
+
+            # BIGLIETTI ABBONAMENTO - Serie 3
+            if fiscal_data.abbonamento_ticket_start_number_3 and fiscal_data.abbonamento_ticket_start_number_3 != 0:
+                titolo_abbonamento_3 = {
+                    'tipo' : 'ABBONAMENTO',
+                    'serie_lettera' : re.findall('[a-zA-Z]+', fiscal_data.abbonamento_ticket_serie_3) if fiscal_data.abbonamento_ticket_serie_3 else ['n.d.'],
+                    'serie_numero' : re.findall('[0-9]+', fiscal_data.abbonamento_ticket_serie_3) if fiscal_data.abbonamento_ticket_serie_3 else ['n.d.'],
+                    'importo' : 0.0,
+                    'da' : fiscal_data.abbonamento_ticket_start_number_3,
+                    'a' : fiscal_data.abbonamento_ticket_end_number_3,
+                }
+                if titolo_abbonamento_3['a'] >= titolo_abbonamento_3['da']:
+                    titolo_abbonamento_3['num'] = titolo_abbonamento_3['a'] - titolo_abbonamento_3['da'] + 1
+                else:
+                    titolo_abbonamento_3['num'] = 0
+                titoli.append(titolo_abbonamento_3)
+
+            # BIGLIETTI ABBONAMENTO - Serie 4
+            if fiscal_data.abbonamento_ticket_start_number_4 and fiscal_data.abbonamento_ticket_start_number_4 != 0:
+                titolo_abbonamento_4 = {
+                    'tipo' : 'ABBONAMENTO',
+                    'serie_lettera' : re.findall('[a-zA-Z]+', fiscal_data.abbonamento_ticket_serie_4) if fiscal_data.abbonamento_ticket_serie_4 else ['n.d.'],
+                    'serie_numero' : re.findall('[0-9]+', fiscal_data.abbonamento_ticket_serie_4) if fiscal_data.abbonamento_ticket_serie_4 else ['n.d.'],
+                    'importo' : 0.0,
+                    'da' : fiscal_data.abbonamento_ticket_start_number_4,
+                    'a' : fiscal_data.abbonamento_ticket_end_number_4,
+                }
+                if titolo_abbonamento_4['a'] >= titolo_abbonamento_4['da']:
+                    titolo_abbonamento_4['num'] = titolo_abbonamento_4['a'] - titolo_abbonamento_4['da'] + 1
+                else:
+                    titolo_abbonamento_4['num'] = 0
+                titoli.append(titolo_abbonamento_4)
+
+
             generate_mod2A: bool = True
             generate_mod566: bool = True
             generate_casher: bool = True
 
             if generate_mod2A: # MOD 2A Excel Generator Procedure
-                mod2da_xls_filename = f'{evnt_date_code}_mod2DA_{evnt_show_slug}.xls'
+                mod2da_xls_filename = f'{evnt_date_code}_mod2DA_{evnt_show_slug}.xlsx'
                 filename = os.path.join(os.getcwd(), save_path,mod2da_xls_filename)
 
-                try: 
+                try:
                     report = Report.objects.get(event_id = curr_event.pk, type ='SIAE_2DA')
+                    # Aggiorna il path se usa la vecchia estensione .xls
+                    if report.doc_path != mod2da_xls_filename:
+                        report.doc_path = mod2da_xls_filename
+                        report.save()
                 except:
                     report = Report()
                     report.type = 'SIAE_2DA'
@@ -829,11 +940,15 @@ def siae(request, event_id):
                 report.save()
 
             if generate_mod566: # MOD 566 Excel Generator Procedure
-                mod566_xls_filename = f'{evnt_date_code}_mod566_{evnt_show_slug}.xls'
+                mod566_xls_filename = f'{evnt_date_code}_mod566_{evnt_show_slug}.xlsx'
                 filename = os.path.join(os.getcwd(), save_path,mod566_xls_filename)   
 
-                try: 
+                try:
                     report = Report.objects.get(event_id = curr_event.pk, type ='SIAE_566')
+                    # Aggiorna il path se usa la vecchia estensione .xls
+                    if report.doc_path != mod566_xls_filename:
+                        report.doc_path = mod566_xls_filename
+                        report.save()
                 except:
                     report = Report()
                     report.type = 'SIAE_566'
@@ -871,9 +986,9 @@ def siae(request, event_id):
                 colnames = ('A','B','C','D','E','F','G','H','I','J')
                 for col in colnames:
                     ws.column_dimensions[col].width = 7.7
-                img = Image(os.path.join(os.getcwd(), save_path,'AgenziaEntrateLogo.png'))
-                img.height = 442 /6 # insert image height in pixels as float or int (e.g. 305.5)
-                img.width= 1874 / 6 # insert image width in pixels as float or int (e.g. 405.8)
+                img = Image(os.path.join(os.getcwd(), save_path,'AgenziaEntrateLogo.jpg'))
+                img.height = 73.67 # insert image height in pixels as float or int (e.g. 305.5)
+                img.width= 312.33 # insert image width in pixels as float or int (e.g. 405.8)
                 img.anchor = 'A1' # where you want image to be anchored/start from
                 ws.add_image(img) # adding in the image
 
@@ -1769,9 +1884,13 @@ def siae(request, event_id):
 
                 casher_xlsx_filename = f'{evnt_show_code}.xlsx'
                 filename = os.path.join(os.getcwd(), save_path,casher_xlsx_filename)   
-                try: 
+                try:
                     report = Report.objects.get(event_id = curr_event.pk, type ='CASSA')
                     progress_number = report.progress_number
+                    # Aggiorna il path se usa la vecchia estensione .xls
+                    if report.doc_path != casher_xlsx_filename:
+                        report.doc_path = casher_xlsx_filename
+                        report.save()
                 except:
                     report = Report()
                     report.type = 'CASSA'
@@ -2672,10 +2791,29 @@ def siae(request, event_id):
 
             
             form = FiscalDataForm(instance=fiscal_data)
+            
+            # Calcola statistiche evento per aiuto compilazione
+            all_tickets = Ticket.objects.filter(event_id=curr_event.pk)
+            stats = {
+                'total_tickets': all_tickets.count(),
+                'presold_tickets': all_tickets.filter(sell_mode="W").count(),
+                'box_office_tickets': all_tickets.filter(sell_mode="C").count(),
+                'full_price_count': all_tickets.filter(price=2).count(),
+                'reduced_price_count': all_tickets.filter(price=1).count(),
+                'free_count': all_tickets.filter(price=0).count(),
+                'subscription_count': all_tickets.filter(price__in=[3, 4, 5, 6]).count(),
+                'subscription_r4_count': all_tickets.filter(price=3).count(),  # Abbonamento R4
+                'subscription_r8_count': all_tickets.filter(price=4).count(),  # Abbonamento R8
+                'subscription_i4_count': all_tickets.filter(price=5).count(),  # Abbonamento I4
+                'subscription_i8_count': all_tickets.filter(price=6).count(),  # Abbonamento I8
+                'total_income': all_tickets.filter(price=2).count() * curr_event.price_full + 
+                               all_tickets.filter(price=1).count() * curr_event.price_reduced,
+            }
 
             context = {
                 'event' : curr_event,
                 'form' : form,
+                'stats': stats,
 
             }
             if report_done:
@@ -2839,4 +2977,756 @@ def get_styles(cell):
 
 def colnum(letter):
     return ord(letter.lower()) - 96
+
+
+@login_required(login_url='login')
+def sd2_monthly(request):
+    """
+    Vista principale per selezionare il mese e generare il report SD2 mensile abbonamenti
+    """
+    if not request.user.is_staff:
+        return redirect('fiscalmgm:user_not_allowed')
+    
+    # Ottieni tutti i mesi in cui ci sono state vendite di abbonamenti
+    subscriptions = Subscription.objects.all().order_by('-created_at')
+    
+    # Raggruppa per anno/mese
+    months_with_sales = {}
+    for sub in subscriptions:
+        year = sub.created_at.year
+        month = sub.created_at.month
+        key = f"{year}-{month:02d}"
+        if key not in months_with_sales:
+            months_with_sales[key] = {
+                'year': year,
+                'month': month,
+                'count': 0,
+                'month_name': sub.created_at.strftime('%B %Y'),
+                'report': None
+            }
+        months_with_sales[key]['count'] += 1
+    
+    # Aggiungi info sui report già generati
+    for key, data in months_with_sales.items():
+        try:
+            report = Report.objects.filter(
+                type='SIAE_SD2',
+                created_at__year=data['year'],
+                created_at__month=data['month']
+            ).first()
+            if report:
+                data['report'] = report
+        except Report.DoesNotExist:
+            pass
+    
+    # Ordina per data decrescente
+    months_list = sorted(months_with_sales.values(), 
+                        key=lambda x: (x['year'], x['month']), 
+                        reverse=True)
+    
+    context = {
+        'months_list': months_list,
+    }
+    
+    return render(request, 'fiscalmgm/sd2_monthly.html', context)
+
+
+@login_required(login_url='login')
+def sd2_generate(request, year, month):
+    """
+    Genera il report MOD SD2 per il mese selezionato
+    """
+    if not request.user.is_staff:
+        return redirect('fiscalmgm:user_not_allowed')
+    
+    # Definisci range del mese
+    localtz = pytz.timezone('Europe/Rome')
+    first_day = datetime(year, month, 1, 0, 0, 0, tzinfo=localtz)
+    last_day_num = monthrange(year, month)[1]
+    last_day = datetime(year, month, last_day_num, 23, 59, 59, tzinfo=localtz)
+    
+    # Filtra abbonamenti venduti nel mese
+    subscriptions_month = Subscription.objects.filter(
+        created_at__gte=first_day,
+        created_at__lte=last_day
+    ).select_related('subscription_type', 'user').order_by('created_at')
+    
+    if subscriptions_month.count() == 0:
+        messages.warning(request, f"Nessun abbonamento venduto a {first_day.strftime('%B %Y')}")
+        return redirect('fiscalmgm:sd2_monthly')
+    
+    # Aggrega per tipo di abbonamento
+    subscription_summary = {}
+    for sub in subscriptions_month:
+        type_name = sub.subscription_type.name
+        if type_name not in subscription_summary:
+            subscription_summary[type_name] = {
+                'type': sub.subscription_type,
+                'count': 0,
+                'total_price': 0,
+                'subscriptions': []
+            }
+        subscription_summary[type_name]['count'] += 1
+        subscription_summary[type_name]['total_price'] += float(sub.subscription_type.price)
+        subscription_summary[type_name]['subscriptions'].append(sub)
+    
+    # Genera Excel MOD SD2
+    save_path = os.path.join('media', 'siae_reports')
+    os.makedirs(save_path, exist_ok=True)
+    
+    sd2_xls_filename = f'{year}{month:02d}_modSD2_abbonamenti.xlsx'
+    filename = os.path.join(os.getcwd(), save_path, sd2_xls_filename)
+    
+    # Controlla se esiste già un report per questo mese
+    try:
+        report = Report.objects.get(type='SIAE_SD2', created_at__year=year, created_at__month=month)
+    except Report.DoesNotExist:
+        report = Report()
+        report.type = 'SIAE_SD2'
+        report.doc_path = sd2_xls_filename
+        report.save()
+        
+        # Calcola progressivo
+        all_reports = Report.objects.filter(type='SIAE_SD2').order_by('-progress_number')
+        if all_reports.exists():
+            report.progress_number = all_reports.first().progress_number + 1
+        else:
+            report.progress_number = 1
+        report.save()
+    
+    # Genera Excel
+    font = {
+        'normal': Font(name='Arial', size=10, bold=False, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'normal07': Font(name='Arial', size=7, bold=False, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'normal09': Font(name='Arial', size=9, bold=False, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'normal11': Font(name='Arial', size=11, bold=False, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'bold': Font(name='Arial', size=10, bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'bold09': Font(name='Arial', size=9, bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'bold11': Font(name='Arial', size=11, bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+        'bold13': Font(name='Arial', size=13, bold=True, italic=False, vertAlign=None, underline='none', strike=False, color='FF000000'),
+    }
+    alignment = {
+        'l_b': Alignment(horizontal='left', vertical='bottom', text_rotation=0, wrap_text=False, shrink_to_fit=False, indent=0),
+        'l_c': Alignment(horizontal='left', vertical='center', text_rotation=0, wrap_text=False, shrink_to_fit=False, indent=0),
+        'c_c': Alignment(horizontal='center', vertical='center', text_rotation=0, wrap_text=True, shrink_to_fit=False, indent=0),
+        'r_c': Alignment(horizontal='right', vertical='center', text_rotation=0, wrap_text=True, shrink_to_fit=False, indent=0),
+    }
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'mod SD2'
+    ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_margins.left = 0.25
+    ws.page_margins.right = 0.25
+    ws.page_margins.top = 0.25
+    ws.page_margins.bottom = 0.25
+    
+    ws.HeaderFooter.differentFirst = True
+    ws.firstHeader.left.text = "Page &P of &N"
+    ws.firstHeader.center.text = "MOD. SD2"
+    
+    # Imposta larghezza colonne
+    colnames = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J')
+    for col in colnames:
+        ws.column_dimensions[col].width = 7.7
+
+    # Logo Agenzia delle Entrate
+    img = Image(os.path.join(os.getcwd(), save_path,'AgenziaEntrateLogo.jpg'))
+    img.height = 73.67
+    img.width = 312.33
+    img.anchor = 'A1'
+    ws.add_image(img)
+
+    # Headers - Numero progressivo e foglio
+    row = 1
+    ws[f'J{row}'].value = 'Mod.SD/2'
+    ws[f'J{row}'].font = font['bold']
+    ws[f'J{row}'].alignment = alignment['r_c']
+
+    row = 3
+    ws.merge_cells(start_row=row, start_column=colnum('f'), end_row=row, end_column=colnum('g'))
+    ws[f'F{row}'].value = 'N. Progressivo'
+    ws[f'F{row}'].font = font['normal09']
+    ws[f'F{row}'].alignment = alignment['r_c']
+
+    ws[f'H{row}'].value = report.progress_number
+    ws[f'H{row}'].font = font['bold09']
+    ws[f'H{row}'].alignment = alignment['r_c']
+    ws[f'H{row}'].number_format = '00000'
+    make_border(ws[f'H{row}'],'thin')
+
+    ws[f'I{row}'].value = 'Foglio n.'
+    ws[f'I{row}'].font = font['normal09']
+    ws[f'I{row}'].alignment = alignment['r_c']
+    ws[f'J{row}'].value = 1
+    ws[f'J{row}'].font = font['bold09']
+    ws[f'J{row}'].alignment = alignment['r_c']
+    ws[f'J{row}'].number_format = '00'
+    make_border(ws[f'J{row}'],'thin')
+
+    # Titolo principale
+    row = 6
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('j'))
+    ws[f'A{row}'].value = "PROSPETTO ABBONAMENTI RILASCIATI NEL MESE DI"
+    ws[f'A{row}'].font = font['bold13']
+    ws[f'A{row}'].alignment = alignment['c_c']
+
+    row = 7
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('j'))
+    ws[f'A{row}'].value = "art. 5, comma 4, DPR 13 marzo 2002, n. 69"
+    ws[f'A{row}'].font = font['bold13']
+    ws[f'A{row}'].alignment = alignment['c_c']
+
+    row = 8
+    ws.row_dimensions[row].height = 5
+
+    # Dati Società/Organizzatore
+    row = 9
+    ws[f'A{row}'].value = 'Società/Associazione'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('j'))
+    ws[f'B{row}'].value = 'La Teca del Cielo A.P.S.'
+    ws[f'B{row}'].font = font['bold09']
+    ws[f'B{row}'].alignment = alignment['l_c']
+    make_underline(ws[f'B{row}'], 'thin')
+    for col in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
+        make_underline(ws[f'{col}{row}'], 'thin')
+
+    row = 10
+    ws[f'A{row}'].value = 'Cod. Fiscale'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('d'))
+    ws[f'B{row}'].value = '94168670633'
+    ws[f'B{row}'].font = font['bold09']
+    ws[f'B{row}'].alignment = alignment['l_c']
+    for col in ['B', 'C', 'D']:
+        make_border(ws[f'{col}{row}'], 'thin')
+
+    row = 11
+    ws[f'A{row}'].value = 'Sede legale: Via/Piazza'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('f'))
+    ws[f'B{row}'].value = 'Via Castello, 10'
+    ws[f'B{row}'].font = font['bold09']
+    ws[f'B{row}'].alignment = alignment['l_c']
+    for col in ['B', 'C', 'D', 'E', 'F']:
+        make_underline(ws[f'{col}{row}'], 'thin')
+
+    ws[f'G{row}'].value = 'n.'
+    ws[f'G{row}'].font = font['normal09']
+    ws[f'G{row}'].alignment = alignment['r_c']
+
+    ws[f'H{row}'].value = ''
+    make_underline(ws[f'H{row}'], 'thin')
+
+    ws[f'I{row}'].value = 'CAP'
+    ws[f'I{row}'].font = font['normal09']
+    ws[f'I{row}'].alignment = alignment['r_c']
+
+    ws[f'J{row}'].value = '12060'
+    ws[f'J{row}'].font = font['bold09']
+    ws[f'J{row}'].alignment = alignment['c_c']
+    make_border(ws[f'J{row}'], 'thin')
+
+    row = 12
+    ws[f'A{row}'].value = 'Comune'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('f'))
+    ws[f'B{row}'].value = 'Castellinaldo d\'Alba'
+    ws[f'B{row}'].font = font['bold09']
+    ws[f'B{row}'].alignment = alignment['l_c']
+    for col in ['B', 'C', 'D', 'E', 'F']:
+        make_underline(ws[f'{col}{row}'], 'thin')
+
+    ws[f'G{row}'].value = 'Prov.'
+    ws[f'G{row}'].font = font['normal09']
+    ws[f'G{row}'].alignment = alignment['r_c']
+
+    ws[f'H{row}'].value = 'CN'
+    ws[f'H{row}'].font = font['bold09']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    make_border(ws[f'H{row}'], 'thin')
+
+    row = 13
+    ws.row_dimensions[row].height = 5
+
+    # Periodo sociale
+    row = 14
+    ws[f'A{row}'].value = 'Esercizio sociale: data inizio'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    # Giorno inizio
+    ws[f'C{row}'].value = 'Giorno'
+    ws[f'C{row}'].font = font['normal09']
+    ws[f'C{row}'].alignment = alignment['c_c']
+    ws[f'D{row}'].value = 'Mese'
+    ws[f'D{row}'].font = font['normal09']
+    ws[f'D{row}'].alignment = alignment['c_c']
+    ws[f'E{row}'].value = 'Anno'
+    ws[f'E{row}'].font = font['normal09']
+    ws[f'E{row}'].alignment = alignment['c_c']
+
+    ws[f'F{row}'].value = 'data fine'
+    ws[f'F{row}'].font = font['normal09']
+    ws[f'F{row}'].alignment = alignment['l_c']
+
+    ws[f'H{row}'].value = 'Giorno'
+    ws[f'H{row}'].font = font['normal09']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    ws[f'I{row}'].value = 'Mese'
+    ws[f'I{row}'].font = font['normal09']
+    ws[f'I{row}'].alignment = alignment['c_c']
+    ws[f'J{row}'].value = 'Anno'
+    ws[f'J{row}'].font = font['normal09']
+    ws[f'J{row}'].alignment = alignment['c_c']
+
+    row = 15
+    # Data inizio
+    ws[f'C{row}'].value = '01'
+    ws[f'C{row}'].font = font['bold09']
+    ws[f'C{row}'].alignment = alignment['c_c']
+    make_border(ws[f'C{row}'], 'thin')
+
+    ws[f'D{row}'].value = '09'
+    ws[f'D{row}'].font = font['bold09']
+    ws[f'D{row}'].alignment = alignment['c_c']
+    make_border(ws[f'D{row}'], 'thin')
+
+    ws[f'E{row}'].value = year
+    ws[f'E{row}'].font = font['bold09']
+    ws[f'E{row}'].alignment = alignment['c_c']
+    make_border(ws[f'E{row}'], 'thin')
+
+    # Data fine
+    ws[f'H{row}'].value = '30'
+    ws[f'H{row}'].font = font['bold09']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    make_border(ws[f'H{row}'], 'thin')
+
+    ws[f'I{row}'].value = '06'
+    ws[f'I{row}'].font = font['bold09']
+    ws[f'I{row}'].alignment = alignment['c_c']
+    make_border(ws[f'I{row}'], 'thin')
+
+    ws[f'J{row}'].value = year + 1
+    ws[f'J{row}'].font = font['bold09']
+    ws[f'J{row}'].alignment = alignment['c_c']
+    make_border(ws[f'J{row}'], 'thin')
+
+    row = 16
+    ws.row_dimensions[row].height = 5
+
+    # Rappresentante Legale
+    row = 17
+    ws[f'A{row}'].value = 'Rappresentante legale:'
+    ws[f'A{row}'].font = font['bold09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    row = 18
+    ws.row_dimensions[row].height = 2
+
+    row = 19
+    ws[f'A{row}'].value = 'Cognome'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['r_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('c'))
+    ws[f'B{row}'].value = 'Miletto'
+    ws[f'B{row}'].font = font['bold09']
+    ws[f'B{row}'].alignment = alignment['l_c']
+    make_underline(ws[f'B{row}'], 'thin')
+    make_underline(ws[f'C{row}'], 'thin')
+
+    ws[f'D{row}'].value = 'Nome'
+    ws[f'D{row}'].font = font['normal09']
+    ws[f'D{row}'].alignment = alignment['r_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('e'), end_row=row, end_column=colnum('f'))
+    ws[f'E{row}'].value = 'Giuseppe'
+    ws[f'E{row}'].font = font['bold09']
+    ws[f'E{row}'].alignment = alignment['l_c']
+    make_underline(ws[f'E{row}'], 'thin')
+    make_underline(ws[f'F{row}'], 'thin')
+
+    ws[f'G{row}'].value = 'Cod. Fiscale'
+    ws[f'G{row}'].font = font['normal09']
+    ws[f'G{row}'].alignment = alignment['r_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('h'), end_row=row, end_column=colnum('j'))
+    ws[f'H{row}'].value = 'MLTGPP64E12F889Y'
+    ws[f'H{row}'].font = font['bold09']
+    ws[f'H{row}'].alignment = alignment['l_c']
+    make_underline(ws[f'H{row}'], 'thin')
+    make_underline(ws[f'I{row}'], 'thin')
+    make_underline(ws[f'J{row}'], 'thin')
+
+    row = 20
+    ws[f'A{row}'].value = 'Residenza anagrafica o Domicilio fiscale: Via/Piazza'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('j'))
+    ws[f'B{row}'].value = ''
+    make_underline(ws[f'B{row}'], 'thin')
+    for col in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
+        make_underline(ws[f'{col}{row}'], 'thin')
+
+    row = 21
+    ws[f'A{row}'].value = 'Comune'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('j'))
+    ws[f'B{row}'].value = ''
+    make_underline(ws[f'B{row}'], 'thin')
+    for col in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
+        make_underline(ws[f'{col}{row}'], 'thin')
+
+    row = 22
+    ws.row_dimensions[row].height = 5
+
+    # Tabella Abbonamenti - Intestazione
+    begin_row = 24
+    row = begin_row
+    
+    # Riga superiore bordo
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    row = begin_row + 1
+    
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('c'))
+    ws[f'A{row}'].value = 'DESCRIZIONE'
+    ws[f'A{row}'].font = font['bold']
+    ws[f'A{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'A{row}'], 'thin')
+    
+    ws.merge_cells(start_row=row, start_column=colnum('d'), end_row=row, end_column=colnum('e'))
+    ws[f'D{row}'].value = 'SERIE'
+    ws[f'D{row}'].font = font['bold']
+    ws[f'D{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'D{row}'], 'thin')
+    
+    ws[f'F{row}'].value = 'Dal n.'
+    ws[f'F{row}'].font = font['normal09']
+    ws[f'F{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'F{row}'], 'thin')
+    
+    ws[f'G{row}'].value = 'Al n.'
+    ws[f'G{row}'].font = font['normal09']
+    ws[f'G{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'G{row}'], 'thin')
+    
+    ws[f'H{row}'].value = 'Quantità'
+    ws[f'H{row}'].font = font['normal09']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'H{row}'], 'thin')
+    
+    ws[f'I{row}'].value = 'Prezzo'
+    ws[f'I{row}'].font = font['normal09']
+    ws[f'I{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'I{row}'], 'thin')
+    
+    ws[f'J{row}'].value = 'Importo'
+    ws[f'J{row}'].font = font['normal09']
+    ws[f'J{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'J{row}'], 'thin')
+    make_rightline(ws[f'J{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    row = begin_row + 2
+    
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('c'))
+    ws[f'A{row}'].value = 'ABBONAMENTO'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'A{row}'], 'thin')
+    
+    ws[f'D{row}'].value = 'lettera'
+    ws[f'D{row}'].font = font['normal07']
+    ws[f'D{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'D{row}'], 'thin')
+    
+    ws[f'E{row}'].value = 'numero'
+    ws[f'E{row}'].font = font['normal07']
+    ws[f'E{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'E{row}'], 'thin')
+    
+    ws[f'F{row}'].value = 'numero'
+    ws[f'F{row}'].font = font['normal07']
+    ws[f'F{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'F{row}'], 'thin')
+    
+    ws[f'G{row}'].value = 'numero'
+    ws[f'G{row}'].font = font['normal07']
+    ws[f'G{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'G{row}'], 'thin')
+    
+    ws[f'H{row}'].value = 'col.4-col.3+1'
+    ws[f'H{row}'].font = font['normal07']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'H{row}'], 'thin')
+    
+    ws[f'I{row}'].value = 'unitario'
+    ws[f'I{row}'].font = font['normal07']
+    ws[f'I{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'I{row}'], 'thin')
+    
+    ws[f'J{row}'].value = 'col.5 x col.6'
+    ws[f'J{row}'].font = font['normal07']
+    ws[f'J{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'J{row}'], 'thin')
+    make_rightline(ws[f'J{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    row = begin_row + 3
+    
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('c'))
+    ws[f'A{row}'].value = '1'
+    ws[f'A{row}'].font = font['normal']
+    ws[f'A{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'A{row}'], 'thin')
+    
+    ws[f'D{row}'].value = '2'
+    ws[f'D{row}'].font = font['normal']
+    ws[f'D{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'D{row}'], 'thin')
+    
+    ws[f'E{row}'].value = '3'
+    ws[f'E{row}'].font = font['normal']
+    ws[f'E{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'E{row}'], 'thin')
+    
+    ws[f'F{row}'].value = '4'
+    ws[f'F{row}'].font = font['normal']
+    ws[f'F{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'F{row}'], 'thin')
+    
+    ws[f'G{row}'].value = '5'
+    ws[f'G{row}'].font = font['normal']
+    ws[f'G{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'G{row}'], 'thin')
+    
+    ws[f'H{row}'].value = '6'
+    ws[f'H{row}'].font = font['normal']
+    ws[f'H{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'H{row}'], 'thin')
+    
+    ws[f'I{row}'].value = '7'
+    ws[f'I{row}'].font = font['normal']
+    ws[f'I{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'I{row}'], 'thin')
+    
+    ws[f'J{row}'].value = '8'
+    ws[f'J{row}'].font = font['normal']
+    ws[f'J{row}'].alignment = alignment['c_c']
+    make_leftline(ws[f'J{row}'], 'thin')
+    make_rightline(ws[f'J{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    # Dati abbonamenti
+    row_count = 0
+    total_abbonamenti = 0
+    total_incasso = 0.0
+    
+    for type_name, data in subscription_summary.items():
+        row_count += 1
+        row = begin_row + 3 + row_count
+        
+        subs_list = data['subscriptions']
+        first_sub = min(subs_list, key=lambda x: x.subscription_number)
+        last_sub = max(subs_list, key=lambda x: x.subscription_number)
+        
+        # Descrizione abbonamento
+        ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('c'))
+        ws[f'A{row}'].value = type_name
+        ws[f'A{row}'].font = font['bold09']
+        ws[f'A{row}'].alignment = alignment['l_c']
+        make_leftline(ws[f'A{row}'], 'thin')
+        
+        # Serie lettera
+        serie_parts = first_sub.subscription_number.split('-')
+        ws[f'D{row}'].value = serie_parts[0] if len(serie_parts) > 0 else ''
+        ws[f'D{row}'].font = font['bold']
+        ws[f'D{row}'].alignment = alignment['c_c']
+        make_leftline(ws[f'D{row}'], 'thin')
+        
+        # Serie numero (vuoto per abbonamenti - usano solo lettera)
+        ws[f'E{row}'].value = ''
+        ws[f'E{row}'].font = font['normal']
+        ws[f'E{row}'].alignment = alignment['c_c']
+        make_leftline(ws[f'E{row}'], 'thin')
+        
+        # Dal numero
+        ws[f'F{row}'].value = first_sub.subscription_number
+        ws[f'F{row}'].font = font['normal']
+        ws[f'F{row}'].alignment = alignment['c_c']
+        make_leftline(ws[f'F{row}'], 'thin')
+        
+        # Al numero
+        ws[f'G{row}'].value = last_sub.subscription_number
+        ws[f'G{row}'].font = font['normal']
+        ws[f'G{row}'].alignment = alignment['c_c']
+        make_leftline(ws[f'G{row}'], 'thin')
+        
+        # Quantità
+        ws[f'H{row}'].value = data['count']
+        ws[f'H{row}'].font = font['normal']
+        ws[f'H{row}'].alignment = alignment['r_c']
+        make_leftline(ws[f'H{row}'], 'thin')
+        
+        # Prezzo unitario
+        ws[f'I{row}'].value = float(data['type'].price)
+        ws[f'I{row}'].font = font['normal']
+        ws[f'I{row}'].alignment = alignment['r_c']
+        ws[f'I{row}'].number_format = '0.00'
+        make_leftline(ws[f'I{row}'], 'thin')
+        
+        # Importo totale
+        importo_totale = float(data['type'].price) * data['count']
+        ws[f'J{row}'].value = importo_totale
+        ws[f'J{row}'].font = font['normal']
+        ws[f'J{row}'].alignment = alignment['r_c']
+        ws[f'J{row}'].number_format = '0.00'
+        make_leftline(ws[f'J{row}'], 'thin')
+        make_rightline(ws[f'J{row}'], 'thin')
+        
+        total_abbonamenti += data['count']
+        total_incasso += importo_totale
+        
+        for letter in colnames:
+            make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    # Righe vuote fino a 15
+    for idx in range(15 - row_count):
+        row = begin_row + 3 + row_count + 1 + idx
+        ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('c'))
+        make_leftline(ws[f'A{row}'], 'thin')
+        make_leftline(ws[f'D{row}'], 'thin')
+        make_leftline(ws[f'E{row}'], 'thin')
+        make_leftline(ws[f'F{row}'], 'thin')
+        make_leftline(ws[f'G{row}'], 'thin')
+        make_leftline(ws[f'H{row}'], 'thin')
+        make_leftline(ws[f'I{row}'], 'thin')
+        make_leftline(ws[f'J{row}'], 'thin')
+        make_rightline(ws[f'J{row}'], 'thin')
+        
+        for letter in colnames:
+            make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    # Totali
+    row = begin_row + 19
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('g'))
+    ws[f'A{row}'].value = 'TOTALE'
+    ws[f'A{row}'].font = font['bold11']
+    ws[f'A{row}'].alignment = alignment['r_c']
+    make_leftline(ws[f'A{row}'], 'thin')
+    
+    ws[f'H{row}'].value = total_abbonamenti
+    ws[f'H{row}'].font = font['bold']
+    ws[f'H{row}'].alignment = alignment['r_c']
+    make_leftline(ws[f'H{row}'], 'thin')
+    make_border(ws[f'H{row}'], 'thin')
+    
+    ws[f'I{row}'].value = ''
+    ws[f'I{row}'].font = font['bold']
+    ws[f'I{row}'].alignment = alignment['r_c']
+    make_leftline(ws[f'I{row}'], 'thin')
+    
+    ws[f'J{row}'].value = total_incasso
+    ws[f'J{row}'].font = font['bold']
+    ws[f'J{row}'].alignment = alignment['r_c']
+    ws[f'J{row}'].number_format = '0.00'
+    make_leftline(ws[f'J{row}'], 'thin')
+    make_rightline(ws[f'J{row}'], 'thin')
+    make_border(ws[f'J{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    for letter in colnames:
+        make_underline(ws[f'{letter}{row}'], 'thin')
+    
+    # Spazio
+    row = begin_row + 20
+    ws.row_dimensions[row].height = 10
+    
+    # Note e dichiarazioni
+    row = begin_row + 21
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row+2, end_column=colnum('j'))
+    ws[f'A{row}'].value = 'Il sottoscritto dichiara che i dati riportati nel presente prospetto corrispondono a quelli risultanti dalle scritture contabili.'
+    ws[f'A{row}'].font = font['normal09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+    make_border(ws[f'A{row}'], 'thin')
+    
+    # Firma
+    row = begin_row + 24
+    ws.row_dimensions[row].height = 5
+    
+    row = begin_row + 25
+    ws[f'A{row}'].value = 'Data'
+    ws[f'A{row}'].font = font['bold09']
+    ws[f'A{row}'].alignment = alignment['l_c']
+    
+    ws.merge_cells(start_row=row, start_column=colnum('b'), end_row=row, end_column=colnum('d'))
+    ws[f'B{row}'].value = datetime.now().strftime('%d/%m/%Y')
+    ws[f'B{row}'].font = font['normal']
+    ws[f'B{row}'].alignment = alignment['c_c']
+    make_underline(ws[f'B{row}'], 'thin')
+    make_underline(ws[f'C{row}'], 'thin')
+    make_underline(ws[f'D{row}'], 'thin')
+    
+    ws.merge_cells(start_row=row, start_column=colnum('f'), end_row=row, end_column=colnum('j'))
+    ws[f'F{row}'].value = 'Firma del legale rappresentante'
+    ws[f'F{row}'].font = font['bold09']
+    ws[f'F{row}'].alignment = alignment['c_c']
+    
+    row = begin_row + 26
+    ws.row_dimensions[row].height = 30
+    ws.merge_cells(start_row=row, start_column=colnum('f'), end_row=row+2, end_column=colnum('j'))
+    make_underline(ws[f'F{row}'], 'thin')
+    make_underline(ws[f'G{row}'], 'thin')
+    make_underline(ws[f'H{row}'], 'thin')
+    make_underline(ws[f'I{row}'], 'thin')
+    make_underline(ws[f'J{row}'], 'thin')
+    
+    # Note a piè di pagina
+    row = begin_row + 29
+    ws.merge_cells(start_row=row, start_column=colnum('a'), end_row=row, end_column=colnum('j'))
+    ws[f'A{row}'].value = 'N.B. - Il presente prospetto deve essere compilato in duplice copia e consegnato alla SIAE entro il giorno 15 del mese successivo.'
+    ws[f'A{row}'].font = font['normal07']
+    ws[f'A{row}'].alignment = alignment['l_c']
+    
+    # Salva file
+    wb.save(filename=filename)
+    report.updated_at = datetime.now()
+    report.save()
+    
+    messages.success(request, f'Report SD2 generato con successo per {first_day.strftime("%B %Y")}')
+    
+    # Ritorna il file per download
+    with open(filename, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = f'attachment; filename="{sd2_xls_filename}"'
+        return response
+
 

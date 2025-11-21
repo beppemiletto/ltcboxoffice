@@ -230,7 +230,14 @@ def set_ing_booking(request, item_id=None, ingresso_code=0):
             return redirect('bookings')
         
         # Check if this specific subscription code is available
-        if ingresso_new not in subscription_options:
+        # subscription_options è una lista di dict con chiave 'code'
+        available_codes = [opt['code'] for opt in subscription_options]
+        if ingresso_new not in available_codes:
+            return redirect('bookings')
+        
+        # Verifica che l'abbonamento specifico abbia eventi disponibili
+        selected_subscription = next((opt for opt in subscription_options if opt['code'] == ingresso_new), None)
+        if not selected_subscription or selected_subscription['remaining'] <= 0:
             return redirect('bookings')
         
         # Check if subscription already used for this event in cart

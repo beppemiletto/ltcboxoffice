@@ -609,14 +609,22 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
             try:
                 subscription = Subscription.objects.get(subscription_number=sold_seat.subscription_code)
                 if subscription.is_valid():
-                    # Create usage record with actual subscription owner
-                    SubscriptionUsage.objects.create(
+                    # Check if usage already exists (evita duplicati)
+                    existing_usage = SubscriptionUsage.objects.filter(
                         subscription=subscription,
                         event=current_event,
-                        seat=sold_seat.seat,
-                        used_by=request.user if request.user.is_authenticated else boxoffice_user,
-                    )
-                    # Counter incremented automatically by SubscriptionUsage.save()
+                        seat=sold_seat.seat
+                    ).first()
+                    
+                    if not existing_usage:
+                        # Create usage record with actual subscription owner
+                        SubscriptionUsage.objects.create(
+                            subscription=subscription,
+                            event=current_event,
+                            seat=sold_seat.seat,
+                            used_by=request.user if request.user.is_authenticated else boxoffice_user,
+                        )
+                        # Counter incremented automatically by SubscriptionUsage.save()
             except Subscription.DoesNotExist:
                 pass  # Should not happen, already verified
 
@@ -1120,6 +1128,8 @@ def confirm_booking_selection(request, event_id, orderevent_id, mode):
     return redirect('boxoffice_cart', event_id=event_id)
 
 def sell_booking(request, order = None, mode=None):
+    from subscriptions.utils import get_subscription_price_options
+    
     if mode == '1':
         order_event =  OrderEvent.objects.get(id=order)
         order_number = order_event.orderevent_number
@@ -1132,17 +1142,43 @@ def sell_booking(request, order = None, mode=None):
     costs_extended = extend_price_array(costs)
     booked_seats_price = order_event.seats_price
     session_id = get_or_create_session_id(request)
+    
+    # Get user's available subscriptions and map codes to subscription objects
+    user_subscriptions = {}
+    subscription_codes = {}  # Maps price_code to subscription_number
+    if order_event.user:
+        subscription_options = get_subscription_price_options(order_event.user)
+        for opt in subscription_options:
+            if opt['remaining'] > 0:
+                user_subscriptions[opt['code']] = opt
+                subscription_codes[opt['code']] = opt['subscription_number']
+    
     for seat_price in booked_seats_price.split(','):
         ordered_seat, ordered_price  = seat_price.split('$')
         price_idx = int(ordered_price)
+        
+        # Se il prezzo è un codice abbonamento (3-6) e l'utente ha quell'abbonamento disponibile,
+        # mantieni il codice abbonamento e imposta il subscription_code
+        final_price_idx = price_idx
+        final_cost = safe_price_access(costs_extended, price_idx)
+        subscription_number = None
+        
+        # Controlla se è un codice abbonamento e se l'utente ce l'ha ancora disponibile
+        if is_subscription_price_code(price_idx) and price_idx in user_subscriptions:
+            # Mantieni il codice abbonamento
+            final_price_idx = price_idx
+            final_cost = 0.0  # Abbonamenti hanno costo 0
+            subscription_number = subscription_codes.get(price_idx)
+        
         ordered_sellingseat = SellingSeats(
             event = order_event.event,
             orderevent = order_number,
             seat = ordered_seat,
-            price = price_idx,
-            cost = safe_price_access(costs_extended, price_idx),
-            ingresso = safe_price_access(costs_extended, price_idx),
-            session_id = session_id
+            price = final_price_idx,
+            cost = final_cost,
+            ingresso = final_cost,
+            session_id = session_id,
+            subscription_code = subscription_number  # Imposta automaticamente il codice abbonamento
         )
         ordered_sellingseat.save()
     sellingseats = SellingSeats.objects.filter(session_id=session_id, event=order_event.event)

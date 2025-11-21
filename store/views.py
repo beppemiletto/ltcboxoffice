@@ -23,21 +23,19 @@ def store(request, section_slug=None):
         keyword=None
     billboard_list = []
 
-    max_date_time = datetime.now()+relativedelta(hours=18)
-    max_date_time = max_date_time.replace(tzinfo=pytz.utc)
     for show in shows:
-        shw_events = Event.objects.all().filter(show=show.pk) 
+        shw_events = Event.objects.all().filter(show=show.pk).order_by('date_time')
         sell_allowed: bool = False 
         if shw_events.count():
-            from_date = datetime.now()+relativedelta(months=36)
-            from_date = from_date.replace(tzinfo=pytz.utc)
+            # Trova il primo evento prenotabile (il più vicino nel tempo)
             for event in shw_events:
-                if (event.date_time < from_date) and (event.date_time > max_date_time):
+                if event.is_bookable():
                     from_date = event.date_time
                     price_full = event.price_full
                     price_reduced = event.price_reduced
                     show_url = show.get_url
                     sell_allowed: bool = True
+                    break  # Prendi il primo evento prenotabile e interrompi
 
             if sell_allowed:
 
@@ -73,10 +71,9 @@ def show_detail(request, section_slug, show_slug):
 
     # section = get_object_or_404(Section, slug=section_slug)
     # show = get_object_or_404(Show, slug=show_slug)
-    max_date_time = datetime.now()+relativedelta(hours=6)
-    max_date_time = max_date_time.replace(tzinfo=pytz.utc)  
-    events = Event.objects.filter(show=show,date_time__gte=max_date_time)
-    events_number = events.count()
+    all_events = Event.objects.filter(show=show)
+    events = [event for event in all_events if event.is_bookable()]
+    events_number = len(events)
     prices = ''
     if events_number > 0:
         for event in events:
@@ -114,20 +111,18 @@ def search(request):
             shows = Show.objects.filter(Q(description__icontains=keyword) | Q(shw_title__icontains=keyword))
             billboard_list = []
             for show in shows:
-                shw_events = Event.objects.all().filter(show=show.pk) 
+                shw_events = Event.objects.all().filter(show=show.pk).order_by('date_time')
                 sell_allowed: bool = False 
                 if shw_events.count():
-                    from_date = datetime.now()+relativedelta(month=12)
-                    from_date = from_date.replace(tzinfo=pytz.utc)
-                    max_date_time = datetime.now()+relativedelta(hours=24)
-                    max_date_time = max_date_time.replace(tzinfo=pytz.utc)
+                    # Trova il primo evento prenotabile (il più vicino nel tempo)
                     for event in shw_events:
-                        if event.date_time < from_date:
+                        if event.is_bookable():
                             from_date = event.date_time
                             price_full = event.price_full
                             price_reduced = event.price_reduced
                             show_url = show.get_url
-                            sell_allowed: bool = (event.date_time > max_date_time)
+                            sell_allowed: bool = True
+                            break  # Prendi il primo evento prenotabile e interrompi
 
                     if sell_allowed:
 
@@ -170,10 +165,9 @@ def show_detail_showcode(request, showcode=None):
 
     # section = get_object_or_404(Section, slug=section_slug)
     # show = get_object_or_404(Show, slug=show_slug)
-    max_date_time = datetime.now()+relativedelta(hours=18)
-    max_date_time = max_date_time.replace(tzinfo=pytz.utc)  
-    events = Event.objects.filter(show=show,date_time__gte=max_date_time)
-    events_number = events.count()
+    all_events = Event.objects.filter(show=show)
+    events = [event for event in all_events if event.is_bookable()]
+    events_number = len(events)
     prices = ''
     if events_number > 0:
         for event in events:

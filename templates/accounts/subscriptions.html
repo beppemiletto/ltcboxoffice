@@ -30,112 +30,47 @@
                                         <i class="fas fa-check-circle"></i> Abbonamento Attivo
                                     </div>
                                     <div class="card-body">
-                                        <h6 class="card-title">{{ subscription.subscription_type }}</h6>
+                                        <h6 class="card-title">{{ subscription.subscription_type.name }}</h6>
                                         <p class="mb-1"><strong>Numero:</strong> {{ subscription.subscription_number }}</p>
-                                        <p class="mb-1"><strong>Ingressi disponibili:</strong> {{ subscription.remaining_entries }} / {{ subscription.total_entries }}</p>
-                                        <p class="mb-1"><strong>Valido fino al:</strong> {{ subscription.expiry_date|date:"d/m/Y" }}</p>
+                                        <p class="mb-1"><strong>Eventi disponibili:</strong> {{ subscription.remaining_events }} / {{ subscription.subscription_type.events_included }}</p>
+                                        <p class="mb-1"><strong>Valido fino al:</strong> {{ subscription.valid_to|date:"d/m/Y" }}</p>
+                                        <p class="mb-1"><strong>Stato:</strong> 
+                                            {% if subscription.status == 'ACTIVE' %}
+                                                <span class="badge badge-success">Attivo</span>
+                                            {% elif subscription.status == 'EXPIRED' %}
+                                                <span class="badge badge-warning">Scaduto</span>
+                                            {% elif subscription.status == 'EXHAUSTED' %}
+                                                <span class="badge badge-secondary">Esaurito</span>
+                                            {% else %}
+                                                <span class="badge badge-info">{{ subscription.get_status_display }}</span>
+                                            {% endif %}
+                                        </p>
                                         <div class="progress mb-2" style="height: 25px;">
-                                            {% widthratio subscription.remaining_entries subscription.total_entries 100 as percentage %}
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%">
+                                            {% widthratio subscription.remaining_events subscription.subscription_type.events_included 100 as percentage %}
+                                            <div class="progress-bar {% if percentage > 50 %}bg-success{% elif percentage > 20 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ percentage }}%">
                                                 {{ percentage }}%
                                             </div>
                                         </div>
-                                        <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> Dettagli</a>
                                     </div>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
-                        
-                        <hr class="my-4">
-                        {% endif %}
-                        
-                        <h5 class="mb-3">Acquista un nuovo abbonamento</h5>
-                        <div class="row">
-                            <!-- Abbonamento Ridotto 4 ingressi -->
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header bg-info text-white">
-                                        <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Abbonamento Ridotto 4</h5>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h3 class="text-primary">€ 32,00</h3>
-                                        <ul class="list-unstyled flex-grow-1">
-                                            <li><i class="fas fa-check text-success"></i> 4 ingressi ridotti</li>
-                                            <li><i class="fas fa-check text-success"></i> Valido per tutta la stagione</li>
-                                            <li><i class="fas fa-check text-success"></i> Utilizzabile su tutti gli spettacoli</li>
-                                        </ul>
-                                        <a href="#" class="btn btn-primary btn-block mt-auto"><i class="fas fa-shopping-cart"></i> Acquista ora</a>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Abbonamento Ridotto 8 ingressi -->
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header bg-info text-white">
-                                        <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Abbonamento Ridotto 8</h5>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h3 class="text-primary">€ 60,00</h3>
-                                        <ul class="list-unstyled flex-grow-1">
-                                            <li><i class="fas fa-check text-success"></i> 8 ingressi ridotti</li>
-                                            <li><i class="fas fa-check text-success"></i> Valido per tutta la stagione</li>
-                                            <li><i class="fas fa-check text-success"></i> Utilizzabile su tutti gli spettacoli</li>
-                                            <li><i class="fas fa-star text-warning"></i> <strong>Risparmio del 6%</strong></li>
-                                        </ul>
-                                        <a href="#" class="btn btn-primary btn-block mt-auto"><i class="fas fa-shopping-cart"></i> Acquista ora</a>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Abbonamento Intero 4 ingressi -->
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Abbonamento Intero 4</h5>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h3 class="text-primary">€ 36,00</h3>
-                                        <ul class="list-unstyled flex-grow-1">
-                                            <li><i class="fas fa-check text-success"></i> 4 ingressi interi</li>
-                                            <li><i class="fas fa-check text-success"></i> Valido per tutta la stagione</li>
-                                            <li><i class="fas fa-check text-success"></i> Utilizzabile su tutti gli spettacoli</li>
-                                        </ul>
-                                        <a href="#" class="btn btn-warning btn-block mt-auto"><i class="fas fa-shopping-cart"></i> Acquista ora</a>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Abbonamento Intero 8 ingressi -->
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Abbonamento Intero 8</h5>
-                                        <small class="badge badge-danger">Più Conveniente</small>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h3 class="text-primary">€ 68,00</h3>
-                                        <ul class="list-unstyled flex-grow-1">
-                                            <li><i class="fas fa-check text-success"></i> 8 ingressi interi</li>
-                                            <li><i class="fas fa-check text-success"></i> Valido per tutta la stagione</li>
-                                            <li><i class="fas fa-check text-success"></i> Utilizzabile su tutti gli spettacoli</li>
-                                            <li><i class="fas fa-star text-warning"></i> <strong>Risparmio del 15%</strong></li>
-                                        </ul>
-                                        <a href="#" class="btn btn-warning btn-block mt-auto"><i class="fas fa-shopping-cart"></i> Acquista ora</a>
-                                    </div>
-                                </div>
-                            </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Non hai abbonamenti attivi al momento.
                         </div>
+                        <p class="text-muted">Gli abbonamenti vengono venduti in biglietteria. Contattaci per maggiori informazioni.</p>
+                        {% endif %}
                         
                         <div class="alert alert-light border mt-4">
                             <h6><i class="fas fa-info-circle"></i> Come funzionano gli abbonamenti?</h6>
                             <ul class="mb-0">
                                 <li>Ogni abbonamento ti dà diritto a un numero prestabilito di ingressi</li>
-                                <li>Puoi utilizzare l'abbonamento per qualsiasi spettacolo della stagione</li>
+                                <li>Puoi utilizzare l'abbonamento per qualsiasi spettacolo della stagione prenotando online</li>
                                 <li>Gli ingressi vengono scalati automaticamente ad ogni utilizzo</li>
                                 <li>L'abbonamento è personale e non trasferibile</li>
-                                <li>Valido fino alla data di scadenza indicata</li>
+                                <li>Quando prenoti online, seleziona "Abbonamento" come tipo di ingresso</li>
                             </ul>
                         </div>
                         

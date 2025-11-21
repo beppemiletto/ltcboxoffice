@@ -442,22 +442,18 @@ def updateorder(main_order_id=None):
 @login_required(login_url='login')
 def subscriptions(request):
     """
-    Gestione Abbonamenti - mostra abbonamenti attivi e permette di acquistarne di nuovi
+    Visualizzazione Abbonamenti - mostra tutti gli abbonamenti dell'utente
     """
     user = request.user
     
-    # Get user's active subscriptions (status = 'active')
+    # Get all user's subscriptions ordered by status and creation date
     user_subscriptions = Subscription.objects.filter(
-        user=user,
-        status='active'
-    ).order_by('-created_at')
-    
-    # Get available subscription types (from events or a dedicated model)
-    # TODO: Creare un modello SubscriptionType per definire i tipi di abbonamento disponibili
+        user=user
+    ).select_related('subscription_type').order_by('-status', '-created_at')
     
     context = {
         'user_subscriptions': user_subscriptions,
-        'subscriptions_count': user_subscriptions.count(),
+        'subscriptions_count': user_subscriptions.filter(status='ACTIVE').count(),
     }
     
     return render(request, 'accounts/subscriptions.html', context)

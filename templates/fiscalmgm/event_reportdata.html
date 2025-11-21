@@ -1,389 +1,1128 @@
-{%extends 'boxoffice_base.html'%}
-{%load static%}
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+{% load fiscal_filters %}
 
-{% block content%}
-<section class="section-content padding-y bg">
+{% block content %}
+<style>
+.section-fiscal {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.collapsible-section {
+    cursor: pointer;
+    user-select: none;
+    padding: 10px;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    transition: background-color 0.2s;
+}
+
+.collapsible-section:hover {
+    background: #f8f9fa;
+}
+
+.section-content {
+    display: none;
+    padding: 20px 10px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.section-content.active {
+    display: block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.3s;
+    margin-right: 8px;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(90deg);
+}
+
+.ticket-series-container {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.ticket-series-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.ticket-type-badge {
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 8px 15px;
+    border-radius: 6px;
+}
+
+.badge-intero {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge-ridotto {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-gratuito {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-abbonamento {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.series-row {
+    display: none;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.series-row.active {
+    display: block;
+}
+
+.cash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 15px;
+}
+
+.denomination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.denomination-label {
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.denomination-input {
+    flex: 1;
+    max-width: 150px;
+}
+
+.denomination-input input {
+    width: 100%;
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .cash-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<section class="padding-y bg">
     <div class="container">
-        {%if reports%}
-        <div class="row">
-            <div class="col-4 col-sm-4">
-
-                <h5 class="card-title mb-4">Attenzione!</h5>
-                {%include 'includes/alerts.html'%}
-                <p class="card-text">Qui a destra l'elenco dei report già presenti   - <i class="fa fa-arrow-right" aria-hidden="true" style="font-size:24px;"></i></p>
-                
-
-
+        <!-- ALERT REPORT ESISTENTI -->
+        {% if reports %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Report già presenti per questo evento</h5>
+                    {% include 'includes/alerts.html' %}
+                    <p>Modificando i dati, i report verranno aggiornati automaticamente.</p>
+                </div>
             </div>
-            <div class="col-8 col-sm-8">
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <h6 class="text-primary">Report Esistenti</h6>
+                <p class="text-muted">
+                    <i class="fa fa-arrow-right" aria-hidden="true"></i> 
+                    Elenco dei report già generati
+                </p>
+            </div>
+            <div class="col-md-8">
                 <table class="table table-warning table-striped table-hover">
                     <thead>
-                        <th> Tipo </th>
-                        <th>Progr.N</th>
-                        <th>Creato</th>
-                        <th>Aggiornato</th>
-                        <th> Download</th>
-                      </thead>
-                      <tbody>
-                            {% for report in reports%}
                         <tr>
-                            <td> {{report.type}}</td>
-                            <td> {{report.progress_number}}</td>
-                            <td> {{report.created_at}}</td>
-                            <td> {{report.updated_at}}</td>
-                            <td><a href="/media/siae_reports/{{report.doc_path}}" download> <i class="fa fa-download" style="font-size:24px;" id="ticket_item"></i></a></td>
+                            <th>Tipo</th>
+                            <th>N. Prog.</th>
+                            <th>Creato</th>
+                            <th>Aggiornato</th>
+                            <th>Download</th>
                         </tr>
-                            {% endfor %}
-                      </tbody> 
-
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>{{ report.type }}</td>
+                            <td>{{ report.progress_number }}</td>
+                            <td>{{ report.created_at }}</td>
+                            <td>{{ report.updated_at }}</td>
+                            <td>
+                                <a href="/media/siae_reports/{{ report.doc_path|fix_extension }}" download>
+                                    <i class="fa fa-download" style="font-size:24px;"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
         </div>
-        {%endif%}
-        <div class="row">
-            <div class="card" style="width: 72rem;">
-                <div class="card-body">
-                  <h5 class="card-title">Dati fiscali per evento {{event.show}}</h5>
-                  <h6 class="card-subtitle mb-2 text-muted">del {{event.date_time}}</h6>
-                  <p class="card-text">Verranno generati i report modello SIAE 2DA, SIAE modello 566 e il foglio Excel del resoconto di cassa.
-            Inserire o aggiornare i dati nel modulo qui sotto. 
-            Premere il tasto verde per registrare/aggiornare i dati e generare/aggiornare i report.
-        Premere il tasto 'Cancella operazione' per annullare.</p>
-                </div>
-              </div>
+        {% endif %}
+
+        <!-- CARD INFORMAZIONI EVENTO -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <div class="card">
-                    
+                    <div class="card-body">
+                        <h5 class="card-title">Dati fiscali per evento {{ event.show }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">del {{ event.date_time }}</h6>
+                        <p class="card-text">
+                            Verranno generati i report modello SIAE 2DA, SIAE modello 566 e il foglio Excel del resoconto di cassa.
+                            Inserire o aggiornare i dati nel modulo qui sotto. 
+                            Premere il tasto verde per registrare/aggiornare i dati e generare/aggiornare i report.
+                        </p>
+                    </div>
                 </div>
+            </div>
         </div>
-        <form action="{% url 'fiscalmgm:siae' event.pk %}" method="post">
+
+        <!-- STATISTICHE EVENTO -->
+        {% if stats %}
+        <div class="section-fiscal">
+            <h5 class="text-primary mb-3">
+                <i class="fas fa-chart-bar"></i> Statistiche Evento (aiuto compilazione)
+            </h5>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="alert alert-info mb-2">
+                        <small class="text-muted">Biglietti Totali</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.total_tickets }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-success mb-2">
+                        <small class="text-muted">Interi Venduti</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.full_price_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-warning mb-2">
+                        <small class="text-muted">Ridotti Venduti</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.reduced_price_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-secondary mb-2">
+                        <small class="text-muted">Gratuiti</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.free_count }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6 class="text-primary mb-2">
+                        <i class="fas fa-id-card"></i> Ingressi con Abbonamento
+                    </h6>
+                </div>
+                <div class="col-md-2">
+                    <div class="alert alert-primary mb-2">
+                        <small class="text-muted"><strong>Totale Abbonamenti</strong></small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.subscription_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="alert alert-info mb-2">
+                        <small class="text-muted">Abbonamento R4</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.subscription_r4_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="alert alert-info mb-2">
+                        <small class="text-muted">Abbonamento R8</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.subscription_r8_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-info mb-2">
+                        <small class="text-muted">Abbonamento I4</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.subscription_i4_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-info mb-2">
+                        <small class="text-muted">Abbonamento I8</small><br>
+                        <strong style="font-size: 1.3rem;">{{ stats.subscription_i8_count }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <small class="text-muted"><i class="fas fa-globe"></i> Prevendita Web:</small>
+                    <strong>{{ stats.presold_tickets }} biglietti</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted"><i class="fas fa-cash-register"></i> Venduti in Cassa:</small>
+                    <strong>{{ stats.box_office_tickets }} biglietti</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted"><i class="fas fa-euro-sign"></i> Incasso Teorico Totale:</small>
+                    <strong>€ {{ stats.total_income|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FORM PRINCIPALE -->
+        <form id="fiscalForm" action="{% url 'fiscalmgm:siae' event.pk %}" method="post">
             {% csrf_token %}
-            <div class="row">
-                {{ form.non_field_errors }}
-                <div class="col-6 col-md-6">
-                        <div class="fieldWrapper">
+            {{ form.non_field_errors }}
+
+            <!-- CASSIERI -->
+            <div class="section-fiscal">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-user"></i> Cassieri
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.casher_01.id_for_label }}">Cassiere 01:</label>
                             {{ form.casher_01.errors }}
-                            <label for="{{ form.casher_01.id_for_label }}">Casher 01:</label> {{ form.casher_01 }}
+                            {{ form.casher_01 }}
                         </div>
-                </div>
-                <div class="col-6 col-md-6">
-                        <div class="fieldWrapper">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.casher_02.id_for_label }}">Cassiere 02:</label>
                             {{ form.casher_02.errors }}
-                            <label for="{{ form.casher_02.id_for_label }}">Casher 02:</label> {{ form.casher_02 }}
-                        </div>
-                </div>
-            </div>
-            <!-- INIZIO Ingressi serie e numeri - Serie _1 -->
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_serie_1.errors }}
-                        <label for="{{ form.intero_ticket_serie_1.id_for_label }}">Intero serie_1:</label> {{ form.intero_ticket_serie_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_start_number_1.errors }}
-                        <label for="{{ form.intero_ticket_start_number_1.id_for_label }}">Intero Num. Inizio:</label> {{ form.intero_ticket_start_number_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_end_number_1.errors }}
-                        <label for="{{ form.intero_ticket_end_number_1.id_for_label }}">Intero Num. Fine:</label> {{ form.intero_ticket_end_number_1 }}
-                    </div>
-                </div>
-               
-            </div>
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_serie_1.errors }}
-                        <label for="{{ form.ridotto_ticket_serie_1.id_for_label }}">Ridotto serie_1:</label> {{ form.ridotto_ticket_serie_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_start_number_1.errors }}
-                        <label for="{{ form.ridotto_ticket_start_number_1.id_for_label }}">Ridotto Num. Inizio:</label> {{ form.ridotto_ticket_start_number_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_end_number_1.errors }}
-                        <label for="{{ form.ridotto_ticket_end_number_1.id_for_label }}">Ridotto Num. Fine:</label> {{ form.ridotto_ticket_end_number_1 }}
-                    </div>
-                </div>
-                
-            </div>
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_serie_1.errors }}
-                        <label for="{{ form.gratuito_ticket_serie_1.id_for_label }}">Gratuito serie_1:</label> {{ form.gratuito_ticket_serie_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_start_number_1.errors }}
-                        <label for="{{ form.gratuito_ticket_start_number_1.id_for_label }}">Gratuito Num. Inizio:</label> {{ form.gratuito_ticket_start_number_1 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_end_number_1.errors }}
-                        <label for="{{ form.gratuito_ticket_end_number_1.id_for_label }}">Gratuito Num. Fine:</label> {{ form.gratuito_ticket_end_number_1 }}
-                    </div>
-                </div>
-                              
-            </div>
-            <!--  FINE Ingressi serie e numeri - Serie _1 -->
-
-            <!-- INIZIO Ingressi serie e numeri - Serie _2 -->
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_serie_2.errors }}
-                        <label for="{{ form.intero_ticket_serie_2.id_for_label }}">Intero serie_2:</label> {{ form.intero_ticket_serie_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_start_number_2.errors }}
-                        <label for="{{ form.intero_ticket_start_number_2.id_for_label }}">Intero Num. Inizio:</label> {{ form.intero_ticket_start_number_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.intero_ticket_end_number_2.errors }}
-                        <label for="{{ form.intero_ticket_end_number_2.id_for_label }}">Intero Num. Fine:</label> {{ form.intero_ticket_end_number_2 }}
-                    </div>
-                </div>
-               
-            </div>
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_serie_2.errors }}
-                        <label for="{{ form.ridotto_ticket_serie_2.id_for_label }}">Ridotto serie_2:</label> {{ form.ridotto_ticket_serie_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_start_number_2.errors }}
-                        <label for="{{ form.ridotto_ticket_start_number_2.id_for_label }}">Ridotto Num. Inizio:</label> {{ form.ridotto_ticket_start_number_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.ridotto_ticket_end_number_2.errors }}
-                        <label for="{{ form.ridotto_ticket_end_number_2.id_for_label }}">Ridotto Num. Fine:</label> {{ form.ridotto_ticket_end_number_2 }}
-                    </div>
-                </div>
-                
-            </div>
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_serie_2.errors }}
-                        <label for="{{ form.gratuito_ticket_serie_2.id_for_label }}">Gratuito serie_2:</label> {{ form.gratuito_ticket_serie_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_start_number_2.errors }}
-                        <label for="{{ form.gratuito_ticket_start_number_2.id_for_label }}">Gratuito Num. Inizio:</label> {{ form.gratuito_ticket_start_number_2 }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.gratuito_ticket_end_number_2.errors }}
-                        <label for="{{ form.gratuito_ticket_end_number_2.id_for_label }}">Gratuito Num. Fine:</label> {{ form.gratuito_ticket_end_number_2 }}
-                    </div>
-                </div>
-                              
-            </div>
-            <!--  FINE Ingressi serie e numeri - Serie _2 -->
-
-            <!--  INIZIO conteggio cash -->
-            <div class="row">
-                <div class="col-6 col-md-6">
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_200euro.errors }}
-                            <label for="{{ form.cash_begin_200euro.id_for_label }}">Banconote 200 Euro Inizio:</label> {{ form.cash_begin_200euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_100euro.errors }}
-                            <label for="{{ form.cash_begin_100euro.id_for_label }}">Banconote 100 Euro Inizio:</label> {{ form.cash_begin_100euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_50euro.errors }}
-                            <label for="{{ form.cash_begin_50euro.id_for_label }}">Banconote 50 Euro Inizio:</label> {{ form.cash_begin_50euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_20euro.errors }}
-                            <label for="{{ form.cash_begin_20euro.id_for_label }}">Banconote 20 Euro Inizio:</label> {{ form.cash_begin_20euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_10euro.errors }}
-                            <label for="{{ form.cash_begin_10euro.id_for_label }}">Banconote 10 Euro Inizio:</label> {{ form.cash_begin_10euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_5euro.errors }}
-                            <label for="{{ form.cash_begin_5euro.id_for_label }}">Banconote 5 Euro Inizio:</label> {{ form.cash_begin_5euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_2euro.errors }}
-                            <label for="{{ form.cash_begin_2euro.id_for_label }}">Monete 2 Euro Inizio:</label> {{ form.cash_begin_2euro }}
-                        </div>
-                    </div>                    
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_1euro.errors }}
-                            <label for="{{ form.cash_begin_1euro.id_for_label }}">Monete 1 Euro Inizio:</label> {{ form.cash_begin_1euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_50cent.errors }}
-                            <label for="{{ form.cash_begin_50cent.id_for_label }}">Monete 50 Cent Inizio:</label> {{ form.cash_begin_50cent }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_20cent.errors }}
-                            <label for="{{ form.cash_begin_20cent.id_for_label }}">Monete 20 Cent Inizio:</label> {{ form.cash_begin_20cent }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_begin_10cent.errors }}
-                            <label for="{{ form.cash_begin_10cent.id_for_label }}">Monete 10 Cent Inizio:</label> {{ form.cash_begin_10cent }}
+                            {{ form.casher_02 }}
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-6">
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_200euro.errors }}
-                            <label for="{{ form.cash_end_200euro.id_for_label }}">Banconote 200 Euro Fine:</label> {{ form.cash_end_200euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_100euro.errors }}
-                            <label for="{{ form.cash_end_100euro.id_for_label }}">Banconote 100 Euro Fine:</label> {{ form.cash_end_100euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_50euro.errors }}
-                            <label for="{{ form.cash_end_50euro.id_for_label }}">Banconote 50 Euro Fine:</label> {{ form.cash_end_50euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_20euro.errors }}
-                            <label for="{{ form.cash_end_20euro.id_for_label }}">Banconote 20 Euro Fine:</label> {{ form.cash_end_20euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_10euro.errors }}
-                            <label for="{{ form.cash_end_10euro.id_for_label }}">Banconote 10 Euro Fine:</label> {{ form.cash_end_10euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_5euro.errors }}
-                            <label for="{{ form.cash_end_5euro.id_for_label }}">Banconote 5 Euro Fine:</label> {{ form.cash_end_5euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_2euro.errors }}
-                            <label for="{{ form.cash_end_2euro.id_for_label }}">Monete 2 Euro Fine:</label> {{ form.cash_end_2euro }}
-                        </div>
-                    </div>                    
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_1euro.errors }}
-                            <label for="{{ form.cash_end_1euro.id_for_label }}">Monete 1 Euro Fine:</label> {{ form.cash_end_1euro }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_50cent.errors }}
-                            <label for="{{ form.cash_end_50cent.id_for_label }}">Monete 50 Cent Fine:</label> {{ form.cash_end_50cent }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_20cent.errors }}
-                            <label for="{{ form.cash_end_20cent.id_for_label }}">Monete 20 Cent Fine:</label> {{ form.cash_end_20cent }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fieldWrapper">
-                            {{ form.cash_end_10cent.errors }}
-                            <label for="{{ form.cash_end_10cent.id_for_label }}">Monete 10 Cent Fine:</label> {{ form.cash_end_10cent }}
-                        </div>
-                    </div>
-                </div>
-               
             </div>
 
-            <div class="row">
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.collection_satispay.errors }}
-                        <label for="{{ form.collection_satispay.id_for_label }}">Incasso Satispy Euro:</label> {{ form.collection_satispay }}
-                    </div>
+            <!-- SEZIONE BIGLIETTI SIAE -->
+            <div class="section-fiscal">
+                <div class="collapsible-section" onclick="toggleSection('tickets')">
+                    <h5>
+                        <i class="fas fa-chevron-right toggle-icon rotated" id="icon-tickets"></i>
+                        <i class="fas fa-ticket-alt"></i> Serie Biglietti SIAE
+                    </h5>
                 </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.collection_sumup.errors }}
-                        <label for="{{ form.collection_sumup.id_for_label }}">Incasso Sumup Euro:</label> {{ form.collection_sumup }}
-                    </div>
-                </div>
-                <div class="col-4 col-md-4">
-                    <div class="fieldWrapper">
-                        {{ form.collection_others.errors }}
-                        <label for="{{ form.collection_others.id_for_label }}">Altri incassi Euro:</label> {{ form.collection_others }}
-                    </div>
-                </div>
+                <div class="section-content active" id="content-tickets">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle"></i> 
+                        Inserire le serie dei biglietti SIAE ufficiali staccati. 
+                        Le serie continuano automaticamente dall'ultimo evento.
+                        Usare i pulsanti <strong>+ Aggiungi Serie</strong> per aggiungere serie multiple dello stesso tipo.
+                    </p>
 
+                    <!-- BIGLIETTI INTERI -->
+                    <div class="ticket-series-container">
+                        <div class="ticket-series-header">
+                            <span class="ticket-type-badge badge-intero">
+                                <i class="fas fa-ticket-alt"></i> BIGLIETTI INTERI
+                            </span>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addSeries('intero')">
+                                <i class="fas fa-plus"></i> Aggiungi Serie
+                            </button>
+                        </div>
+                        
+                        <div class="series-row active" id="intero-serie-1">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 1</label>
+                                    {{ form.intero_ticket_serie_1.errors }}
+                                    {{ form.intero_ticket_serie_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.intero_ticket_start_number_1.errors }}
+                                    {{ form.intero_ticket_start_number_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.intero_ticket_end_number_1.errors }}
+                                    {{ form.intero_ticket_end_number_1 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('intero', 1)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="intero-serie-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 2</label>
+                                    {{ form.intero_ticket_serie_2.errors }}
+                                    {{ form.intero_ticket_serie_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.intero_ticket_start_number_2.errors }}
+                                    {{ form.intero_ticket_start_number_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.intero_ticket_end_number_2.errors }}
+                                    {{ form.intero_ticket_end_number_2 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('intero', 2)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BIGLIETTI RIDOTTI -->
+                    <div class="ticket-series-container">
+                        <div class="ticket-series-header">
+                            <span class="ticket-type-badge badge-ridotto">
+                                <i class="fas fa-ticket-alt"></i> BIGLIETTI RIDOTTI
+                            </span>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addSeries('ridotto')">
+                                <i class="fas fa-plus"></i> Aggiungi Serie
+                            </button>
+                        </div>
+                        
+                        <div class="series-row active" id="ridotto-serie-1">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 1</label>
+                                    {{ form.ridotto_ticket_serie_1.errors }}
+                                    {{ form.ridotto_ticket_serie_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.ridotto_ticket_start_number_1.errors }}
+                                    {{ form.ridotto_ticket_start_number_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.ridotto_ticket_end_number_1.errors }}
+                                    {{ form.ridotto_ticket_end_number_1 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('ridotto', 1)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="ridotto-serie-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 2</label>
+                                    {{ form.ridotto_ticket_serie_2.errors }}
+                                    {{ form.ridotto_ticket_serie_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.ridotto_ticket_start_number_2.errors }}
+                                    {{ form.ridotto_ticket_start_number_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.ridotto_ticket_end_number_2.errors }}
+                                    {{ form.ridotto_ticket_end_number_2 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('ridotto', 2)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BIGLIETTI GRATUITI -->
+                    <div class="ticket-series-container">
+                        <div class="ticket-series-header">
+                            <span class="ticket-type-badge badge-gratuito">
+                                <i class="fas fa-gift"></i> BIGLIETTI GRATUITI
+                            </span>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addSeries('gratuito')">
+                                <i class="fas fa-plus"></i> Aggiungi Serie
+                            </button>
+                        </div>
+                        
+                        <div class="series-row active" id="gratuito-serie-1">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 1</label>
+                                    {{ form.gratuito_ticket_serie_1.errors }}
+                                    {{ form.gratuito_ticket_serie_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.gratuito_ticket_start_number_1.errors }}
+                                    {{ form.gratuito_ticket_start_number_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.gratuito_ticket_end_number_1.errors }}
+                                    {{ form.gratuito_ticket_end_number_1 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('gratuito', 1)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="gratuito-serie-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 2</label>
+                                    {{ form.gratuito_ticket_serie_2.errors }}
+                                    {{ form.gratuito_ticket_serie_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.gratuito_ticket_start_number_2.errors }}
+                                    {{ form.gratuito_ticket_start_number_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.gratuito_ticket_end_number_2.errors }}
+                                    {{ form.gratuito_ticket_end_number_2 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('gratuito', 2)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BIGLIETTI ABBONAMENTO -->
+                    <div class="ticket-series-container">
+                        <div class="ticket-series-header">
+                            <span class="ticket-type-badge badge-abbonamento">
+                                <i class="fas fa-id-card"></i> BIGLIETTI ABBONAMENTO
+                            </span>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addSeries('abbonamento')">
+                                <i class="fas fa-plus"></i> Aggiungi Serie
+                            </button>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-info-circle"></i> 
+                            Biglietti SIAE staccati per ingressi con abbonamento
+                        </p>
+                        
+                        <div class="series-row active" id="abbonamento-serie-1">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 1</label>
+                                    {{ form.abbonamento_ticket_serie_1.errors }}
+                                    {{ form.abbonamento_ticket_serie_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.abbonamento_ticket_start_number_1.errors }}
+                                    {{ form.abbonamento_ticket_start_number_1 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.abbonamento_ticket_end_number_1.errors }}
+                                    {{ form.abbonamento_ticket_end_number_1 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('abbonamento', 1)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="abbonamento-serie-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 2</label>
+                                    {{ form.abbonamento_ticket_serie_2.errors }}
+                                    {{ form.abbonamento_ticket_serie_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.abbonamento_ticket_start_number_2.errors }}
+                                    {{ form.abbonamento_ticket_start_number_2 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.abbonamento_ticket_end_number_2.errors }}
+                                    {{ form.abbonamento_ticket_end_number_2 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('abbonamento', 2)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="abbonamento-serie-3">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 3</label>
+                                    {{ form.abbonamento_ticket_serie_3.errors }}
+                                    {{ form.abbonamento_ticket_serie_3 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.abbonamento_ticket_start_number_3.errors }}
+                                    {{ form.abbonamento_ticket_start_number_3 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.abbonamento_ticket_end_number_3.errors }}
+                                    {{ form.abbonamento_ticket_end_number_3 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('abbonamento', 3)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="series-row" id="abbonamento-serie-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <label>Serie 4</label>
+                                    {{ form.abbonamento_ticket_serie_4.errors }}
+                                    {{ form.abbonamento_ticket_serie_4 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Dal numero</label>
+                                    {{ form.abbonamento_ticket_start_number_4.errors }}
+                                    {{ form.abbonamento_ticket_start_number_4 }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Al numero</label>
+                                    {{ form.abbonamento_ticket_end_number_4.errors }}
+                                    {{ form.abbonamento_ticket_end_number_4 }}
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSeries('abbonamento', 4)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="row">
-                {%if reports%}
-                <div class="col-6 col-md-4">
-                    <button name="submit" id="submit" class="btn btn-success" value="Aggiorna">Registra/aggiorna i dati e aggiorna i report</button>
+            <!-- SEZIONE CONTEGGIO CASSA -->
+            <div class="section-fiscal">
+                <div class="collapsible-section" onclick="toggleSection('cash')">
+                    <h5>
+                        <i class="fas fa-chevron-right toggle-icon" id="icon-cash"></i>
+                        <i class="fas fa-euro-sign"></i> Conteggio Cassa Contanti
+                    </h5>
                 </div>
-                {%else%}
-                <div class="col-6 col-md-4">
-                    <button name="submit" id="submit" class="btn btn-success" value="Registra">Registra i dati e genera i report</button>
+                <div class="section-content" id="content-cash">
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Cassa Inizio</strong> viene pre-compilata con i valori di chiusura dell'evento precedente.
+                        <button type="button" class="btn btn-sm btn-outline-info ml-2" onclick="calculateTotals()">
+                            <i class="fas fa-calculator"></i> Calcola Totali
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ml-2" onclick="copyBeginToEnd()">
+                            <i class="fas fa-copy"></i> Copia Inizio → Fine
+                        </button>
+                    </p>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <strong>Totale Cassa Inizio:</strong> <span id="total-begin" class="float-right">€ 0.00</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-success">
+                                <strong>Totale Cassa Fine:</strong> <span id="total-end" class="float-right">€ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cash-grid">
+                        <!-- CASSA INIZIO -->
+                        <div>
+                            <h6 class="mb-3"><i class="fas fa-arrow-down"></i> Cassa Inizio</h6>
+                            <div class="denomination-row">
+                                <span class="denomination-label">200 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_200euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">100 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_100euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">50 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_50euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">20 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_20euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">10 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_10euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">5 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_5euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">2 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_2euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">1 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_1euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.50 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_50cent }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.20 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_20cent }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.10 €</span>
+                                <div class="denomination-input">{{ form.cash_begin_10cent }}</div>
+                            </div>
+                        </div>
+
+                        <!-- CASSA FINE -->
+                        <div>
+                            <h6 class="mb-3"><i class="fas fa-arrow-up"></i> Cassa Fine</h6>
+                            <div class="denomination-row">
+                                <span class="denomination-label">200 €</span>
+                                <div class="denomination-input">{{ form.cash_end_200euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">100 €</span>
+                                <div class="denomination-input">{{ form.cash_end_100euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">50 €</span>
+                                <div class="denomination-input">{{ form.cash_end_50euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">20 €</span>
+                                <div class="denomination-input">{{ form.cash_end_20euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">10 €</span>
+                                <div class="denomination-input">{{ form.cash_end_10euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">5 €</span>
+                                <div class="denomination-input">{{ form.cash_end_5euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">2 €</span>
+                                <div class="denomination-input">{{ form.cash_end_2euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">1 €</span>
+                                <div class="denomination-input">{{ form.cash_end_1euro }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.50 €</span>
+                                <div class="denomination-input">{{ form.cash_end_50cent }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.20 €</span>
+                                <div class="denomination-input">{{ form.cash_end_20cent }}</div>
+                            </div>
+                            <div class="denomination-row">
+                                <span class="denomination-label">0.10 €</span>
+                                <div class="denomination-input">{{ form.cash_end_10cent }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {%endif%}
-                <div class="col-6 col-md-4">
-                    <a href="{% url 'fiscalmgm:fiscalmgm_main' %}" id="cancel" name="cancel" class="btn btn-secondary">Cancella operazione</a>
+            </div>
+
+            <!-- SEZIONE PAGAMENTI DIGITALI -->
+            <div class="section-fiscal">
+                <div class="collapsible-section" onclick="toggleSection('digital')">
+                    <h5>
+                        <i class="fas fa-chevron-right toggle-icon" id="icon-digital"></i>
+                        <i class="fas fa-credit-card"></i> Incassi Digitali e Prevendita
+                    </h5>
+                </div>
+                <div class="section-content" id="content-digital">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="{{ form.collection_satispay.id_for_label }}">
+                                    <i class="fas fa-mobile-alt"></i> Satispay
+                                </label>
+                                {{ form.collection_satispay.errors }}
+                                {{ form.collection_satispay }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="{{ form.collection_sumup.id_for_label }}">
+                                    <i class="fas fa-credit-card"></i> SumUp
+                                </label>
+                                {{ form.collection_sumup.errors }}
+                                {{ form.collection_sumup }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="{{ form.collection_others.id_for_label }}">
+                                    <i class="fas fa-wallet"></i> Altri
+                                </label>
+                                {{ form.collection_others.errors }}
+                                {{ form.collection_others }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-globe"></i> Prevendita
+                                </label>
+                                <input type="text" class="form-control" value="{{ stats.presold_income|default:'0.00' }}" readonly>
+                                <small class="text-muted">Calcolato automaticamente</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong>Totale Pagamenti Elettronici:</strong>
+                                <span id="total-electronic-payments" class="float-right" style="font-size:1.3rem;">€ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PULSANTI AZIONE -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    {% if reports %}
+                    <button type="submit" name="submit" class="btn btn-success btn-lg btn-block">
+                        <i class="fas fa-sync-alt"></i> Aggiorna Dati e Report
+                    </button>
+                    {% else %}
+                    <button type="submit" name="submit" class="btn btn-success btn-lg btn-block">
+                        <i class="fas fa-file-alt"></i> Genera Report SIAE
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'fiscalmgm:fiscalmgm_main' %}" class="btn btn-secondary btn-lg btn-block">
+                        <i class="fas fa-times"></i> Annulla
+                    </a>
                 </div>
             </div>
         </form>
+    </div>
+</section>
+
+<script>
+// Toggle sezioni collassabili
+function toggleSection(sectionId) {
+    const content = document.getElementById('content-' + sectionId);
+    const icon = document.getElementById('icon-' + sectionId);
     
-    </div> <!-- container .//  -->
-    </section>
-    <!-- ========================= SECTION CONTENT END// ========================= -->
-{%endblock%}
+    content.classList.toggle('active');
+    icon.classList.toggle('rotated');
+}
+
+// Calcolo automatico totali cassa
+function calculateTotals() {
+    const denominations = [
+        {value: 200, name: '200euro'},
+        {value: 100, name: '100euro'},
+        {value: 50, name: '50euro'},
+        {value: 20, name: '20euro'},
+        {value: 10, name: '10euro'},
+        {value: 5, name: '5euro'},
+        {value: 2, name: '2euro'},
+        {value: 1, name: '1euro'},
+        {value: 0.50, name: '50cent'},
+        {value: 0.20, name: '20cent'},
+        {value: 0.10, name: '10cent'}
+    ];
+    
+    let totalBegin = 0;
+    let totalEnd = 0;
+    
+    denominations.forEach(denom => {
+        const beginInput = document.getElementById(`id_cash_begin_${denom.name}`);
+        const endInput = document.getElementById(`id_cash_end_${denom.name}`);
+        
+        if (beginInput && beginInput.value) {
+            totalBegin += parseFloat(beginInput.value) * denom.value;
+        }
+        if (endInput && endInput.value) {
+            totalEnd += parseFloat(endInput.value) * denom.value;
+        }
+    });
+    
+    document.getElementById('total-begin').textContent = `€ ${totalBegin.toFixed(2)}`;
+    document.getElementById('total-end').textContent = `€ ${totalEnd.toFixed(2)}`;
+    
+    // Mostra differenza
+    const diff = totalEnd - totalBegin;
+    const diffColor = diff >= 0 ? 'success' : 'danger';
+    
+    let diffAlert = document.getElementById('cash-diff-alert');
+    if (!diffAlert) {
+        diffAlert = document.createElement('div');
+        diffAlert.id = 'cash-diff-alert';
+        diffAlert.className = `alert alert-${diffColor} mt-3`;
+        document.querySelector('.cash-grid').parentElement.appendChild(diffAlert);
+    } else {
+        diffAlert.className = `alert alert-${diffColor} mt-3`;
+    }
+    
+    diffAlert.innerHTML = `
+        <strong>Differenza Cassa:</strong> 
+        <span class="float-right">€ ${Math.abs(diff).toFixed(2)} ${diff >= 0 ? '(+)' : '(-)'}</span>
+    `;
+}
+
+// Copia veloce da Cassa Inizio a Cassa Fine
+function copyBeginToEnd() {
+    const denominations = ['200euro', '100euro', '50euro', '20euro', '10euro', '5euro', 
+                          '2euro', '1euro', '50cent', '20cent', '10cent'];
+    
+    let copied = 0;
+    denominations.forEach(denom => {
+        const beginInput = document.getElementById(`id_cash_begin_${denom}`);
+        const endInput = document.getElementById(`id_cash_end_${denom}`);
+        
+        if (beginInput && endInput && beginInput.value) {
+            endInput.value = beginInput.value;
+            copied++;
+        }
+    });
+    
+    if (copied > 0) {
+        calculateTotals();
+        alert(`Copiati ${copied} valori da Cassa Inizio a Cassa Fine`);
+    }
+}
+
+// Gestione dinamica serie biglietti
+const seriesCounters = {
+    'intero': 1,
+    'ridotto': 1,
+    'gratuito': 1,
+    'abbonamento': 1
+};
+
+// Limiti massimi per tipo
+const maxSeries = {
+    'intero': 2,
+    'ridotto': 2,
+    'gratuito': 2,
+    'abbonamento': 4
+};
+
+function addSeries(type) {
+    const nextNumber = seriesCounters[type] + 1;
+    const limit = maxSeries[type] || 2;
+
+    if (nextNumber > limit) {
+        alert(`Massimo ${limit} serie per ${type} supportate.`);
+        return;
+    }
+
+    const seriesDiv = document.getElementById(`${type}-serie-${nextNumber}`);
+    if (seriesDiv) {
+        seriesDiv.classList.add('active');
+        seriesCounters[type] = nextNumber;
+    }
+}
+
+function removeSeries(type, serieNumber) {
+    if (serieNumber === 1 && seriesCounters[type] === 1) {
+        const seriesDiv = document.getElementById(`${type}-serie-1`);
+        const inputs = seriesDiv.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.value = '';
+        });
+        return;
+    }
+    
+    const seriesDiv = document.getElementById(`${type}-serie-${serieNumber}`);
+    if (seriesDiv) {
+        seriesDiv.classList.remove('active');
+        const inputs = seriesDiv.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.value = '';
+        });
+        
+        if (serieNumber === seriesCounters[type]) {
+            seriesCounters[type]--;
+        }
+    }
+}
+
+// Auto-suggerimento numero finale
+function suggestEndNumber(type, serieNum) {
+    const startInput = document.getElementById(`id_${type}_ticket_start_number_${serieNum}`);
+    const endInput = document.getElementById(`id_${type}_ticket_end_number_${serieNum}`);
+    
+    if (startInput && endInput && startInput.value && !endInput.value) {
+        const suggested = parseInt(startInput.value) + 49;
+        endInput.placeholder = `Suggerito: ${suggested}`;
+    }
+}
+
+// Calcolo totale pagamenti elettronici
+function calculateElectronicPayments() {
+    const satispay = parseFloat(document.getElementById('id_collection_satispay')?.value || '0') || 0;
+    const sumup = parseFloat(document.getElementById('id_collection_sumup')?.value || '0') || 0;
+    const others = parseFloat(document.getElementById('id_collection_others')?.value || '0') || 0;
+    const presell = parseFloat(document.querySelector('input[readonly]')?.value || '0') || 0;
+
+    const total = satispay + sumup + others + presell;
+    document.getElementById('total-electronic-payments').textContent = `€ ${total.toFixed(2)}`;
+}
+
+// Inizializzazione eventi
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcoli cassa
+    const cashInputs = document.querySelectorAll('[id^="id_cash_"]');
+    cashInputs.forEach(input => {
+        input.addEventListener('input', calculateTotals);
+        input.addEventListener('change', calculateTotals);
+    });
+    
+    // Pagamenti elettronici
+    ['id_collection_satispay', 'id_collection_sumup', 'id_collection_others'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', calculateElectronicPayments);
+            el.addEventListener('change', calculateElectronicPayments);
+        }
+    });
+    
+    // Suggerimenti numeri finali
+    ['intero', 'ridotto', 'gratuito', 'abbonamento'].forEach(type => {
+        const limit = maxSeries[type] || 2;
+
+        for (let serieNum = 1; serieNum <= limit; serieNum++) {
+            const startInput = document.getElementById(`id_${type}_ticket_start_number_${serieNum}`);
+            if (startInput) {
+                startInput.addEventListener('input', () => suggestEndNumber(type, serieNum));
+                startInput.addEventListener('blur', () => suggestEndNumber(type, serieNum));
+            }
+        }
+    });
+    
+    // Inizializza contatori serie attive
+    ['intero', 'ridotto', 'gratuito', 'abbonamento'].forEach(type => {
+        const limit = maxSeries[type] || 2;
+
+        // Controlla tutte le serie possibili per questo tipo
+        for (let i = 2; i <= limit; i++) {
+            const serie = document.getElementById(`${type}-serie-${i}`);
+            if (serie) {
+                const serieInput = serie.querySelector('input[type="text"]');
+                if (serieInput && serieInput.value && serieInput.value !== '' && serieInput.value !== 'nd') {
+                    serie.classList.add('active');
+                    seriesCounters[type] = i;
+                }
+            }
+        }
+    });
+    
+    // Calcoli iniziali
+    calculateTotals();
+    calculateElectronicPayments();
+});
+
+// Validazione form
+document.getElementById('fiscalForm').addEventListener('submit', function(e) {
+    let hasTickets = false;
+
+    ['intero', 'ridotto', 'gratuito', 'abbonamento'].forEach(type => {
+        const limit = maxSeries[type] || 2;
+
+        for (let serieNum = 1; serieNum <= limit; serieNum++) {
+            const startInput = document.getElementById(`id_${type}_ticket_start_number_${serieNum}`);
+            const endInput = document.getElementById(`id_${type}_ticket_end_number_${serieNum}`);
+
+            if (startInput && endInput && startInput.value && endInput.value &&
+                parseInt(startInput.value) > 0 && parseInt(endInput.value) > 0) {
+                hasTickets = true;
+            }
+        }
+    });
+    
+    if (!hasTickets) {
+        const confirm = window.confirm(
+            'ATTENZIONE: Non hai inserito nessuna serie di biglietti.\n\n' +
+            'I report SIAE richiederanno almeno una serie di biglietti.\n\n' +
+            'Vuoi continuare comunque?'
+        );
+        
+        if (!confirm) {
+            e.preventDefault();
+            const ticketsSection = document.getElementById('content-tickets');
+            const ticketsIcon = document.getElementById('icon-tickets');
+            if (!ticketsSection.classList.contains('active')) {
+                ticketsSection.classList.add('active');
+                ticketsIcon.classList.add('rotated');
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}
