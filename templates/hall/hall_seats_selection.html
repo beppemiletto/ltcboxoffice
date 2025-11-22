@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <head>
  <meta charset="UTF-8">
+ {% load static %}
 <style>
 table, th, td {
     border: 0px dotted green;
@@ -18,32 +19,44 @@ th, td {
 p { font-size:90%;
 }
 
+/* Nuova palette colori moderna ad alto contrasto */
 .button_seat {
-    background-color: #909090;
-    border: none;
+    background-color: #10B981; /* Verde brillante - posto libero */
+    border: 2px solid #059669;
     color: white;
-    padding: 0px 0px;
+    padding: 4px 6px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 9px;
-    margin: 0px 0px;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
     cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.button_seat:hover {
+    background-color: #059669;
+    transform: scale(1.05);
 }
 
 .button_seat_NA {
-    background-color: #A01010;
-    border: none;
-    color: black;
-    padding: 0px 0px;
+    background-color: #DC2626; /* Rosso vivo - non disponibile */
+    border: 2px solid #B91C1C;
+    color: white;
+    padding: 4px 6px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 9px;
-    margin: 0px 0px;
-    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: not-allowed;
+    border-radius: 3px;
 }
 </style>
+<link rel="stylesheet" href="{% static 'css/seat-colors-buttons.css' %}">
 <script type="text/javascript">
 var seat_name = [
 				 'A5','A6','A7','A8','A9','A10','A11','A12','A13','A14','A15','A16','A17','A18',
@@ -109,10 +122,12 @@ function selectSeat(seat) {
 function toggleStatus(seat,newStatus){
 	var property = document.getElementById(seat_name[seat]);
         if (newStatus == '5') {
-            property.style.backgroundColor = "#DFDF00"
+            property.style.backgroundColor = "#FBBF24" // Giallo oro - selezionato
+            property.style.borderColor = "#F59E0B"
 		}
         if (newStatus == '1') {
-            property.style.backgroundColor = "#00DF00"
+            property.style.backgroundColor = "#10B981" // Verde brillante - libero
+            property.style.borderColor = "#059669"
 		}
 }
 
@@ -124,16 +139,20 @@ var text = "";
 for (i = 0; i < 263; i++) {
 	var property = document.getElementById(seat_name[i]);
         if (seatsStatus[i] == '5') {
-            property.style.backgroundColor = "#DFDF00"
+            property.style.backgroundColor = "#FBBF24" // Giallo oro - selezionato
+            property.style.borderColor = "#F59E0B"
 		}
         if (seatsStatus[i] == '1') {
-            property.style.backgroundColor = "#00DF00"
+            property.style.backgroundColor = "#10B981" // Verde brillante - libero
+            property.style.borderColor = "#059669"
 		}
         if (seatsStatus[i] == '2') {
-            property.style.backgroundColor = "#DF0000"
+            property.style.backgroundColor = "#DC2626" // Rosso vivo - prenotato/bloccato
+            property.style.borderColor = "#B91C1C"
 		}
 		if (seatsStatus[i] == '0') {
-            property.style.backgroundColor = "#050505"
+            property.style.backgroundColor = "#6B7280" // Grigio scuro - non disponibile
+            property.style.borderColor = "#4B5563"
 		}
 	}
 //get value
@@ -147,6 +166,22 @@ for (i = 0; i < 263; i++) {
 <body onload="readStatus()">
 	<div class="w3-container w3-orange" style="width:800px">
 		<h7>Teatro Comunale di Cambiano  {{event.show}} / {{event.event_date}}</h7>
+	</div>
+
+	<!-- Legenda colori -->
+	<div style="width:800px; padding: 12px; background-color: #1F2937; border-radius: 8px; margin-bottom: 10px; text-align: center;">
+		<span style="display: inline-block; margin: 0 15px;">
+			<span style="display: inline-block; width: 25px; height: 25px; background-color: #10B981; border: 2px solid #ffffff; border-radius: 3px; vertical-align: middle;"></span>
+			<strong style="color: #FFFFFF; margin-left: 8px;">Libero</strong>
+		</span>
+		<span style="display: inline-block; margin: 0 15px;">
+			<span style="display: inline-block; width: 25px; height: 25px; background-color: #FBBF24; border: 2px solid #ffffff; border-radius: 3px; vertical-align: middle;"></span>
+			<strong style="color: #FFFFFF; margin-left: 8px;">Selezionato</strong>
+		</span>
+		<span style="display: inline-block; margin: 0 15px;">
+			<span style="display: inline-block; width: 25px; height: 25px; background-color: #DC2626; border: 2px solid #ffffff; border-radius: 3px; vertical-align: middle;"></span>
+			<strong style="color: #FFFFFF; margin-left: 8px;">Non Disponibile</strong>
+		</span>
 	</div>
 	<div class="w3-row-padding2">
 		<div class="w3-full-padding2">

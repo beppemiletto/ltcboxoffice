@@ -1,0 +1,119 @@
+/*
+ * Palette colori moderna per selezione posti sala - versione button
+ * Per template che usano button invece di table cells
+ * Alta visibilità e contrasto per prenotazioni utenti
+ */
+
+/* Posto libero - Verde brillante */
+.button_seat {
+    background-color: #10B981 !important;
+    border: 2px solid #059669 !important;
+    color: white !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.button_seat:hover {
+    background-color: #059669 !important;
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Posto non disponibile / Bloccato - Rosso vivo */
+.button_seat_NA {
+    background-color: #DC2626 !important;
+    border: 2px solid #B91C1C !important;
+    color: white !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: not-allowed;
+    border-radius: 3px;
+}
+
+/* Posto selezionato - Giallo oro */
+.button_seat_selected {
+    background-color: #FBBF24 !important;
+    border: 2px solid #F59E0B !important;
+    color: #1F2937 !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    margin: 1px 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+/* Posto prenotato - Arancione */
+.button_seat_booked {
+    background-color: #F59E0B !important;
+    border: 2px solid #D97706 !important;
+    color: white !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: not-allowed;
+    border-radius: 3px;
+}
+
+/* Posto nel carrello - Viola */
+.button_seat_cart {
+    background-color: #8B5CF6 !important;
+    border: 2px solid #7C3AED !important;
+    color: white !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: not-allowed;
+    border-radius: 3px;
+}
+
+/* Posto venduto - Grigio scuro */
+.button_seat_sold {
+    background-color: #6B7280 !important;
+    border: 2px solid #4B5563 !important;
+    color: #E5E7EB !important;
+    padding: 4px 6px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 1px 1px;
+    cursor: not-allowed;
+    border-radius: 3px;
+    opacity: 0.8;
+}

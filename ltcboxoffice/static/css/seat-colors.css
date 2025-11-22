@@ -1,0 +1,104 @@
+/*
+ * Palette colori moderna per selezione posti sala
+ * Alta visibilità e contrasto per operatori di cassa
+ */
+
+/* Status 0 - LIBERO - Verde brillante */
+.table-success {
+    background-color: #10B981 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.table-success:hover {
+    background-color: #059669 !important;
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Status 1 e 2 - PRENOTATO - Arancione */
+.table-danger {
+    background-color: #F59E0B !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+/* Status 2 - BLOCCATO - Rosso vivo (per differenziare da status 1 se necessario) */
+.table-danger.blocked {
+    background-color: #DC2626 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+/* Status 3 - SELEZIONATO (in fase di vendita) - Giallo oro */
+.table-warning {
+    background-color: #FBBF24 !important;
+    color: #1F2937 !important;
+    font-weight: 700;
+    cursor: pointer;
+    animation: pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+/* Animazione per posti selezionati - attira l'attenzione */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+.table-warning:hover {
+    background-color: #F59E0B !important;
+}
+
+/* Status 4 - NEL CARRELLO (altro utente) - Viola */
+.table-info {
+    background-color: #8B5CF6 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+/* Status 5 - VENDUTO - Grigio scuro */
+.table-secondary {
+    background-color: #6B7280 !important;
+    color: #E5E7EB !important;
+    font-weight: 600;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Stili comuni per tutti i posti */
+.table td {
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #D1D5DB;
+    padding: 8px 4px;
+    font-size: 0.85rem;
+}
+
+/* Migliora la visibilità del testo sui posti */
+.table td small {
+    font-size: 0.75rem;
+    font-weight: inherit;
+    letter-spacing: 0.5px;
+}
+
+/* Effetto hover generico per posti cliccabili */
+.table td[onclick]:not(.table-danger):not(.table-info):not(.table-secondary) {
+    cursor: pointer;
+}
+
+/* Spazi vuoti e bordi palco */
+.table-primary {
+    background-color: #1E40AF !important;
+    color: #ffffff !important;
+    font-weight: 500;
+}

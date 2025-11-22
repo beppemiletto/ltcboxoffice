@@ -3,6 +3,7 @@
 {% block content %}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
+<link rel="stylesheet" href="{% static 'css/seat-colors.css' %}">
 <section class="section-content padding-y bg">
 <div class="container">
     <div class="card">
@@ -35,6 +36,36 @@
         </div> <!-- row -->
 
     </div> <!-- card -->
+
+<!-- ============================ Legenda colori posti ================================= -->
+<div class="card">
+    <div class="row mb-2">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 15px; padding: 12px; background-color: #1F2937; border-radius: 8px;">
+                <div class="d-flex align-items-center">
+                    <div style="width: 35px; height: 35px; background-color: #10B981; border-radius: 4px; margin-right: 10px; border: 2px solid #ffffff;"></div>
+                    <strong style="color: #FFFFFF; font-size: 1rem;">Libero</strong>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="width: 35px; height: 35px; background-color: #F59E0B; border-radius: 4px; margin-right: 10px; border: 2px solid #ffffff;"></div>
+                    <strong style="color: #FFFFFF; font-size: 1rem;">Prenotato</strong>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="width: 35px; height: 35px; background-color: #FBBF24; border-radius: 4px; margin-right: 10px; border: 2px solid #ffffff;"></div>
+                    <strong style="color: #FFFFFF; font-size: 1rem;">Selezionato</strong>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="width: 35px; height: 35px; background-color: #8B5CF6; border-radius: 4px; margin-right: 10px; border: 2px solid #ffffff;"></div>
+                    <strong style="color: #FFFFFF; font-size: 1rem;">Nel Carrello</strong>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="width: 35px; height: 35px; background-color: #6B7280; border-radius: 4px; margin-right: 10px; border: 2px solid #ffffff;"></div>
+                    <strong style="color: #FFFFFF; font-size: 1rem;">Venduto</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ============================ COMPONENT 1 ================================= -->
 <div class="card">
