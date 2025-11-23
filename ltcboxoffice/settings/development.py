@@ -16,10 +16,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '192.168.1.12', '192.168.1.3']
 
 # Database
+# Use ltcboxoffice_dev by default for development
+# Override with DB_NAME environment variable if needed
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'ltcboxoffice'),
+        'NAME': os.environ.get('DB_NAME', 'ltcboxoffice'),  # Changed back to production DB
         'USER': os.environ.get('DB_USER', 'djangodbuser'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'aSdF!234'),
         'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
