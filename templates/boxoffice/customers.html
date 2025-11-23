@@ -3,162 +3,261 @@
 {%load index%}
 
 {% block content%}
+<style>
+    /* Stili personalizzati per la pagina clienti */
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f0f7ff;
+        cursor: pointer;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: 0;
+    }
+
+    .form-control {
+        border-left: 0;
+    }
+
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    }
+
+    .border-bottom {
+        border-color: #e9ecef !important;
+    }
+</style>
 <section class="section-content padding-y bg">
-    <div class="container">
-        <div class="row">
-            <aside class="col-lg-12">
-                <div class="card"> <!-- header card card -->
-                    <table class="table table-border small">
-                        <thead class="text-dark">
-                            <th class="header" scope="colgroup" colspan="3"> <h4> Evento: </h4>
-                                <figure class="itemside align-items-center">
-                                    <div class="aside"><img src="{{current_event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
-                                    <figcaption class="info"> 
-                                        <a href="#" class="title text-dark"> {{current_event.show.shw_title}}</a>
-                                        <p>  del {{current_event.date_time|date:"D d m Y"}} alle ore {{current_event.date_time|date:"H : i"}}  </p>
-                                    </figcaption>
-                                </figure>
-                            </th>
-                            <th>
-                                <h2>SCELTA CLIENTE REGISTRATO O REGISTRAZIONE NUOVO CLIENTE</h2>
-                            </th>
-                        </thead>
-                    </table>
-                </div> <!-- header card card -->
-            </aside>
+    <div class="container-fluid">
+        <!-- Header con informazioni evento -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <img src="{{current_event.show.shw_image.url}}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;" alt="{{current_event.show.shw_title}}">
+                            </div>
+                            <div class="flex-grow-1">
+                                <h4 class="text-white mb-1">{{current_event.show.shw_title}}</h4>
+                                <p class="text-white mb-0">
+                                    <i class="fas fa-calendar-alt mr-2"></i>{{current_event.date_time|date:"D d m Y"}}
+                                    <i class="fas fa-clock ml-3 mr-2"></i>{{current_event.date_time|date:"H:i"}}
+                                </p>
+                            </div>
+                            <div>
+                                <h5 class="text-white mb-0">Gestione Clienti</h5>
+                                <p class="text-white-50 small mb-0">Selezione o Registrazione</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div> <!-- row -->
                 <!--  IN CASE nothing to show-->
         <div class="row">
             <!-- FIRST TABLE FOR WEB USER ORDERS -->
             <aside class="col-lg-5">
-                <div class="card">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-users mr-2"></i>Clienti in Anagrafica</h5>
+                    </div>
                     {%if not paged_customers%}
-                    <H2 class="text-center">Non ci sono Clienti registrati.</H2>
-                    <br>
-                    <div class="text-center">
-                        <a href="{%url 'event_list'%}" class="btn btn-outline-primary"> Torna alla Home in area riservata.</a>
-                        </div>
-                        {%else%}
-        
-                        <table class="table table-border small">
-                        <thead class="text-dark">
-                            <th class="header" scope="colgroup" colspan="3"> 
-                                <h4> Clienti in anagrafica</h4>
-                                </th>
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Non ci sono clienti registrati</h5>
+                        <a href="{%url 'event_list'%}" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-home mr-2"></i>Torna alla Home
+                        </a>
+                    </div>
+                    {%else%}
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                        <thead class="thead-light">
                             <tr class="small text-uppercase">
-                                <th scope="col" width="150">Cognome </th>
-                                <th scope="col" width="150">Nome</th>
-                                <th scope="col" width="150">email</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                    {%for customer in paged_customers %}
-                                    <tr>
-                                        <td>
-                                            <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.last_name}}</a>
+                                <th scope="col">Cognome</th>
+                                <th scope="col">Nome</th>
+                                <th scope="col">Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {%for customer in paged_customers %}
+                            <tr class="cursor-pointer">
+                                <td>
+                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="text-dark font-weight-bold">
+                                        <i class="fas fa-user-circle mr-2 text-primary"></i>{{customer.last_name}}
+                                    </a>
                                 </td>
-                                <td> 
-                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.first_name}}</a>
+                                <td>
+                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="text-dark">
+                                        {{customer.first_name}}
+                                    </a>
                                 </td>
-                                <td> 
-                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="title text-dark"> {{customer.email}}</a>
-                                    </td>
-                                    </tr>
-                                    {%endfor%}
-                                    </tbody>
-                                    </table>
-                                    
-                                    <nav class="mt-4" aria-label="Page navigation sample">
-                                        {%if paged_customers.has_other_pages %}
-                                        
-                                        <ul class="pagination">
-                                            {%if paged_customers.has_previous%}
-                                            <li class="page-item"><a class="page-link" href="?page={{paged_customers.previous_page_number}}">Previous</a></li>
-                                            {%else%}
-                                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                                            {%endif%}
-                                            {%for i in paged_customers.paginator.page_range%}
-                                            {%if paged_customers.number == i %}
-                                            <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
-                                            {%else%}
-                                            <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
-                                            {%endif%}
-                                            {%endfor%}
-                                            {%if paged_customers.has_next%}
-                                            <li class="page-item"><a class="page-link" href="?page={{paged_customers.next_page_number}}">Next</a></li>
-                                            {%else%}
-                                            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
-                                            {%endif%}
-                                            </ul>
-                                            {%endif%}
-                                            </nav>
-                                        {%endif%}
-                                            </div> <!-- card.// -->
+                                <td>
+                                    <a href="{%url 'customers' current_event.pk customer.email%}" class="text-dark">
+                                        <i class="fas fa-envelope mr-2 text-muted"></i>{{customer.email}}
+                                    </a>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                        </tbody>
+                        </table>
+                    </div>
+
+                    {%if paged_customers.has_other_pages %}
+                    <div class="card-footer bg-light">
+                        <nav aria-label="Navigazione pagine">
+                            <ul class="pagination justify-content-center mb-0">
+                                {%if paged_customers.has_previous%}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{paged_customers.previous_page_number}}">
+                                        <i class="fas fa-chevron-left"></i> Precedente
+                                    </a>
+                                </li>
+                                {%else%}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#"><i class="fas fa-chevron-left"></i> Precedente</a>
+                                </li>
+                                {%endif%}
+
+                                {%for i in paged_customers.paginator.page_range%}
+                                {%if paged_customers.number == i %}
+                                <li class="page-item active"><a class="page-link" href="#">{{i}}</a></li>
+                                {%else%}
+                                <li class="page-item"><a class="page-link" href="?page={{i}}">{{i}}</a></li>
+                                {%endif%}
+                                {%endfor%}
+
+                                {%if paged_customers.has_next%}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{paged_customers.next_page_number}}">
+                                        Successivo <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                                {%else%}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">Successivo <i class="fas fa-chevron-right"></i></a>
+                                </li>
+                                {%endif%}
+                            </ul>
+                        </nav>
+                    </div>
+                    {%endif%}
+                    {%endif%}
+                </div> <!-- card.// -->
             </aside> <!-- aside -->
 
             <!-- A new customer form -->
-            <aside class="col-lg-6">
-                <div class="row">
-                    <h3>INSERISCI NUOVO CLIENTE</h3>
-                    <p>Se non hai trovato il cliente nell'elenco a sinistra, qui puoi inserire un nuovo cliente. I dati obbligatori sono il Nome, 
-                        il Cognome e l'indirizzo email.</p>
-                        <h6> Se inserisci un indirizzo email già registrato ti verrà mostrato un messaggio di scelta / errore. Altrimenti verrai indirizzato 
-                            alla scelta dei posti.
-                        </h6>
-                        <br>
-                        <br>
-                        <br>
+            <aside class="col-lg-7">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-user-plus mr-2"></i>Registra Nuovo Cliente</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info border-0" role="alert">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Informazioni:</strong> I campi contrassegnati con <span class="text-danger">*</span> sono obbligatori.
+                            Se l'email è già registrata, ti verrà mostrato un messaggio di errore.
+                        </div>
+
+                        <form method="POST" action="{% url 'customers' event_id=current_event.pk customer=new_customer %}">
+                            {% csrf_token %}
+
+                            <!-- Dati anagrafici -->
+                            <div class="border-bottom pb-3 mb-4">
+                                <h6 class="text-muted mb-3"><i class="fas fa-id-card mr-2"></i>Dati Anagrafici</h6>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="font-weight-bold">Nome <span class="text-danger">*</span></label>
+                                        {{customer_profile_form.first_name}}
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="font-weight-bold">Cognome <span class="text-danger">*</span></label>
+                                        {{customer_profile_form.last_name}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contatti -->
+                            <div class="border-bottom pb-3 mb-4">
+                                <h6 class="text-muted mb-3"><i class="fas fa-address-book mr-2"></i>Contatti</h6>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="font-weight-bold">Email <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            </div>
+                                            {{customer_profile_form.email}}
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="font-weight-bold">Telefono</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            </div>
+                                            {{customer_profile_form.phone_number}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Indirizzo -->
+                            <div class="pb-3 mb-4">
+                                <h6 class="text-muted mb-3"><i class="fas fa-map-marker-alt mr-2"></i>Indirizzo (Opzionale)</h6>
+                                <div class="form-row">
+                                    <div class="form-group col-md-12">
+                                        <label class="font-weight-bold">Via/Piazza</label>
+                                        {{customer_profile_form.address}}
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label class="font-weight-bold">CAP</label>
+                                        {{customer_profile_form.post_code}}
+                                    </div>
+                                    <div class="form-group col-md-5">
+                                        <label class="font-weight-bold">Città</label>
+                                        {{customer_profile_form.city}}
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="font-weight-bold">Provincia</label>
+                                        {{customer_profile_form.province}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pulsanti azione -->
+                            <div class="form-row mt-4">
+                                <div class="form-group col-md-6">
+                                    <button type="submit" class="btn btn-success btn-lg btn-block">
+                                        <i class="fas fa-save mr-2"></i>Salva e Continua
+                                    </button>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <a href="{%url 'boxoffice'%}" class="btn btn-outline-secondary btn-lg btn-block">
+                                        <i class="fas fa-times mr-2"></i>Annulla
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div row>
-                    
-                </div>
-                <form method="POST" action="{% url 'customers' event_id=current_event.pk customer=new_customer %}">
-                    {% csrf_token %}
-                    <div class="form-row">
-                        <div class="form_group col-md-12">
-                            <label >Nome*</label>
-                            {{customer_profile_form.first_name}}
-                            <label >Cognome*</label>
-                            {{customer_profile_form.last_name}}
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form_group col-md-12">
-                            <label >Telefono</label>
-                            {{customer_profile_form.phone_number}}
-                            <label >Email*</label>
-                            {{customer_profile_form.email}}
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form_group col-md-12">
-                        <label> Indirizzo</label>
-                        {{customer_profile_form.address}}
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form_group col-md-12">
-                            <label >CAP</label>
-                            {{customer_profile_form.post_code}}
-                            <label >Citta'</label>
-                            {{customer_profile_form.city}}
-                        </div>
-                    </div>
-                            <div class="form-row">
-                                <div class="form_group col-md-12">
-                            <label >Provincia</label>
-                            {{customer_profile_form.province}}
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                    <button type="submit" class="btn btn-primary">Salva nuovo cliente</button>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <a href="{%url 'boxoffice'%}" class="btn btn-light btn-block">Torna alla home</a>
-                        </div>
-                    </div>
-                </form>
             </aside> <!-- col.// -->
         </div> <!-- row.// -->
     </div> <!-- container .//  -->
