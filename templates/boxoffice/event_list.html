@@ -34,7 +34,15 @@
     <tr>
         <td>
             <figure class="itemside align-items-center">
-                <div class="aside"><img src="{{event.show.shw_image.url}}" class="img-xs" alt="Image for Show" ></div>
+                <div class="aside">
+                    {% if event.show.shw_image %}
+                        <img src="{{event.show.shw_image.url}}" class="img-xs" alt="Image for Show">
+                    {% else %}
+                        <div class="img-xs" style="width: 80px; height: 80px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                            <span style="font-size: 2rem;">🎭</span>
+                        </div>
+                    {% endif %}
+                </div>
                 <figcaption class="info">
                     <a href="#" class="title text-dark">Evento {{event.show.shw_title}}</a>
                     <p>  del {{event.date_time|date:"D d m Y"}} alle ore {{event.date_time|date:"H : i"}}  </p>

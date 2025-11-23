@@ -28,7 +28,14 @@ class Event(models.Model):
         a = self.show.slug
         b = self.date_time.strftime('%Y%m%d')     #Day of the month as string
         c = self.show.shw_code
-        return c+'_'+b+'_'+ a 
+        # Include event pk to support multiple events on the same day
+        # If event is not yet saved (no pk), use timestamp for uniqueness
+        if self.pk:
+            d = str(self.pk)
+        else:
+            # For new events, use time component temporarily
+            d = self.date_time.strftime('%H%M')
+        return c+'_'+b+'_'+d+'_'+ a 
 
     def get_booking_deadline(self):
         """Calcola il timestamp limite per le prenotazioni basato su booking_deadline_hours"""
@@ -59,7 +66,8 @@ class Event(models.Model):
         # Track old slug for file renaming if date/show changes
         old_slug = None
         old_json_path = None
-        
+        is_new = self.pk is None
+
         if self.pk:  # Existing event
             port_booking: bool = True
             try:
@@ -71,13 +79,20 @@ class Event(models.Model):
                 pass
         else:
             port_booking: bool = False
-        
+
         # Update event_slug based on current show/date
         self.event_slug = self.get_unique_id
-        
+
         # Save to database
         super(Event, self).save(*args, **kwargs)
-        
+
+        # For new events, update slug again now that we have pk
+        if is_new:
+            old_slug = self.event_slug
+            self.event_slug = self.get_unique_id
+            # Save again with proper slug containing pk
+            super(Event, self).save(update_fields=['event_slug'])
+
         # Handle JSON file renaming if slug changed
         if old_slug and old_slug != self.event_slug:
             self._rename_json_file(old_json_path)

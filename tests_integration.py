@@ -114,8 +114,8 @@ class TestCompleteUserJourney:
             price_full=30.0,
             price_reduced=20.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='integration-event-001'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         # Create JSON seat file
@@ -310,8 +310,8 @@ class TestMultipleEventsBooking:
             price_full=25.0,
             price_reduced=18.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='show-1-event'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         event2 = Event.objects.create(
@@ -320,8 +320,8 @@ class TestMultipleEventsBooking:
             price_full=30.0,
             price_reduced=22.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='show-2-event'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         # Create cart

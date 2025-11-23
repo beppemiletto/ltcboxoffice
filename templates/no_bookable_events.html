@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teatro Comunale di Cambiano</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 6rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #d4af37;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+        }
+
+        .main-text {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .sub-text {
+            font-size: 1.2rem;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .highlight {
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #f0f0f0;
+            margin: 2rem 0;
+        }
+
+        .info-text {
+            font-size: 1.1rem;
+            color: #888;
+            margin-bottom: 1.5rem;
+        }
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold {
+            background: #d4af37;
+        }
+
+        .btn-gold:hover {
+            background: #b8941f;
+            transform: translateY(-2px);
+        }
+
+        .btn-red {
+            background: #FF0000;
+        }
+
+        .btn-red:hover {
+            background: #cc0000;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            color: #999;
+            font-size: 0.95rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .icon {
+                font-size: 4rem;
+            }
+
+            .card {
+                padding: 2rem;
+            }
+
+            .main-text {
+                font-size: 1.3rem;
+            }
+
+            .sub-text {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🎭</div>
+
+        <h1>Teatro Comunale di Cambiano</h1>
+
+        <div class="card">
+            <p class="main-text">
+                Al Teatro Comunale di Cambiano non ci sono spettacoli prenotabili.
+            </p>
+
+            <p class="sub-text">
+                Il <strong class="highlight">Laboratorio Teatrale di Cambiano APS</strong>
+                sta preparando il nuovo programma e presto sarà prenotabile.
+            </p>
+
+            <hr>
+
+            <p class="info-text">Per informazioni e aggiornamenti:</p>
+
+            <div class="links">
+                <a href="https://prenota.teatrocambiano.com" class="btn btn-gold">
+                    🌐 prenota.teatrocambiano.com
+                </a>
+
+                <a href="https://www.youtube.com/channel/UCBtMPZAXfecZHMNr0N0T0vg"
+                   target="_blank"
+                   class="btn btn-red">
+                    📺 Canale YouTube
+                </a>
+            </div>
+        </div>
+
+        <p class="footer">
+            Teatro gestito in convenzione con il Comune di Cambiano<br>
+            <strong class="highlight">Laboratorio Teatrale di Cambiano A.P.S.</strong>
+        </p>
+    </div>
+</body>
+</html>

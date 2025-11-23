@@ -639,7 +639,8 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
             ticket.seat = sold_seat.seat
             ticket.status = 'New'
             ticket.sell_mode = ticket.SELLING_MODE[ticket.SELLING_MODE.index(('C','Cassa'))][0]
-            ticket.number=f"{ticket.sell_mode[0]}{current_event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+            # Use event.pk instead of show.pk to support multiple events on same day
+            ticket.number=f"{ticket.sell_mode[0]}{current_event.date_time.strftime('%Y%m%d')}.{current_event.pk:04d}.{f'{serial:03d}'}"
             ticket.event = current_event
         data = {}
         data['seat'] = sold_seat.seat

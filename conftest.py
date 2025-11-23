@@ -187,7 +187,7 @@ def future_event(db, show, venue):
         price_reduced=18.0,
         vat_rate=10.0,
         venue=venue,
-        event_slug=f"hamlet-{event_datetime.strftime('%Y%m%d')}",
+        # event_slug is auto-generated in save() method
         sold_out=False,
         booking_deadline_hours=3
     )
@@ -232,7 +232,7 @@ def past_event(db, show, venue):
         price_reduced=18.0,
         vat_rate=10.0,
         venue=venue,
-        event_slug=f"hamlet-past-{event_datetime.strftime('%Y%m%d')}",
+        # event_slug is auto-generated in save() method
         sold_out=False,
         booking_deadline_hours=3
     )
@@ -253,7 +253,7 @@ def imminent_event(db, show, venue):
         price_reduced=18.0,
         vat_rate=10.0,
         venue=venue,
-        event_slug=f"hamlet-imminent-{event_datetime.strftime('%Y%m%d%H%M')}",
+        # event_slug is auto-generated in save() method
         sold_out=False,
         booking_deadline_hours=3
     )
@@ -437,7 +437,7 @@ def multiple_shows(db, section, siae_type, venue):
             price_reduced=15.0 + i,
             vat_rate=10.0,
             venue=venue,
-            event_slug=f'show-{i+1}-{event_datetime.strftime("%Y%m%d")}',
+            # event_slug is auto-generated in save() method
             sold_out=False,
             booking_deadline_hours=3
         )

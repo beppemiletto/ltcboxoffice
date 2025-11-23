@@ -16,16 +16,15 @@
 
     {%else%}
     
-    <div class="card mx-auto" style="max-width: 512px; margin-top:100px;">
+    <div class="card mx-auto" style="max-width: 512px; margin-top:100px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <!-- Header accogliente -->
+          <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 2rem; border-radius: 0.25rem 0.25rem 0 0; text-align: center;">
+              <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎭</div>
+              <h3 style="color: #d4af37; margin-bottom: 0.5rem; font-weight: 600;">Bentornato!</h3>
+              <p style="color: #ffffff; margin: 0; font-size: 0.95rem;">Accedi al tuo account per prenotare i prossimi spettacoli</p>
+          </div>
+
           <div class="card-body">
-          <h4 class="card-title mb-4">Login</h4>
-          <h5>fornisci le tue credenziali di accesso</h5>
-          <h6><B>Il nuovo sito richiede una nuova validazione del tuo utente.</B></h6>
-          <p><small>Controlla la mail che hai usato per la registrazione sul vecchio sito di prenotazioni. Agli utenti che hanno usato il sito nel 2023 o 2024 
-            è stata inviata una mail con le istruzioni per riattivare l'utenza.<BR> La mail è stata spedita da LTCBoxOffice@teatrocambiano.com. 
-              Se non hai ricevuto nessuna e-mail dovrai registrarti nuovamente.<BR> 
-              In caso persistano problemi contattaci alla mail </small></p>
-              <p><small><a href="mailto:LTCBoxOffice@teatrocambiano.com">LTCBoxOffice@teatrocambiano.com</a></small></p>
           {%include 'includes/alerts.html'%}
           <form action="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" method="POST">
             {%csrf_token%}

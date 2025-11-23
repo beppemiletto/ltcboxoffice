@@ -100,7 +100,8 @@ def print_ticket(request):
                 ticket.seat = k
                 ticket.user = ordereventobj.user
                 serial = total_tickets_x_event + 1
-                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{show.pk:04d}.{f'{serial:03d}'}"
+                # Use event.pk instead of show.pk to support multiple events on same day
+                ticket.number=f"{ticket.sell_mode[0]}{event.date_time.strftime('%Y%m%d')}.{event.pk:04d}.{f'{serial:03d}'}"
             elif action_ticket == "change_it":
                 price = int(seat[-1])
                 ticket.price = price

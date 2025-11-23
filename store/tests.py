@@ -119,8 +119,8 @@ class TestEventListing:
             price_full=20.0,
             price_reduced=15.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='prosa-show-event'
+            venue=venue
+            # event_slug is auto-generated
         )
         Event.objects.create(
             show=show2,
@@ -128,8 +128,8 @@ class TestEventListing:
             price_full=25.0,
             price_reduced=18.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='dance-show-event'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         # Test section1 filter
@@ -177,8 +177,8 @@ class TestShowDetail:
             price_full=25.0,
             price_reduced=18.0,
             vat_rate=10.0,
-            venue=future_event.venue,
-            event_slug=f"hamlet-{(timezone.now() + timedelta(days=14)).strftime('%Y%m%d')}"
+            venue=future_event.venue
+            # event_slug is auto-generated
         )
 
         response = client.get(
@@ -259,7 +259,7 @@ class TestEventAvailability:
             price_reduced=18.0,
             vat_rate=10.0,
             venue=venue,
-            event_slug='custom-deadline-event',
+            # event_slug is auto-generated
             booking_deadline_hours=24
         )
 
@@ -420,8 +420,8 @@ class TestEventModel:
             price_full=30.0,
             price_reduced=22.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='new-test-event'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         json_path = event.get_json_path()
@@ -436,12 +436,12 @@ class TestEventModel:
             price_full=30.0,
             price_reduced=22.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='unique-event-1'
+            venue=venue
+            # event_slug is auto-generated
         )
 
-        # Trying to create another event with the same slug should fail
-        # or slug should be auto-modified
+        # Trying to create another event on the same day should succeed with different slug
+        # since slug now includes event pk
 
 
 @pytest.mark.django_db
@@ -524,8 +524,8 @@ class TestPriceDisplay:
             price_full=20.0,
             price_reduced=15.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='event-cheap'
+            venue=venue
+            # event_slug is auto-generated
         )
         event2 = Event.objects.create(
             show=show,
@@ -533,8 +533,8 @@ class TestPriceDisplay:
             price_full=30.0,
             price_reduced=25.0,
             vat_rate=10.0,
-            venue=venue,
-            event_slug='event-expensive'
+            venue=venue
+            # event_slug is auto-generated
         )
 
         # Price range should be 15.0 - 30.0

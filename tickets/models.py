@@ -19,7 +19,7 @@ class Ticket(models.Model):
         ('C', 'Cassa'),
         ('P', 'Prenotazione'),
     )
-    number = models.CharField(max_length=25, blank=True, default='')
+    number = models.CharField(max_length=25, blank=True, default='', db_index=True)
     seat = models.CharField(max_length=3, editable= False, blank=True, default='C03')
     user = models.ForeignKey(Account, on_delete=models.CASCADE, blank=True, null=True)
     orderevent = models.CharField(max_length=25, blank=True, default='', null= True)
@@ -31,6 +31,15 @@ class Ticket(models.Model):
     pdf_path = models.FilePathField(path=MEDIA_ROOT / 'tickets' , verbose_name='pdf file path', default='dummy.pdf', editable=False)
     created_at = models.DateTimeField(auto_now_add=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True)
+
+    class Meta:
+        # Ensure each ticket number is unique
+        constraints = [
+            models.UniqueConstraint(fields=['number'], name='unique_ticket_number', condition=models.Q(number__gt=''))
+        ]
+        indexes = [
+            models.Index(fields=['event', 'seat'], name='ticket_event_seat_idx'),
+        ]
 
     def __str__(self) -> str:
         if self.orderevent is not None:

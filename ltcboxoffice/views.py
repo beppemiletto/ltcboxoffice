@@ -15,6 +15,9 @@ def home(request):
         evidence_timedelta = timedelta(days=365)
         evidence_show_found: bool = False
         evidence_show = shows.last()
+        date_start = None
+        evidence_show_url = None
+
         for show in shows:
             shw_events = Event.objects.filter(show=show.pk).order_by('date_time')
             if shw_events.count():
@@ -39,8 +42,20 @@ def home(request):
                 if event.is_bookable():
                     evidence_show_url = evidence_show.get_url()
                     date_start = event.date_time
+                    evidence_show_found = True
                     break
-                
+
+        # If still no bookable event found, show the no bookable events page
+        if not evidence_show_found:
+            context = {
+                'message': 'Al Teatro Comunale di Cambiano non ci sono spettacoli prenotabili. Il Laboratorio Teatrale di Cambiano APS sta preparando il nuovo programma e presto sarà prenotabile.',
+            }
+            return render(request, 'no_bookable_events.html', context)
+
+        # Only add to billboard if we have at least a show URL
+        if evidence_show_url is None:
+            evidence_show_url = evidence_show.get_url()
+
         billboard[evidence_show.pk]= {
         'title': evidence_show.shw_title,
         'slug': evidence_show.slug,
