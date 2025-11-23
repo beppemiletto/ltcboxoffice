@@ -458,7 +458,7 @@ def record_booking(request):
             data.order_total = grand_total
             data.tax = tax
             data.ip = request.META.get('REMOTE_ADDR')
-            data.save() 
+            data.save()
 
             # Generate order number
             order_number = f"{data.id:06d}"
@@ -497,7 +497,54 @@ def record_booking(request):
             response = booking_payments(request, context)
             return response
         else:
-            return HttpResponse("<H1>Entered the POST clause</H1><br>Got the following form that is NOT VALID <br> {}".format(form))
+            # Form has validation errors - re-render checkout page with errors
+            current_user = request.user
+            try:
+                former_order = Order.objects.filter(user=current_user).order_by('-created_at').first()
+                user_data = {
+                'user': current_user,
+                'first_name': form.cleaned_data.get('first_name', former_order.first_name),
+                'last_name': form.cleaned_data.get('last_name', former_order.last_name),
+                'phone': form.data.get('phone', former_order.phone),  # Use submitted value to show what user entered
+                'email': form.cleaned_data.get('email', former_order.email),
+                'address_line_1': form.cleaned_data.get('address_line_1', former_order.address_line_1),
+                'address_line_2': form.cleaned_data.get('address_line_2', former_order.address_line_2),
+                'post_code': form.cleaned_data.get('post_code', former_order.post_code),
+                'city': form.cleaned_data.get('city', former_order.city),
+                'province': form.cleaned_data.get('province', former_order.province),
+                'order_note': form.cleaned_data.get('order_note', former_order.order_note),
+                }
+            except:
+                userprofile = UserProfile.objects.get(user=current_user)
+                user_data = {
+                'user': current_user,
+                'first_name': form.cleaned_data.get('first_name', userprofile.user.first_name),
+                'last_name': form.cleaned_data.get('last_name', userprofile.user.last_name),
+                'phone': form.data.get('phone', userprofile.user.phone_number),  # Use submitted value
+                'email': form.cleaned_data.get('email', userprofile.user.email),
+                'address_line_1': form.cleaned_data.get('address_line_1', userprofile.address_line1),
+                'address_line_2': form.cleaned_data.get('address_line_2', userprofile.address_line2),
+                'post_code': form.cleaned_data.get('post_code', userprofile.post_code),
+                'city': form.cleaned_data.get('city', userprofile.city),
+                'province': form.cleaned_data.get('province', userprofile.province),
+                'order_note': form.cleaned_data.get('order_note', ''),
+                }
+
+            vat_rate = 10
+            # Get cart from cart_items (cart_items already available from earlier in the function)
+            cart = cart_items[0].cart if cart_items else None
+
+            context = {
+                'user_data': user_data,
+                'cart': cart,
+                'cart_items': cart_items,
+                'total': grand_total,
+                'taxable': taxable,
+                'tax': tax,
+                'vat_rate': vat_rate,
+                'form_errors': form.errors,  # Pass form errors to template
+            }
+            return render(request, 'booking/checkout.html', context)
 
     else:
         return redirect('bookings')

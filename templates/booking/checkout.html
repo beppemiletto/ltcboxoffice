@@ -13,8 +13,37 @@
                     <div class="card">
                         <div class="card-body">
                             <h4 class="card-title mb-4">Indirizzo invio prenotazione</h4>
+
+                            {% if form_errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Errore nella compilazione del form:</strong>
+                                <ul class="mb-0">
+                                {% for field, errors in form_errors.items %}
+                                    {% for error in errors %}
+                                    <li>
+                                        {% if field == 'phone' %}
+                                            <strong>Telefono:</strong> {{ error }}
+                                        {% elif field == 'email' %}
+                                            <strong>Email:</strong> {{ error }}
+                                        {% elif field == 'first_name' %}
+                                            <strong>Nome:</strong> {{ error }}
+                                        {% elif field == 'last_name' %}
+                                            <strong>Cognome:</strong> {{ error }}
+                                        {% else %}
+                                            <strong>{{ field }}:</strong> {{ error }}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                {% endfor %}
+                                </ul>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            {% endif %}
+
                             <!-- place_order -->
-                            <form action="{% url 'record_booking' %}" method="post" onsubmit="submit.disabled = true; return true;"> 
+                            <form action="{% url 'record_booking' %}" method="post" onsubmit="submit.disabled = true; return true;">
                                 {% csrf_token %}
                                 <div class="row">
                                     <div class="col">
@@ -40,7 +69,14 @@
                                     <div class="col">
                                         <div class="form-group">
                                             <label for="">Telefono</label>
-                                            <input type="text" name="phone" class="form-control" value="{{ user_data.phone }}"  required>
+                                            <input type="text" name="phone" class="form-control {% if form_errors.phone %}is-invalid{% endif %}" value="{{ user_data.phone }}"  required>
+                                            {% if form_errors.phone %}
+                                            <div class="invalid-feedback" style="display: block;">
+                                                {% for error in form_errors.phone %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div> 

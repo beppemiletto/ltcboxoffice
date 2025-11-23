@@ -261,13 +261,13 @@ def event(request, event_id):
 
         for user_event in users_event:
             orders[user_event.user.email]={
-                'id':user_event.pk, 
-                'last_name':user_event.user.last_name, 
+                'id':user_event.pk,
+                'last_name':user_event.user.last_name,
                 'first_name':user_event.user.first_name,
-                'orders':{} 
+                'orders':{}
                 }
-            
-            # The user_event can be emptied by users changes. The control variable 
+
+            # The user_event can be emptied by users changes. The control variable
             # empty_user_event is set to True - If no valid (NOT EXPIRED) ORDER EVENT
             # are found, the user event will be removed from the Dictionary
             empty_user_event = True
@@ -292,13 +292,32 @@ def event(request, event_id):
                     continue
                 else:
                     empty_user_event = False
+                    sold_count = 0
+                    total_count = 0
+
+                    # Count all seats with this orderevent_number in hall_status
+                    # This includes both booked (status=1) and sold (status=5) seats
+                    orderevent_number = orderevent.orderevent_number
+                    for seat_name, seat_data in hall_status.items():
+                        if seat_data.get('order') == orderevent_number:
+                            total_count += 1
+                            # Status 5 = sold (payed)
+                            if seat_data['status'] == 5:
+                                sold_count += 1
+
+                    # Also add current seats still in booking to display
                     for seat_price in orderevent.seats_price.split(','):
-                        seat = f"{seat_price.split('$')[0]},"
+                        seat_name = seat_price.split('$')[0]
+                        seat = f"{seat_name},"
                         seats.append(seat)
-                    
+
                     del seat_price, seat
 
-                    orders[user_event.user.email]['orders'][orderevent.pk] = seats
+                    orders[user_event.user.email]['orders'][orderevent.pk] = {
+                        'seats': seats,
+                        'sold': sold_count,
+                        'total': total_count
+                    }
             del order_event, seats
 
             # The user event remained empty since the ordeevents have been expired or removed
@@ -313,6 +332,37 @@ def event(request, event_id):
 
     boxofficebookingevent = BoxOfficeBookingEvent.objects.filter(event=current_event).filter(expired=False).order_by('customer__last_name')
 
+    # Add sold/total count for boxoffice bookings
+    boxoffice_bookings_with_count = []
+    for booking in boxofficebookingevent:
+        sold_count = 0
+        total_count = 0
+        seats_list = []
+
+        # Count all seats with this booking_number in hall_status
+        # This includes both booked (status=1) and sold (status=5) seats
+        booking_number = booking.booking_number
+        for seat_name, seat_data in hall_status.items():
+            if seat_data.get('order') == booking_number:
+                total_count += 1
+                # Status 5 = sold (payed)
+                if seat_data['status'] == 5:
+                    sold_count += 1
+
+        # Also collect current seats still in booking for display
+        if booking.seats_price:
+            for seat_price in booking.seats_price.split(','):
+                if seat_price.strip():
+                    seat_name = seat_price.split('$')[0]
+                    seats_list.append(seat_name)
+
+        boxoffice_bookings_with_count.append({
+            'booking': booking,
+            'sold': sold_count,
+            'total': total_count,
+            'seats': seats_list
+        })
+
     printer_status: bool = printer_ready()
 
     context = {
@@ -322,7 +372,7 @@ def event(request, event_id):
         'current_event' : current_event,
         'orders' : orders,
         'printer_ready': printer_status,
-        'boxofficebookings': boxofficebookingevent,
+        'boxofficebookings': boxoffice_bookings_with_count,
     }
 
     # return HttpResponse(f"Apriamo allegramente la pagina di gestione della cassa per evento numero {event_id}.")
