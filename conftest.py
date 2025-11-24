@@ -413,8 +413,16 @@ def client_with_user(client, test_user, test_password):
 @pytest.fixture
 def multiple_shows(db, section, siae_type, venue):
     """Create multiple shows with events for testing pagination and filtering."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
     shows = []
+    # Create minimal GIF for image fields
+    image_content = (b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
+                    b'\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
+                    b'\x00\x3b')
+
     for i in range(6):
+        test_image = SimpleUploadedFile(f"show{i+1}.gif", image_content, content_type="image/gif")
         show = Show.objects.create(
             shw_title=f'Show {i+1}',
             shw_author=f'Author {i+1}',
@@ -424,6 +432,7 @@ def multiple_shows(db, section, siae_type, venue):
             section=section,
             description=f'Description for show {i+1}',
             siaetype=siae_type,
+            shw_image=test_image,
             is_in_billboard=True,
             is_active=True
         )
