@@ -13,10 +13,10 @@
                 <table class="table table-sm">
                     <tbody>
                         <tr>
-                            <th scope="row"><small>Titolo: {{current_event.show.shw_title}}</small></th>
-                            <td><small> del {{current_event.date_time|date:"D d m Y"}}</small></td>
-                            <td><small>alle  {{current_event.date_time|date:"H : i"}}</small></td>
-                            <td><small>Intero: {{current_event.price_full|stringformat:".2f"}} - Ridotto: {{current_event.price_reduced|stringformat:".2f"}}</small></td>
+                            <th scope="row"><strong style="font-size: 1.2rem;">Titolo: {{current_event.show.shw_title}}</strong></th>
+                            <td><strong style="font-size: 1.2rem;">del {{current_event.date_time|date:"D d m Y"}}</strong></td>
+                            <td><strong style="font-size: 1.2rem;">alle {{current_event.date_time|date:"H : i"}}</strong></td>
+                            <td><strong style="font-size: 1.2rem;">Intero: {{current_event.price_full|stringformat:".2f"}} - Ridotto: {{current_event.price_reduced|stringformat:".2f"}}</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -59,9 +59,9 @@
         <div class="col-md-6">  <!-- col for table -->
             <table class="table table-hover table-sm">
             <tr>
-                <td class="table-primary" colspan = "9"> </td>
+                <td class="table-primary" colspan = "6"><p><strong style="font-size: 1.3rem; color: #FFD700;">{{current_event.venue.name}}</strong></p> </td>
             <td class="table-primary" colspan = "3"><p>LATO PALCO</p> </td>
-            <td class="table-primary" colspan = "9"> </td>
+            <td class="table-primary" colspan = "12"> </td>
         </tr>
         
         {%for k, row in rows.items %}

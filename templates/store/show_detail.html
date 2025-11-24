@@ -50,6 +50,8 @@
 							{{event.date_time|date:"D d m Y"}}
 							<br>
 							{{event.date_time|date:"H : i"}}
+							<br>
+							<small>{{event.venue.name}}</small>
 						</span> <i class="fas fa-ban"> SOLD OUT</i>
 					</a>
 				</td>
@@ -59,8 +61,10 @@
 						<span class="text-center">
 							{{event.date_time|date:"D d m Y"}}
 							<br>
-							{{event.date_time|date:"H : i"}}
-						</span> <i class="fas fa-shopping-cart"></i>
+							{{event.date_time|date:"H : i"}} <i class="fas fa-shopping-cart"></i>
+							<br>
+							<small>{{event.venue.name}}</small>
+						</span>
 					</a>
 				</td>
 				{%endif%}
