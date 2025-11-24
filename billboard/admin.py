@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.html import format_html
 from .models import Show, Section, SiaeType, Venue
 
 class ShowAdmin(admin.ModelAdmin):
@@ -14,11 +16,11 @@ class SiaeTypeAdmin(admin.ModelAdmin):
 
 class VenueAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
-    list_display = ('name', 'slug', 'capacity', 'address', 'has_config_file')
+    list_display = ('name', 'slug', 'capacity', 'address', 'has_config_file', 'generator_link')
     list_filter = ('capacity',)
     search_fields = ('name', 'slug', 'address')
-    readonly_fields = ('config_file_format',)
-    
+    readonly_fields = ('config_file_format', 'config_generator_link')
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'slug', 'address', 'capacity')
@@ -28,9 +30,10 @@ class VenueAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Seating Configuration', {
-            'fields': ('configuration_file', 'config_file_format'),
+            'fields': ('configuration_file', 'config_file_format', 'config_generator_link'),
             'description': 'Upload a JSON or XML file to define the seating layout. '
-                          'File will be saved for future use with venue management commands.'
+                          'File will be saved for future use with venue management commands. '
+                          'Use the Configuration Generator tool to create configuration files visually.'
         }),
     )
     
@@ -44,11 +47,32 @@ class VenueAdmin(admin.ModelAdmin):
         """Display configuration file format"""
         return obj.get_config_file_format() or '-'
     config_file_format.short_description = 'Format'
-    
+
+    def config_generator_link(self, obj):
+        """Display link to configuration generator tool"""
+        url = reverse('billboard:venue_config_generator')
+        return format_html(
+            '<a href="{}" target="_blank" style="display: inline-block; padding: 8px 16px; '
+            'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; '
+            'text-decoration: none; border-radius: 5px; font-weight: 600;">'
+            'Open Configuration Generator Tool</a>',
+            url
+        )
+    config_generator_link.short_description = 'Configuration Tool'
+
+    def generator_link(self, obj):
+        """Display link in list view"""
+        url = reverse('billboard:venue_config_generator')
+        return format_html(
+            '<a href="{}" target="_blank">Generator</a>',
+            url
+        )
+    generator_link.short_description = 'Generator'
+
     def save_model(self, request, obj, form, change):
         """Custom save to handle configuration file upload"""
         super().save_model(request, obj, form, change)
-        
+
         # Show message about uploaded configuration file
         if obj.configuration_file:
             from django.contrib import messages

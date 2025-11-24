@@ -1,0 +1,1099 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - LTC Box Office</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 0;
+            min-height: 80vh;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        .editor-area {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .rows-container {
+            margin-top: 20px;
+        }
+
+        .row-item {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .row-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .row-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .row-name {
+            font-weight: 700;
+            font-size: 1.2em;
+            color: #495057;
+        }
+
+        .row-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .row-controls button {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
+        .row-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .visual-hall {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .visual-hall h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #495057;
+        }
+
+        .stage {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .visual-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .visual-row-label {
+            width: 30px;
+            font-weight: 700;
+            text-align: center;
+            color: #495057;
+        }
+
+        .visual-seats {
+            display: flex;
+            gap: 5px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .visual-seat {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #495057;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .visual-seat.active {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .visual-seat.inactive {
+            background: #6c757d;
+            color: white;
+            border-color: #6c757d;
+            opacity: 0.5;
+        }
+
+        .visual-seat:hover {
+            transform: scale(1.1);
+        }
+
+        .stats-panel {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #495057;
+        }
+
+        .quick-fill {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .help-section {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .help-section h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .help-section ul {
+            margin-left: 20px;
+            color: #333;
+        }
+
+        .help-section li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Venue Configuration Generator</h1>
+            <p>Create and manage hall seating layouts with ease</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Sidebar with Configuration Form -->
+            <div class="sidebar">
+                <div class="section">
+                    <h2>Venue Information</h2>
+                    <div class="form-group">
+                        <label for="venue-name">Venue Name *</label>
+                        <input type="text" id="venue-name" placeholder="Teatro Comunale">
+                        <small>Official name of the venue</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="venue-slug">Venue Slug *</label>
+                        <input type="text" id="venue-slug" placeholder="teatro-comunale">
+                        <small>URL-friendly identifier (lowercase, hyphens)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capacity">Total Capacity *</label>
+                        <input type="number" id="capacity" min="1" value="0">
+                        <small>Total number of active seats</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ba-code">BA Code SIAE</label>
+                        <input type="text" id="ba-code" placeholder="0050450366484" maxlength="13">
+                        <small>13-digit SIAE code</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="local-code">Local Code SIAE</label>
+                        <input type="text" id="local-code" placeholder="  045" maxlength="5">
+                        <small>5-character local code</small>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Load Existing Config</h2>
+                    <div class="form-group">
+                        <label for="load-venue">Select Venue</label>
+                        <select id="load-venue">
+                            <option value="">-- Load from existing venue --</option>
+                            {% for venue in venues %}
+                            <option value="{{ venue.id }}">
+                                {{ venue.name }}{% if venue.configuration_file %} ✓{% else %} (no config){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary btn-block" onclick="loadExistingConfig()">Load Configuration</button>
+                    <small style="color: #6c757d; margin-top: 10px; display: block;">
+                        ✓ = Has configuration file<br>
+                        (no config) = No file uploaded yet
+                    </small>
+                </div>
+
+                <div class="section">
+                    <h2>Row Management</h2>
+                    <div class="form-group">
+                        <label for="row-name">Row Letter</label>
+                        <input type="text" id="row-name" placeholder="A" maxlength="1" style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seat-start">First Seat Number</label>
+                        <input type="number" id="seat-start" min="1" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seat-count">Number of Seats</label>
+                        <input type="number" id="seat-count" min="1" value="20">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="offset-start">Offset Start (visual)</label>
+                        <input type="number" id="offset-start" min="0" value="0">
+                        <small>Empty seats from left</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="offset-end">Offset End (visual)</label>
+                        <input type="number" id="offset-end" min="0" value="0">
+                        <small>Empty seats from right</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="row-active" checked>
+                            Row is Active
+                        </label>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="addRow()">Add Row</button>
+                    <button class="btn btn-secondary btn-block" onclick="addMultipleRows()">Add Multiple Rows</button>
+                </div>
+
+                <div class="section">
+                    <h2>Actions</h2>
+                    <button class="btn btn-success btn-block" onclick="validateAndDownload()">Validate & Download JSON</button>
+                    <button class="btn btn-secondary btn-block" onclick="validateConfig()">Validate Only</button>
+                    <button class="btn btn-danger btn-block" onclick="clearAll()">Clear All</button>
+                </div>
+            </div>
+
+            <!-- Editor Area with Visual Preview -->
+            <div class="editor-area">
+                <div class="help-section">
+                    <h4>Quick Guide</h4>
+                    <ul>
+                        <li>Fill venue information on the left</li>
+                        <li>Add rows one by one or in bulk</li>
+                        <li>Click seats in the preview to toggle active/inactive</li>
+                        <li>Click row names to edit row properties</li>
+                        <li>Validate to check for errors before downloading</li>
+                    </ul>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <div class="stats-panel">
+                    <h3>Configuration Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-rows">0</div>
+                            <div class="stat-label">Total Rows</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-active-seats">0</div>
+                            <div class="stat-label">Active Seats</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-total-seats">0</div>
+                            <div class="stat-label">Total Seats</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-capacity-match">-</div>
+                            <div class="stat-label">Capacity Match</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-hall">
+                    <h3>Visual Hall Layout</h3>
+                    <div class="stage">STAGE / PALCO</div>
+                    <div id="visual-preview">
+                        <p style="text-align: center; color: #6c757d;">Add rows to see the layout</p>
+                    </div>
+                </div>
+
+                <div class="rows-container">
+                    <h3>Configured Rows</h3>
+                    <div id="rows-list">
+                        <p style="text-align: center; color: #6c757d; padding: 20px;">No rows configured yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Row Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Row <span id="edit-row-name"></span></h3>
+            <div class="form-group">
+                <label for="edit-offset-start">Offset Start</label>
+                <input type="number" id="edit-offset-start" min="0">
+            </div>
+            <div class="form-group">
+                <label for="edit-offset-end">Offset End</label>
+                <input type="number" id="edit-offset-end" min="0">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="edit-row-active">
+                    Row is Active
+                </label>
+            </div>
+            <button class="btn btn-primary" onclick="saveRowEdit()">Save Changes</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <script>
+        // Global state
+        let configData = {
+            rows: []
+        };
+        let editingRowIndex = null;
+
+        // Auto-generate slug from name
+        document.getElementById('venue-name').addEventListener('input', function() {
+            const name = this.value;
+            const slug = name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+            document.getElementById('venue-slug').value = slug;
+        });
+
+        // Auto-calculate capacity
+        function updateCapacity() {
+            let totalActive = 0;
+            configData.rows.forEach(row => {
+                if (row.is_active) {
+                    row.seats.forEach(seat => {
+                        if (seat.active) totalActive++;
+                    });
+                }
+            });
+            document.getElementById('capacity').value = totalActive;
+            updateStats();
+        }
+
+        // Add a single row
+        function addRow() {
+            const rowName = document.getElementById('row-name').value.trim().toUpperCase();
+            const seatStart = parseInt(document.getElementById('seat-start').value);
+            const seatCount = parseInt(document.getElementById('seat-count').value);
+            const offsetStart = parseInt(document.getElementById('offset-start').value);
+            const offsetEnd = parseInt(document.getElementById('offset-end').value);
+            const rowActive = document.getElementById('row-active').checked;
+
+            if (!rowName) {
+                showAlert('danger', 'Please enter a row letter');
+                return;
+            }
+
+            // Check for duplicate
+            if (configData.rows.find(r => r.name === rowName)) {
+                showAlert('danger', `Row ${rowName} already exists`);
+                return;
+            }
+
+            // Create seats array
+            const seats = [];
+            for (let i = 0; i < seatCount; i++) {
+                seats.push({
+                    num: seatStart + i,
+                    active: true
+                });
+            }
+
+            // Add row
+            configData.rows.push({
+                name: rowName,
+                offset_start: offsetStart,
+                offset_end: offsetEnd,
+                is_active: rowActive,
+                seats: seats
+            });
+
+            updateCapacity();
+            renderRows();
+            renderVisualPreview();
+
+            // Clear form
+            document.getElementById('row-name').value = '';
+            showAlert('success', `Row ${rowName} added successfully`);
+        }
+
+        // Add multiple rows at once
+        function addMultipleRows() {
+            const startLetter = prompt('Enter starting row letter (e.g., A):');
+            if (!startLetter) return;
+
+            const count = parseInt(prompt('How many rows to add?', '5'));
+            if (!count || count < 1) return;
+
+            const seatStart = parseInt(document.getElementById('seat-start').value);
+            const seatCount = parseInt(document.getElementById('seat-count').value);
+            const offsetStart = parseInt(document.getElementById('offset-start').value);
+            const offsetEnd = parseInt(document.getElementById('offset-end').value);
+            const rowActive = document.getElementById('row-active').checked;
+
+            let currentLetter = startLetter.toUpperCase().charCodeAt(0);
+
+            for (let i = 0; i < count; i++) {
+                const rowName = String.fromCharCode(currentLetter + i);
+
+                // Skip if exists
+                if (configData.rows.find(r => r.name === rowName)) {
+                    continue;
+                }
+
+                const seats = [];
+                for (let j = 0; j < seatCount; j++) {
+                    seats.push({
+                        num: seatStart + j,
+                        active: true
+                    });
+                }
+
+                configData.rows.push({
+                    name: rowName,
+                    offset_start: offsetStart,
+                    offset_end: offsetEnd,
+                    is_active: rowActive,
+                    seats: seats
+                });
+            }
+
+            updateCapacity();
+            renderRows();
+            renderVisualPreview();
+            showAlert('success', `Added ${count} rows successfully`);
+        }
+
+        // Render rows list
+        function renderRows() {
+            const container = document.getElementById('rows-list');
+
+            if (configData.rows.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">No rows configured yet</p>';
+                return;
+            }
+
+            let html = '';
+            configData.rows.forEach((row, index) => {
+                const activeSeats = row.seats.filter(s => s.active).length;
+                html += `
+                    <div class="row-item" onclick="selectRow(${index})">
+                        <div class="row-header">
+                            <span class="row-name">Row ${row.name}</span>
+                            <div class="row-controls">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); editRow(${index})">Edit</button>
+                                <button class="btn btn-danger" onclick="event.stopPropagation(); deleteRow(${index})">Delete</button>
+                            </div>
+                        </div>
+                        <div class="row-info">
+                            <div>Seats: ${row.seats.length}</div>
+                            <div>Active: ${activeSeats}</div>
+                            <div>Start Offset: ${row.offset_start}</div>
+                            <div>End Offset: ${row.offset_end}</div>
+                            <div colspan="2">Status: ${row.is_active ? '✓ Active' : '✗ Inactive'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Render visual preview
+        function renderVisualPreview() {
+            const container = document.getElementById('visual-preview');
+
+            if (configData.rows.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d;">Add rows to see the layout</p>';
+                return;
+            }
+
+            let html = '';
+            configData.rows.forEach((row, rowIndex) => {
+                html += '<div class="visual-row">';
+                html += `<div class="visual-row-label">${row.name}</div>`;
+                html += '<div class="visual-seats">';
+
+                // Add offset start
+                for (let i = 0; i < row.offset_start; i++) {
+                    html += '<div class="visual-seat" style="opacity: 0;"></div>';
+                }
+
+                // Add seats
+                row.seats.forEach((seat, seatIndex) => {
+                    const seatClass = (row.is_active && seat.active) ? 'active' : 'inactive';
+                    html += `<div class="visual-seat ${seatClass}" onclick="toggleSeat(${rowIndex}, ${seatIndex})">${seat.num}</div>`;
+                });
+
+                // Add offset end
+                for (let i = 0; i < row.offset_end; i++) {
+                    html += '<div class="visual-seat" style="opacity: 0;"></div>';
+                }
+
+                html += '</div>';
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Toggle seat active/inactive
+        function toggleSeat(rowIndex, seatIndex) {
+            configData.rows[rowIndex].seats[seatIndex].active = !configData.rows[rowIndex].seats[seatIndex].active;
+            updateCapacity();
+            renderVisualPreview();
+        }
+
+        // Select row
+        function selectRow(index) {
+            editingRowIndex = index;
+        }
+
+        // Edit row
+        function editRow(index) {
+            editingRowIndex = index;
+            const row = configData.rows[index];
+
+            document.getElementById('edit-row-name').textContent = row.name;
+            document.getElementById('edit-offset-start').value = row.offset_start;
+            document.getElementById('edit-offset-end').value = row.offset_end;
+            document.getElementById('edit-row-active').checked = row.is_active;
+
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        // Save row edit
+        function saveRowEdit() {
+            if (editingRowIndex === null) return;
+
+            const row = configData.rows[editingRowIndex];
+            row.offset_start = parseInt(document.getElementById('edit-offset-start').value);
+            row.offset_end = parseInt(document.getElementById('edit-offset-end').value);
+            row.is_active = document.getElementById('edit-row-active').checked;
+
+            updateCapacity();
+            renderRows();
+            renderVisualPreview();
+            closeModal();
+            showAlert('success', `Row ${row.name} updated`);
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+            editingRowIndex = null;
+        }
+
+        // Delete row
+        function deleteRow(index) {
+            if (!confirm(`Delete row ${configData.rows[index].name}?`)) return;
+
+            const rowName = configData.rows[index].name;
+            configData.rows.splice(index, 1);
+
+            updateCapacity();
+            renderRows();
+            renderVisualPreview();
+            showAlert('warning', `Row ${rowName} deleted`);
+        }
+
+        // Clear all
+        function clearAll() {
+            if (!confirm('Clear all configuration? This cannot be undone.')) return;
+
+            configData.rows = [];
+            document.getElementById('venue-name').value = '';
+            document.getElementById('venue-slug').value = '';
+            document.getElementById('capacity').value = '0';
+            document.getElementById('ba-code').value = '';
+            document.getElementById('local-code').value = '';
+
+            renderRows();
+            renderVisualPreview();
+            updateStats();
+            showAlert('warning', 'Configuration cleared');
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalRows = configData.rows.length;
+            let totalSeats = 0;
+            let activeSeats = 0;
+
+            configData.rows.forEach(row => {
+                row.seats.forEach(seat => {
+                    totalSeats++;
+                    if (row.is_active && seat.active) {
+                        activeSeats++;
+                    }
+                });
+            });
+
+            const declaredCapacity = parseInt(document.getElementById('capacity').value) || 0;
+            const match = declaredCapacity === activeSeats;
+
+            document.getElementById('stat-rows').textContent = totalRows;
+            document.getElementById('stat-total-seats').textContent = totalSeats;
+            document.getElementById('stat-active-seats').textContent = activeSeats;
+            document.getElementById('stat-capacity-match').textContent = match ? '✓' : '✗';
+            document.getElementById('stat-capacity-match').style.color = match ? '#28a745' : '#dc3545';
+        }
+
+        // Show alert
+        function showAlert(type, message) {
+            const container = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            container.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Validate configuration
+        async function validateConfig() {
+            const data = collectFormData();
+
+            try {
+                const response = await fetch('{% url "billboard:validate_venue_config" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.valid) {
+                    showAlert('success', result.message);
+                } else {
+                    let errorMsg = 'Validation errors:\n';
+                    if (result.errors) {
+                        errorMsg += result.errors.join('\n');
+                    }
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                showAlert('danger', 'Validation failed: ' + error.message);
+            }
+        }
+
+        // Validate and download
+        async function validateAndDownload() {
+            const data = collectFormData();
+
+            try {
+                const response = await fetch('{% url "billboard:generate_venue_config" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    // Download file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = data.venue_slug + '.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+
+                    showAlert('success', 'Configuration downloaded successfully!');
+                } else {
+                    const result = await response.json();
+                    let errorMsg = 'Validation errors:\n';
+                    if (result.errors) {
+                        errorMsg += result.errors.join('\n');
+                    }
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                showAlert('danger', 'Download failed: ' + error.message);
+            }
+        }
+
+        // Load existing configuration
+        async function loadExistingConfig() {
+            const venueId = document.getElementById('load-venue').value;
+
+            if (!venueId) {
+                showAlert('warning', 'Please select a venue to load');
+                return;
+            }
+
+            try {
+                // Use the full path with namespace
+                const url = `/billboard/api/load-config/${venueId}/`;
+                console.log('Loading config from:', url);
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const config = result.config;
+
+                    // Load venue info
+                    document.getElementById('venue-name').value = config.venue.name;
+                    document.getElementById('venue-slug').value = config.venue.slug;
+                    document.getElementById('capacity').value = config.venue.capacity;
+                    document.getElementById('ba-code').value = config.venue.ba_code_siae || '';
+                    document.getElementById('local-code').value = config.venue.local_code_siae || '';
+
+                    // Load rows
+                    configData.rows = config.rows;
+
+                    renderRows();
+                    renderVisualPreview();
+                    updateStats();
+
+                    showAlert('success', 'Configuration loaded successfully!');
+                } else {
+                    // Show more helpful error message
+                    let errorMsg = result.error || 'Unknown error';
+                    if (errorMsg.includes('No configuration file')) {
+                        errorMsg = 'This venue does not have a configuration file uploaded yet. Please create a new configuration or select a venue marked with ✓.';
+                    }
+                    showAlert('danger', errorMsg);
+                }
+            } catch (error) {
+                let errorMsg = error.message;
+                if (errorMsg.includes('404')) {
+                    errorMsg = 'Configuration not found. This venue may not have a configuration file uploaded yet. Please select a venue marked with ✓ or create a new configuration.';
+                }
+                showAlert('danger', 'Failed to load configuration: ' + errorMsg);
+            }
+        }
+
+        // Collect form data
+        function collectFormData() {
+            return {
+                venue_name: document.getElementById('venue-name').value.trim(),
+                venue_slug: document.getElementById('venue-slug').value.trim(),
+                capacity: parseInt(document.getElementById('capacity').value) || 0,
+                ba_code_siae: document.getElementById('ba-code').value.trim(),
+                local_code_siae: document.getElementById('local-code').value.trim(),
+                rows: configData.rows
+            };
+        }
+
+        // Initialize
+        updateStats();
+    </script>
+</body>
+</html>

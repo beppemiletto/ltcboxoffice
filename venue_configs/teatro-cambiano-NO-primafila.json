@@ -1,0 +1,1202 @@
+{
+  "venue": {
+    "name": "Teatro Comunale di Cambiano",
+    "slug": "teatro-cambiano",
+    "capacity": 218,
+    "ba_code_siae": "0050450366484",
+    "local_code_siae": "045",
+    "aisles": {
+      "horizontal": [
+        {
+          "position": "after_seat",
+          "seat_number": 10,
+          "width": 1,
+          "applies_to_rows": "*",
+          "description": "Corridoio centrale longitudinale - divide la sala in due sezioni"
+        }
+      ],
+      "vertical": [
+        {
+          "position": "after_row",
+          "row_name": "H",
+          "height": 1,
+          "description": "Corridoio trasversale per uscita di sicurezza"
+        }
+      ]
+    }
+  },
+  "rows": [
+    {
+      "name": "A",
+      "offset_start": 4,
+      "offset_end": 2,
+      "is_active": false,
+      "seats": [
+        {
+          "num": 5,
+          "active": false
+        },
+        {
+          "num": 6,
+          "active": false
+        },
+        {
+          "num": 7,
+          "active": false
+        },
+        {
+          "num": 8,
+          "active": false
+        },
+        {
+          "num": 9,
+          "active": false
+        },
+        {
+          "num": 10,
+          "active": false
+        },
+        {
+          "num": 11,
+          "active": false
+        },
+        {
+          "num": 12,
+          "active": false
+        },
+        {
+          "num": 13,
+          "active": false
+        },
+        {
+          "num": 14,
+          "active": false
+        },
+        {
+          "num": 15,
+          "active": false
+        },
+        {
+          "num": 16,
+          "active": false
+        },
+        {
+          "num": 17,
+          "active": false
+        },
+        {
+          "num": 18,
+          "active": false
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "offset_start": 3,
+      "offset_end": 2,
+      "is_active": false,
+      "seats": [
+        {
+          "num": 4,
+          "active": false
+        },
+        {
+          "num": 5,
+          "active": false
+        },
+        {
+          "num": 6,
+          "active": false
+        },
+        {
+          "num": 7,
+          "active": false
+        },
+        {
+          "num": 8,
+          "active": false
+        },
+        {
+          "num": 9,
+          "active": false
+        },
+        {
+          "num": 10,
+          "active": false
+        },
+        {
+          "num": 11,
+          "active": false
+        },
+        {
+          "num": 12,
+          "active": false
+        },
+        {
+          "num": 13,
+          "active": false
+        },
+        {
+          "num": 14,
+          "active": false
+        },
+        {
+          "num": 15,
+          "active": false
+        },
+        {
+          "num": 16,
+          "active": false
+        },
+        {
+          "num": 17,
+          "active": false
+        },
+        {
+          "num": 18,
+          "active": false
+        }
+      ]
+    },
+    {
+      "name": "C",
+      "offset_start": 2,
+      "offset_end": 2,
+      "is_active": false,
+      "seats": [
+        {
+          "num": 3,
+          "active": false
+        },
+        {
+          "num": 4,
+          "active": false
+        },
+        {
+          "num": 5,
+          "active": false
+        },
+        {
+          "num": 6,
+          "active": false
+        },
+        {
+          "num": 7,
+          "active": false
+        },
+        {
+          "num": 8,
+          "active": false
+        },
+        {
+          "num": 9,
+          "active": false
+        },
+        {
+          "num": 10,
+          "active": false
+        },
+        {
+          "num": 11,
+          "active": false
+        },
+        {
+          "num": 12,
+          "active": false
+        },
+        {
+          "num": 13,
+          "active": false
+        },
+        {
+          "num": 14,
+          "active": false
+        },
+        {
+          "num": 15,
+          "active": false
+        },
+        {
+          "num": 16,
+          "active": false
+        },
+        {
+          "num": 17,
+          "active": false
+        },
+        {
+          "num": 18,
+          "active": false
+        }
+      ]
+    },
+    {
+      "name": "D",
+      "offset_start": 2,
+      "offset_end": 2,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "E",
+      "offset_start": 2,
+      "offset_end": 2,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "F",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "G",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "H",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "I",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "L",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "M",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "N",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "O",
+      "offset_start": 0,
+      "offset_end": 0,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        },
+        {
+          "num": 20,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "P",
+      "offset_start": 0,
+      "offset_end": 0,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        },
+        {
+          "num": 20,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "Q",
+      "offset_start": 0,
+      "offset_end": 0,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        },
+        {
+          "num": 11,
+          "active": true
+        },
+        {
+          "num": 12,
+          "active": true
+        },
+        {
+          "num": 13,
+          "active": true
+        },
+        {
+          "num": 14,
+          "active": true
+        },
+        {
+          "num": 15,
+          "active": true
+        },
+        {
+          "num": 16,
+          "active": true
+        },
+        {
+          "num": 17,
+          "active": true
+        },
+        {
+          "num": 18,
+          "active": true
+        },
+        {
+          "num": 19,
+          "active": true
+        },
+        {
+          "num": 20,
+          "active": true
+        }
+      ]
+    }
+  ]
+}
