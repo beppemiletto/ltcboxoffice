@@ -218,15 +218,15 @@ class TestShowDetail:
         assert str(int(future_event.price_full)) in content or str(int(future_event.price_reduced)) in content
 
     def test_show_detail_nonexistent_show_404(self, client, section):
-        """Test that non-existent show returns 404 or redirects."""
+        """Test that non-existent show returns 404."""
         response = client.get(
             reverse('show_detail', kwargs={
                 'section_slug': section.slug,
                 'show_slug': 'nonexistent-show'
             })
         )
-        # View might return 404 or redirect (302) depending on implementation
-        assert response.status_code in [302, 404]
+        # View now uses get_object_or_404 to properly return 404
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db
@@ -302,6 +302,7 @@ class TestSeatSelection:
 
     def test_authenticated_user_can_access_seat_selection(self, client_with_user, section, show, future_event):
         """Test that logged-in users can access seat selection."""
+        # NOTE: select_seats view redirects to /hall/{event_slug}/ (see store/views.py:97)
         response = client_with_user.get(
             reverse('select_seats', kwargs={
                 'section_slug': section.slug,
@@ -310,10 +311,12 @@ class TestSeatSelection:
             })
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 302  # Redirects to hall_detail
+        assert f'/hall/{future_event.event_slug}/' in response.url
 
     def test_seat_selection_displays_venue_map(self, client_with_user, section, show, future_event):
         """Test that seat selection shows the venue seating map."""
+        # NOTE: select_seats view redirects to /hall/{event_slug}/ (see store/views.py:97)
         response = client_with_user.get(
             reverse('select_seats', kwargs={
                 'section_slug': section.slug,
@@ -322,13 +325,17 @@ class TestSeatSelection:
             })
         )
 
+        assert response.status_code == 302  # Redirects to hall_detail
+        # Follow the redirect to test the actual hall_detail page
+        response = client_with_user.get(response.url)
         assert response.status_code == 200
         content = response.content.decode()
         # Should have seat selection interface
-        assert 'seat' in content.lower() or future_event.venue.name in content
+        assert 'seat' in content.lower() or 'posto' in content.lower()
 
     def test_seat_selection_loads_json_seat_status(self, client_with_user, section, show, future_event):
         """Test that seat status JSON is loaded correctly."""
+        # NOTE: select_seats view redirects to /hall/{event_slug}/ (see store/views.py:97)
         response = client_with_user.get(
             reverse('select_seats', kwargs={
                 'section_slug': section.slug,
@@ -337,7 +344,7 @@ class TestSeatSelection:
             })
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 302  # Redirects to hall_detail
 
         # Verify JSON file exists
         json_path = future_event.get_json_path()

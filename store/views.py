@@ -63,14 +63,8 @@ def store(request, section_slug=None):
     return render(request, 'store/store.html', context)
 
 def show_detail(request, section_slug, show_slug):
-    try:
-        show = Show.objects.get(section__slug=section_slug, slug=show_slug)
-    except Exception as e:
-        raise e
-
-
-    # section = get_object_or_404(Section, slug=section_slug)
-    # show = get_object_or_404(Show, slug=show_slug)
+    # Use get_object_or_404 to return 404 when show doesn't exist
+    show = get_object_or_404(Show, section__slug=section_slug, slug=show_slug)
     all_events = Event.objects.filter(show=show)
     events = [event for event in all_events if event.is_bookable()]
     events_number = len(events)
