@@ -17,6 +17,57 @@ import os, json
 import datetime
 from .barcode_printer import OrderBarCodePrinter
 
+# Helper functions for JSON format compatibility
+def load_event_json_data(json_file_path):
+    """Load event JSON data with backward compatibility.
+
+    Returns:
+        tuple: (hall_status dict, aisles dict, rows_metadata dict)
+
+    Supports all formats:
+    - v1.0: {"A01": {"status": 0, ...}, ...}
+    - v2.0: {"seats": {"A01": {...}}, "aisles": {...}}
+    - v2.1: {"seats": {...}, "aisles": {...}, "rows_metadata": {...}}
+    """
+    with open(json_file_path, 'r') as jfp:
+        event_data = json.load(jfp)
+
+    if 'seats' in event_data:
+        # v2.0+ format
+        hall_status = event_data['seats']
+        aisles = event_data.get('aisles', {'horizontal': [], 'vertical': []})
+        rows_metadata = event_data.get('rows_metadata', {})
+    else:
+        # v1.0 format (legacy)
+        hall_status = event_data
+        aisles = {'horizontal': [], 'vertical': []}
+        rows_metadata = {}
+
+    return hall_status, aisles, rows_metadata
+
+def save_event_json_data(json_file_path, hall_status, aisles=None, rows_metadata=None):
+    """Save event JSON data preserving format version.
+
+    Args:
+        json_file_path: Path to JSON file
+        hall_status: Dict of seat data
+        aisles: Optional aisles configuration
+        rows_metadata: Optional rows metadata
+    """
+    if aisles is not None or rows_metadata:
+        # v2.0+ format
+        event_data = {
+            'seats': hall_status,
+            'aisles': aisles if aisles else {'horizontal': [], 'vertical': []},
+            'rows_metadata': rows_metadata if rows_metadata else {}
+        }
+    else:
+        # v1.0 format
+        event_data = hall_status
+
+    with open(json_file_path, 'w') as jfp:
+        json.dump(event_data, jfp, indent=2)
+
 # Create your views here.
 def _cart_id(request):
     cart = request.session.session_key
@@ -32,18 +83,16 @@ def add_booking(request, event_id):
         selected_seats_str = request.POST['selected_seats']
         if len(selected_seats_str):
             selected_seats = selected_seats_str.strip().split(',')
-            # update json file 
+            # update json file
             json_file_path= os.path.abspath(event.get_json_path())
-            with open(json_file_path,'r') as jfp:
-                hall_status = json.load(jfp)
+            hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
             try:
                 for k, seat in hall_status.items():
                     if seat['status']== 3:
                         seat['status'] = 0
                 for seat in selected_seats:
-                    hall_status[seat]['status'] = 4 
-                with open(json_file_path,'w') as jfp:
-                    json.dump(hall_status,jfp, indent=2)
+                    hall_status[seat]['status'] = 4
+                save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
             except:
                 print('Something wrong!')
         # return HttpResponse("The method is POST and we got {} as selected seats".format(all_data))
@@ -86,13 +135,11 @@ def remove_booking(request, item_id):
     event = item.event
     item.delete()
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     try:
         if hall_status[seat]['status'] == 3 or hall_status[seat]['status'] == 4:
-            hall_status[seat]['status'] = 0 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+            hall_status[seat]['status'] = 0
+            save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
     except:
         print('Something wrong!')
     return redirect('bookings')
@@ -651,15 +698,13 @@ def booking_payments(request, newContext={}):
             }
 
 
-        # Update the Json file of event 
+        # Update the Json file of event
         json_filename_fullpath = event.get_json_path()
         if os.path.exists(json_filename_fullpath):
-            with open(json_filename_fullpath,'r') as fp:
-                event_hall = json.load(fp)
-            event_hall[seat]['status'] = 1  # set status to BOOKED 
-            event_hall[seat]['order'] = orderevent.orderevent_number  # set order to orderevent_number 
-            with open(json_filename_fullpath,'w') as fp:
-                json.dump(event_hall,fp,indent=4, separators=(',', ': '))
+            hall_status, aisles, rows_metadata = load_event_json_data(json_filename_fullpath)
+            hall_status[seat]['status'] = 1  # set status to BOOKED
+            hall_status[seat]['order'] = orderevent.orderevent_number  # set order to orderevent_number
+            save_event_json_data(json_filename_fullpath, hall_status, aisles, rows_metadata)
         else:
             print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
 

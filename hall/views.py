@@ -17,21 +17,39 @@ def hall_detail(request, event_slug=None):
     event = get_object_or_404(Event, event_slug=event_slug)
     json_file_path= os.path.abspath(event.get_json_path())
     with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+        event_data = json.load(jfp)
+
+    # Handle both old format (dict of seats) and new format (dict with 'seats', 'aisles', 'rows_metadata')
+    if 'seats' in event_data:
+        # New format (v2.0+) with aisles and rows_metadata
+        hall_status = event_data['seats']
+        aisles = event_data.get('aisles', {'horizontal': [], 'vertical': []})
+        rows_metadata = event_data.get('rows_metadata', {})
+    else:
+        # Old format (v1.0) - backward compatibility
+        hall_status = event_data
+        aisles = {'horizontal': [], 'vertical': []}
+        rows_metadata = {}
+
     if request.method == 'POST':
         selected_seats = request.POST['selected_seats'].split(',')
         try:
             for seat in selected_seats:
-                hall_status[seat]['status'] = 3 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+                hall_status[seat]['status'] = 3
+            # Save back in the same format
+            if 'seats' in event_data:
+                event_data['seats'] = hall_status
+                with open(json_file_path,'w') as jfp:
+                    json.dump(event_data,jfp, indent=2)
+            else:
+                with open(json_file_path,'w') as jfp:
+                    json.dump(hall_status,jfp, indent=2)
         except:
             print('Something wrong!')
         return HttpResponse('Il metodo usato era POST e i posti selezionati sono {}'.format(request.POST['selected_seats']))
     else:
         print("Got the GET Method")
-        # preparing rows
-        row_hall = Row.objects.all()
+        # preparing rows (from JSON metadata instead of DB)
         rows={}
         row ={}
         row_label = ''
@@ -41,8 +59,25 @@ def hall_detail(request, event_slug=None):
                     rows[row_label]=row
                 row = {}
                 row_label = seat['row']
-                r_data = Row.objects.get(name = row_label)
-                row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+
+                # Get row metadata from JSON (or fallback to DB for old events)
+                if row_label in rows_metadata:
+                    r_data = rows_metadata[row_label]
+                    row['data']= {
+                        'name': r_data['name'],
+                        'off_start': r_data['offset_start'],
+                        'off_end': r_data['offset_end'],
+                        'is_act': r_data['is_active']
+                    }
+                else:
+                    # Fallback to DB for backward compatibility with old JSON files
+                    try:
+                        r_data = Row.objects.get(name = row_label)
+                        row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                    except Row.DoesNotExist:
+                        # If row doesn't exist in DB either, use defaults
+                        row['data']= {'name': row_label, 'off_start': 0, 'off_end': 0, 'is_act': True}
+
             row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
         rows[row_label]=row  # last row closure
 
@@ -54,6 +89,7 @@ def hall_detail(request, event_slug=None):
         context = {
             'hall_status': hall_status,
             'rows': rows,
+            'aisles': aisles,  # Pass aisles to template
             'json_file' : json_file_path,
             'event': event,
             'subscription_options': subscription_options,

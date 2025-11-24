@@ -30,12 +30,18 @@ DATABASES = {
 }
 
 # Email Configuration (Development)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_PORT = 2525
-EMAIL_HOST_USER = '460a4a880078c8'
-EMAIL_HOST_PASSWORD = '1d58de165e2dde'
-EMAIL_USE_TLS = True
+# Option 1: Console backend (prints emails to console)
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Option 2: SMTP with imitate.email using custom backend (bypasses SSL verification)
+EMAIL_BACKEND = 'ltcboxoffice.email_backend.UnverifiedSSLEmailBackend'
+EMAIL_HOST = 'smtp.imitate.email'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'W9z83PN9fEuMJQGatmkGjQ'
+EMAIL_HOST_PASSWORD = 'IXmTJGg7XBY0G3GFtkpA'
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True  # Custom backend will use unverified SSL context
+EMAIL_TIMEOUT = 10  # Timeout in seconds
 
 # Debug toolbar (optional - install django-debug-toolbar)
 # INSTALLED_APPS += ['debug_toolbar']

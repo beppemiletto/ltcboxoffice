@@ -25,7 +25,7 @@ from subscriptions.utils import is_subscription_price_code, get_subscription_by_
 from tickets.models import Ticket
 from fiscalmgm.models import Ingresso
 from tickets.reportlab_ticket_printer import TicketPrinter
-from hall.models import Row
+from hall.models import Row  # Only used as fallback for old events without rows_metadata
 from billboard.models import Show
 import time
 from datetime import datetime, timedelta
@@ -38,6 +38,62 @@ import re
 from ltcboxoffice.settings import MEDIA_ROOT
 from django.conf import settings
 from openpyxl import Workbook
+
+
+# ===========================================================================
+# Helper functions for loading event JSON (v1.0 and v2.0 compatibility)
+# ===========================================================================
+
+def load_event_json_data(json_file_path):
+    """
+    Load event JSON data with backward compatibility.
+
+    Returns:
+        tuple: (hall_status dict, aisles dict, rows_metadata dict)
+
+    Supports all formats:
+    - v1.0: {"A01": {"status": 0, ...}, ...}
+    - v2.0: {"seats": {"A01": {...}}, "aisles": {...}}
+    - v2.1: {"seats": {...}, "aisles": {...}, "rows_metadata": {...}}
+    """
+    with open(json_file_path, 'r') as jfp:
+        event_data = json.load(jfp)
+
+    # Check format version
+    if 'seats' in event_data:
+        # v2.0+ format
+        hall_status = event_data['seats']
+        aisles = event_data.get('aisles', {'horizontal': [], 'vertical': []})
+        rows_metadata = event_data.get('rows_metadata', {})
+    else:
+        # v1.0 format (backward compatibility)
+        hall_status = event_data
+        aisles = {'horizontal': [], 'vertical': []}
+        rows_metadata = {}
+
+    return hall_status, aisles, rows_metadata
+
+
+def save_event_json_data(json_file_path, hall_status, aisles=None, rows_metadata=None):
+    """
+    Save event JSON data preserving format version.
+
+    If aisles is provided, saves as v2.0+ format.
+    Otherwise, saves as v1.0 format for backward compatibility.
+    """
+    if aisles is not None or rows_metadata:
+        # v2.0+ format
+        event_data = {
+            'seats': hall_status,
+            'aisles': aisles if aisles else {'horizontal': [], 'vertical': []},
+            'rows_metadata': rows_metadata if rows_metadata else {}
+        }
+    else:
+        # v1.0 format (when reading old data without aisles/metadata)
+        event_data = hall_status
+
+    with open(json_file_path, 'w') as jfp:
+        json.dump(event_data, jfp, indent=2)
 
 
 def get_printer():
@@ -167,11 +223,10 @@ def event(request, event_id):
         boxoffice_orderevent.save()
 
     json_file_path= os.path.abspath(current_event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
-    
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
+
     session_id = get_or_create_session_id(request)
-    
+
     if request.method == 'POST':
         go = False
         selected_seats=[]
@@ -193,8 +248,7 @@ def event(request, event_id):
                 # Lock atomico per prevenire double-booking dello stesso posto da cassieri diversi
                 with transaction.atomic():
                     # Rileggi JSON dentro la transazione per avere stato aggiornato
-                    with open(json_file_path,'r') as jfp:
-                        hall_status = json.load(jfp)
+                    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
                     
                     for seat in selected_seats:
                         # Verifica che il posto sia ancora disponibile
@@ -219,8 +273,7 @@ def event(request, event_id):
                         go=True
 
                     # Scrivi JSON aggiornato dentro la transazione
-                    with open(json_file_path,'w') as jfp:
-                        json.dump(hall_status,jfp, indent=2)
+                    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
             except Exception as e:
                 print(f'Errore durante selezione posti in event(): {e}')
@@ -247,8 +300,17 @@ def event(request, event_id):
                 rows[row_label]=row
             row = {}
             row_label = seat['row']
-            r_data = Row.objects.get(name = row_label)
-            row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+            # Get row metadata from JSON (or fallback to DB for old events)
+            if row_label in rows_metadata:
+                r_data = rows_metadata[row_label]
+                row['data']= {'name': r_data['name'], 'off_start': r_data['offset_start'], 'off_end': r_data['offset_end'], 'is_act': r_data['is_active']}
+            else:
+                # Fallback to DB for backward compatibility
+                try:
+                    r_data = Row.objects.get(name = row_label)
+                    row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                except Row.DoesNotExist:
+                    row['data']= {'name': row_label, 'off_start': 0, 'off_end': 0, 'is_act': True}
         row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
     rows[row_label]=row  # last row closure
 
@@ -328,7 +390,7 @@ def event(request, event_id):
 
 
 
-        del user_event, event_orders, event_id, jfp, boxoffice_orderevent, r_data, k
+        del user_event, event_orders, event_id, boxoffice_orderevent, r_data, k
 
     boxofficebookingevent = BoxOfficeBookingEvent.objects.filter(event=current_event).filter(expired=False).order_by('customer__last_name')
 
@@ -414,8 +476,7 @@ def boxoffice_cart_cancel(request, event_id):
     session_id = get_or_create_session_id(request)
     sellingseats = SellingSeats.objects.filter(session_id=session_id, event=event)
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     for sellingseat in sellingseats:
         if sellingseat.orderevent is not None:
             try:
@@ -440,8 +501,7 @@ def boxoffice_cart_cancel(request, event_id):
         if hall_status[seat]['status'] in [3,4]:
             hall_status[seat]['status'] = 0 
         sellingseat.delete()
-    with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp, indent=2)
+    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
     del sellingseats
     return redirect(reverse('event', kwargs={"event_id": event.pk}))
@@ -475,8 +535,7 @@ def boxoffice_remove_cart(request, item_id):
     item.delete()
     # del item
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     try:
         # Verify if status is :
         #   1 - booked
@@ -485,8 +544,7 @@ def boxoffice_remove_cart(request, item_id):
         if hall_status[seat]['status'] in [1,3,4]:
 
             hall_status[seat]['status'] = 0 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+            save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
     except FileNotFoundError:
         print('Something wrong!')
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": event.pk}))
@@ -600,8 +658,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
 
 
     json_file_path= os.path.abspath(current_event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
 
     if orderevent_id is not None and mode_id=='1':
         payment = orderevent.order.payment
@@ -760,8 +817,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         request = auto_obliterate(request, tckt.number)
 
 
-    with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp, indent=2)
+    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
    
 
     response = close_transaction(request, context=context)
@@ -812,8 +868,7 @@ def close_transaction(request, event_id=None, context=None):
     session_id = get_or_create_session_id(request)
     sold_seats = SellingSeats.objects.filter(session_id=session_id, event=current_event)
     json_file_path= os.path.abspath(current_event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
 
     seats_list:list = []
     totale:float = 0
@@ -871,8 +926,7 @@ def change_bookings(request, event_id=None):
     except:
         boxoffice_orderevent = None
     json_file_path= os.path.abspath(current_event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
        
     if request.method == 'POST':
         go = False
@@ -896,8 +950,7 @@ def change_bookings(request, event_id=None):
                 # Lock atomico per prevenire double-booking dello stesso posto da cassieri diversi
                 with transaction.atomic():
                     # Rileggi JSON dentro la transazione per avere stato aggiornato
-                    with open(json_file_path,'r') as jfp:
-                        hall_status = json.load(jfp)
+                    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
                     
                     for seat in selected_seats:
                         # Verifica che il posto sia ancora disponibile
@@ -922,8 +975,7 @@ def change_bookings(request, event_id=None):
                         go=True
 
                     # Scrivi JSON aggiornato dentro la transazione
-                    with open(json_file_path,'w') as jfp:
-                        json.dump(hall_status,jfp, indent=2)
+                    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
             except Exception as e:
                 print(f'Errore durante selezione posti in change_bookings(): {e}')
@@ -1325,8 +1377,7 @@ def erase_order(request, userorder_id, order_id):
         orders_str = ''
         userevent.delete()
 
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
 
     for seat in seats_changed:
         key = seat.split('$')[0]
@@ -1354,8 +1405,7 @@ def erase_order(request, userorder_id, order_id):
             ticket.status = 'Cancelled'
             ticket.save()
 
-    with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp, indent=2)
+    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
     orderevent.delete()
 
@@ -1538,15 +1588,13 @@ def remove_seat(request, number = None, seat= None):
     # item.delete()
     # UPDATE the JSON Hall file status
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     try:
         if hall_status[removed_seat]['status'] == 1:
             hall_status[seat]['status'] = 0 
             # hall_status[seat]['status'] = 1 # for testing purposes 
             hall_status[seat]['order'] = '' 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+            save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
     except:
         print('Something wrong!')
     
@@ -1700,8 +1748,7 @@ def hall_detail(request, event_slug=None, number=None):
     userevent = UserEvent.objects.filter(event_id = event.pk).get(user_id=user.id)
     former_seats = orderevent.seats_list_name()
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     if request.method == 'POST':
         selected_seats = request.POST['selected_seats'].split(',')
         orderevent_seats_price = orderevent.seats_price
@@ -1713,8 +1760,7 @@ def hall_detail(request, event_slug=None, number=None):
                 hall_status[seat]['status'] = 1
                 hall_status[seat]['order'] = number
                 added_seats +=f',{seat}$2' 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+            save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
         except:
             print('Something wrong!')
 
@@ -1728,7 +1774,6 @@ def hall_detail(request, event_slug=None, number=None):
         return redirect(reverse('edit_order', kwargs={"orderevent_id": orderevent.pk}))
     else:
         # preparing rows
-        row_hall = Row.objects.all()
         rows={}
         row ={}
         row_label = ''
@@ -1738,8 +1783,17 @@ def hall_detail(request, event_slug=None, number=None):
                     rows[row_label]=row
                 row = {}
                 row_label = seat['row']
-                r_data = Row.objects.get(name = row_label)
-                row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                # Get row metadata from JSON (or fallback to DB for old events)
+                if row_label in rows_metadata:
+                    r_data = rows_metadata[row_label]
+                    row['data']= {'name': r_data['name'], 'off_start': r_data['offset_start'], 'off_end': r_data['offset_end'], 'is_act': r_data['is_active']}
+                else:
+                    # Fallback to DB for backward compatibility
+                    try:
+                        r_data = Row.objects.get(name = row_label)
+                        row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                    except Row.DoesNotExist:
+                        row['data']= {'name': row_label, 'off_start': 0, 'off_end': 0, 'is_act': True}
             row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
         rows[row_label]=row  # last row closure
 
@@ -1928,8 +1982,7 @@ def add_bookings(request, event_id=None, customer=None):
     if customer is not None:
         # preparing rows
         json_file_path= os.path.abspath(current_event.get_json_path())
-        with open(json_file_path,'r') as jfp:
-            hall_status = json.load(jfp)
+        hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
         if request.method == 'POST':
             customer_profile_form = CustomerProfileForm(request.POST)
             if customer_profile_form.is_valid():
@@ -1987,8 +2040,7 @@ def add_bookings(request, event_id=None, customer=None):
                                 added_seats +=f'{seat}$2' 
                             else:
                                 added_seats +=f',{seat}$2' 
-                        with open(json_file_path,'w') as jfp:
-                            json.dump(hall_status,jfp, indent=2)
+                        save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
                     except:
                         print('Something wrong!')
 
@@ -2006,7 +2058,6 @@ def add_bookings(request, event_id=None, customer=None):
                     return HttpResponse("Non ci sono posti selezionati")
 
         else:
-            row_hall = Row.objects.all()
             rows={}
             row ={}
             row_label = ''
@@ -2016,8 +2067,17 @@ def add_bookings(request, event_id=None, customer=None):
                         rows[row_label]=row
                     row = {}
                     row_label = seat['row']
-                    r_data = Row.objects.get(name = row_label)
-                    row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                    # Get row metadata from JSON (or fallback to DB for old events)
+                    if row_label in rows_metadata:
+                        r_data = rows_metadata[row_label]
+                        row['data']= {'name': r_data['name'], 'off_start': r_data['offset_start'], 'off_end': r_data['offset_end'], 'is_act': r_data['is_active']}
+                    else:
+                        # Fallback to DB for backward compatibility
+                        try:
+                            r_data = Row.objects.get(name = row_label)
+                            row['data']= {'name': r_data.name, 'off_start': r_data.offset_start, 'off_end': r_data.offset_end, 'is_act':r_data.is_active}
+                        except Row.DoesNotExist:
+                            row['data']= {'name': row_label, 'off_start': 0, 'off_end': 0, 'is_act': True}
                 row[seat['num_in_row']]= {'status':seat['status'], 'order':seat['order'], 'name':seat['name']}
             rows[row_label]=row  # last row closure
             customer_obj = CustomerProfile.objects.get(email=customer)
@@ -2193,15 +2253,13 @@ def removeseat_booking(request, number = None, seat= None):
     # item.delete()
     # UPDATE the JSON Hall file status
     json_file_path= os.path.abspath(event.get_json_path())
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
     try:
         if hall_status[removed_seat]['status'] == 1:
             hall_status[seat]['status'] = 0 
             # hall_status[seat]['status'] = 1 # for testing purposes 
             hall_status[seat]['order'] = '' 
-            with open(json_file_path,'w') as jfp:
-                json.dump(hall_status,jfp, indent=2)
+            save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
     except:
         print('Something wrong!')
     
@@ -2251,8 +2309,7 @@ def erase_booking(request, customerbooking_id=None):
     for seat in seats_booking:
         seats_changed.append(seat)
 
-    with open(json_file_path,'r') as jfp:
-        hall_status = json.load(jfp)
+    hall_status, aisles, rows_metadata = load_event_json_data(json_file_path)
 
     for seat in seats_changed:
         key = seat.split('$')[0]
@@ -2261,8 +2318,7 @@ def erase_booking(request, customerbooking_id=None):
         hall_status[key]['order'] = ''
 
 
-    with open(json_file_path,'w') as jfp:
-        json.dump(hall_status,jfp, indent=2)
+    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
     number = booking.booking_number
 

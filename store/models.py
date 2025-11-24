@@ -98,9 +98,9 @@ class Event(models.Model):
             self._rename_json_file(old_json_path)
             
         json_filename_fullpath = self.get_json_path()
-        
-        # Load seats from venue configuration file instead of database
-        event_hall = self._load_seats_from_venue_config()
+
+        # Load seats, aisles, and row metadata from venue configuration file
+        event_hall, venue_aisles, rows_metadata = self._load_seats_from_venue_config()
         if port_booking:
             from orders.models import OrderEvent
             orderevents = OrderEvent.objects.filter(event_id=self.pk)
@@ -134,12 +134,19 @@ class Event(models.Model):
                         else:
                             print("malformed booking seat_price:  @ {} the seat_price string {}".format(booking.booking_number, booking.seats_price))
 
+        # Prepare complete event data including aisles and row metadata
+        event_data = {
+            'seats': event_hall,
+            'aisles': venue_aisles,
+            'rows_metadata': rows_metadata
+        }
+
         if not os.path.exists(json_filename_fullpath):
             print('writing a new:{}'.format(json_filename_fullpath))
         else:
             print('exist:{}'.format(json_filename_fullpath))
         with open(json_filename_fullpath,'w') as fp:
-            json.dump(event_hall,fp,indent=4, separators=(',', ': '))
+            json.dump(event_data,fp,indent=4, separators=(',', ': '))
 
 
     def get_json_path(self):
@@ -148,41 +155,60 @@ class Event(models.Model):
         return json_filename_fullpath
     
     def _load_seats_from_venue_config(self):
-        """Load seats from venue configuration file instead of database"""
+        """Load seats, aisles, and row metadata from venue configuration file
+        Returns: (event_hall dict, aisles dict, rows_metadata dict)
+        """
         event_hall = {}
-        
+        venue_aisles = {}
+        rows_metadata = {}
+
         # Get venue (use default Teatro Cambiano if not set)
         venue = self.venue
         if not venue:
             venue = Venue.objects.filter(slug='teatro-cambiano').first()
             if not venue:
                 # Fallback to database seats if no venue configured
-                return self._load_seats_from_database()
-        
+                return self._load_seats_from_database(), {}, {}
+
         # Get configuration file path
         config_path = venue.get_config_file_path()
         if not config_path or not os.path.exists(config_path):
             # Fallback to database seats if no config file
-            return self._load_seats_from_database()
-        
+            return self._load_seats_from_database(), {}, {}
+
         # Load JSON configuration
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
-            
-            # Build event_hall from configuration
+
+            # Extract aisles configuration (v2.0 format)
+            venue_data = config_data.get('venue', {})
+            venue_aisles = venue_data.get('aisles', {
+                'horizontal': [],
+                'vertical': []
+            })
+
+            # Build event_hall and rows_metadata from configuration
             seat_number = 1
             for row_data in config_data.get('rows', []):
                 row_name = row_data['name']
-                
+
                 # Skip inactive rows
                 if not row_data.get('is_active', True):
                     continue
-                
+
+                # Store row metadata (offset_start, offset_end, is_active)
+                rows_metadata[row_name] = {
+                    'name': row_name,
+                    'offset_start': row_data.get('offset_start', 0),
+                    'offset_end': row_data.get('offset_end', 0),
+                    'is_active': row_data.get('is_active', True)
+                }
+
                 for seat_data in row_data.get('seats', []):
                     num_in_row = str(seat_data['num']).zfill(2)
                     seat_name = f'{row_name}{num_in_row}'
-                    
+
                     seat_status = {
                         "active": seat_data.get('active', True),
                         "id": seat_number,
@@ -195,13 +221,13 @@ class Event(models.Model):
                     }
                     event_hall[seat_name] = seat_status
                     seat_number += 1
-            
-            return event_hall
-            
+
+            return event_hall, venue_aisles, rows_metadata
+
         except Exception as e:
             print(f"Error loading venue config for event {self.event_slug}: {e}")
             # Fallback to database seats
-            return self._load_seats_from_database()
+            return self._load_seats_from_database(), {}, {}
     
     def _load_seats_from_database(self):
         """Fallback method to load seats from database (legacy)"""
