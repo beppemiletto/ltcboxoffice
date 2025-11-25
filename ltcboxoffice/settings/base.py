@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'booking',
     'history',
     'subscriptions',
+    'contact',
 ]
 
 MIDDLEWARE = [
@@ -210,3 +211,10 @@ PRINTER_USB_OUT_EP = 0x03
 PRINTER_NETWORK_HOST = '192.168.1.100'
 PRINTER_NETWORK_PORT = 9100
 PRINTER_NETWORK_TIMEOUT = 60
+
+# Google reCAPTCHA settings (override in environment-specific settings)
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '')
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '')
+
+# Default email settings
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@teatrocambiano.com')

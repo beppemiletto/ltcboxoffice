@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Contattaci</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-4">
+                            Hai domande o dubbi? Compila il form qui sotto per inviarci un messaggio.
+                            Ti risponderemo al più presto all'indirizzo email che ci fornirai.
+                        </p>
+
+                        <form method="post" id="contactForm">
+                            {% csrf_token %}
+
+                            <div class="form-group">
+                                <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+                                {{ form.subject }}
+                                {% if form.subject.errors %}
+                                    <div class="text-danger">{{ form.subject.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+                                {{ form.message }}
+                                {% if form.message.errors %}
+                                    <div class="text-danger">{{ form.message.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
+
+                            {% if recaptcha_site_key %}
+                            <div class="form-group">
+                                <small class="text-muted">
+                                    Questo sito è protetto da reCAPTCHA e si applicano la
+                                    <a href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a> e i
+                                    <a href="https://policies.google.com/terms" target="_blank">Termini di Servizio</a> di Google.
+                                </small>
+                            </div>
+                            {% endif %}
+
+                            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                                <i class="fa fa-paper-plane"></i> Invia Messaggio
+                            </button>
+
+                            <a href="{% url 'home' %}" class="btn btn-light btn-block mt-2">
+                                <i class="fa fa-arrow-left"></i> Torna alla Home
+                            </a>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Altre informazioni di contatto</h5>
+                        <p>
+                            <i class="fa fa-envelope"></i> Email:
+                            <a href="mailto:ltcboxoffice@teatrocambiano.com">ltcboxoffice@teatrocambiano.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+<script>
+var formSubmitting = false;
+
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    if (formSubmitting) {
+        return true;
+    }
+
+    e.preventDefault();
+
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Invio in corso...';
+
+    grecaptcha.ready(function() {
+        grecaptcha.execute('{{ recaptcha_site_key }}', {action: 'contact'}).then(function(token) {
+            document.getElementById('recaptcha_token').value = token;
+            formSubmitting = true;
+            document.getElementById('contactForm').submit();
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

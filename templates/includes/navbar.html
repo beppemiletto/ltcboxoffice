@@ -16,10 +16,11 @@
             </li>
         </ul>
         <ul class="navbar-nav">
-            <li><a href="#" class="nav-link"> <i class="fa fa-envelope"></i> Email </a></li>
+            <li><a href="{%url 'contact'%}" class="nav-link"> <i class="fa fa-envelope"></i> Email </a></li>
             {%if user.id is not None %}
                 {%if user.is_staff  %}
                 <li><a href="{%url 'boxoffice'%}" class="nav-link"> <i class="fa fa-unlock-alt"></i> Area Riservata </a></li>
+                <li><a href="{%url 'admin:index'%}" class="nav-link"> <i class="fa fa-cog"></i> Backoffice Admin </a></li>
                 {%else%}
                 <li><a href="{%url 'boxoffice'%}" class="nav-link"> <i class="fa fa-lock"></i> Area Riservata </a></li>
                 {%endif%}
