@@ -55,6 +55,11 @@ def generate_venue_config(request):
             "local_code_siae": data.get('local_code_siae', ''),
         }
 
+        # Extract aisles configuration (if present)
+        aisles = data.get('aisles', {'horizontal': [], 'vertical': []})
+        if aisles and (aisles.get('horizontal') or aisles.get('vertical')):
+            venue_info['aisles'] = aisles
+
         # Extract rows configuration
         rows = data.get('rows', [])
 
@@ -104,14 +109,21 @@ def validate_venue_config(request):
         data = json.loads(request.body)
 
         # Build configuration
+        venue_info = {
+            "name": data.get('venue_name', ''),
+            "slug": data.get('venue_slug', ''),
+            "capacity": int(data.get('capacity', 0)),
+            "ba_code_siae": data.get('ba_code_siae', ''),
+            "local_code_siae": data.get('local_code_siae', ''),
+        }
+
+        # Extract aisles configuration (if present)
+        aisles = data.get('aisles', {'horizontal': [], 'vertical': []})
+        if aisles and (aisles.get('horizontal') or aisles.get('vertical')):
+            venue_info['aisles'] = aisles
+
         config = {
-            "venue": {
-                "name": data.get('venue_name', ''),
-                "slug": data.get('venue_slug', ''),
-                "capacity": int(data.get('capacity', 0)),
-                "ba_code_siae": data.get('ba_code_siae', ''),
-                "local_code_siae": data.get('local_code_siae', ''),
-            },
+            "venue": venue_info,
             "rows": data.get('rows', [])
         }
 

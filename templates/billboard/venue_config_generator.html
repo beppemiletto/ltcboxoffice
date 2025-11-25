@@ -550,6 +550,58 @@
                 </div>
 
                 <div class="section">
+                    <h2>Aisles Management</h2>
+
+                    <h3 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px; color: #667eea;">Horizontal Aisles</h3>
+                    <small style="color: #6c757d; display: block; margin-bottom: 10px;">Vertical corridors (divide columns)</small>
+
+                    <div class="form-group">
+                        <label for="h-aisle-seat">After Seat Number</label>
+                        <input type="number" id="h-aisle-seat" min="1" value="10">
+                        <small>Aisle appears after this seat number</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="h-aisle-width">Width (columns)</label>
+                        <input type="number" id="h-aisle-width" min="1" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="h-aisle-rows">Applies to Rows</label>
+                        <input type="text" id="h-aisle-rows" placeholder="* (all) or A,B,C">
+                        <small>Use * for all rows, or comma-separated row letters</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="h-aisle-desc">Description</label>
+                        <input type="text" id="h-aisle-desc" placeholder="Central corridor">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="addHorizontalAisle()">Add Horizontal Aisle</button>
+
+                    <h3 style="font-size: 1.1em; margin-top: 20px; margin-bottom: 10px; color: #667eea;">Vertical Aisles</h3>
+                    <small style="color: #6c757d; display: block; margin-bottom: 10px;">Horizontal corridors (divide rows)</small>
+
+                    <div class="form-group">
+                        <label for="v-aisle-row">After Row</label>
+                        <input type="text" id="v-aisle-row" placeholder="H" maxlength="1" style="text-transform: uppercase;">
+                        <small>Aisle appears after this row</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="v-aisle-height">Height (rows)</label>
+                        <input type="number" id="v-aisle-height" min="1" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="v-aisle-desc">Description</label>
+                        <input type="text" id="v-aisle-desc" placeholder="Emergency exit corridor">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="addVerticalAisle()">Add Vertical Aisle</button>
+                </div>
+
+                <div class="section">
                     <h2>Actions</h2>
                     <button class="btn btn-success btn-block" onclick="validateAndDownload()">Validate & Download JSON</button>
                     <button class="btn btn-secondary btn-block" onclick="validateConfig()">Validate Only</button>
@@ -608,6 +660,13 @@
                         <p style="text-align: center; color: #6c757d; padding: 20px;">No rows configured yet</p>
                     </div>
                 </div>
+
+                <div class="rows-container">
+                    <h3>Configured Aisles</h3>
+                    <div id="aisles-list">
+                        <p style="text-align: center; color: #6c757d; padding: 20px;">No aisles configured yet</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -644,9 +703,15 @@
     <script>
         // Global state
         let configData = {
-            rows: []
+            rows: [],
+            aisles: {
+                horizontal: [],
+                vertical: []
+            }
         };
         let editingRowIndex = null;
+        let editingAisleIndex = null;
+        let editingAisleType = null;
 
         // Auto-generate slug from name
         document.getElementById('venue-name').addEventListener('input', function() {
@@ -820,10 +885,18 @@
                     html += '<div class="visual-seat" style="opacity: 0;"></div>';
                 }
 
-                // Add seats
+                // Add seats with horizontal aisles
                 row.seats.forEach((seat, seatIndex) => {
                     const seatClass = (row.is_active && seat.active) ? 'active' : 'inactive';
                     html += `<div class="visual-seat ${seatClass}" onclick="toggleSeat(${rowIndex}, ${seatIndex})">${seat.num}</div>`;
+
+                    // Check for horizontal aisle after this seat
+                    const hAisle = findHorizontalAisleAfterSeat(seat.num, row.name);
+                    if (hAisle) {
+                        for (let i = 0; i < hAisle.width; i++) {
+                            html += '<div class="visual-seat" style="background: #e0e0e0; border: 1px dashed #999;"></div>';
+                        }
+                    }
                 });
 
                 // Add offset end
@@ -833,9 +906,34 @@
 
                 html += '</div>';
                 html += '</div>';
+
+                // Check for vertical aisle after this row
+                const vAisle = findVerticalAisleAfterRow(row.name);
+                if (vAisle) {
+                    for (let i = 0; i < vAisle.height; i++) {
+                        html += '<div class="visual-row" style="height: 20px; background: #f0f0f0; border: 1px dashed #999; margin: 5px 0;"></div>';
+                    }
+                }
             });
 
             container.innerHTML = html;
+        }
+
+        // Find horizontal aisle after a specific seat in a specific row
+        function findHorizontalAisleAfterSeat(seatNum, rowName) {
+            return configData.aisles.horizontal.find(aisle => {
+                if (aisle.seat_number !== seatNum) return false;
+                if (aisle.applies_to_rows === '*') return true;
+                if (Array.isArray(aisle.applies_to_rows)) {
+                    return aisle.applies_to_rows.includes(rowName);
+                }
+                return false;
+            });
+        }
+
+        // Find vertical aisle after a specific row
+        function findVerticalAisleAfterRow(rowName) {
+            return configData.aisles.vertical.find(aisle => aisle.row_name === rowName);
         }
 
         // Toggle seat active/inactive
@@ -903,6 +1001,7 @@
             if (!confirm('Clear all configuration? This cannot be undone.')) return;
 
             configData.rows = [];
+            configData.aisles = { horizontal: [], vertical: [] };
             document.getElementById('venue-name').value = '';
             document.getElementById('venue-slug').value = '';
             document.getElementById('capacity').value = '0';
@@ -910,9 +1009,167 @@
             document.getElementById('local-code').value = '';
 
             renderRows();
+            renderAisles();
             renderVisualPreview();
             updateStats();
             showAlert('warning', 'Configuration cleared');
+        }
+
+        // Add horizontal aisle
+        function addHorizontalAisle() {
+            const seatNumber = parseInt(document.getElementById('h-aisle-seat').value);
+            const width = parseInt(document.getElementById('h-aisle-width').value);
+            const rowsInput = document.getElementById('h-aisle-rows').value.trim();
+            const description = document.getElementById('h-aisle-desc').value.trim();
+
+            if (!seatNumber || seatNumber < 1) {
+                showAlert('danger', 'Please enter a valid seat number');
+                return;
+            }
+
+            if (!width || width < 1) {
+                showAlert('danger', 'Please enter a valid width');
+                return;
+            }
+
+            // Parse applies_to_rows
+            let appliesToRows = '*';
+            if (rowsInput && rowsInput !== '*') {
+                appliesToRows = rowsInput.toUpperCase().split(',').map(r => r.trim()).filter(r => r);
+            }
+
+            // Create aisle
+            const aisle = {
+                position: 'after_seat',
+                seat_number: seatNumber,
+                width: width,
+                applies_to_rows: appliesToRows,
+                description: description || `Horizontal aisle after seat ${seatNumber}`
+            };
+
+            configData.aisles.horizontal.push(aisle);
+
+            renderAisles();
+            renderVisualPreview();
+            showAlert('success', 'Horizontal aisle added');
+
+            // Clear form
+            document.getElementById('h-aisle-desc').value = '';
+        }
+
+        // Add vertical aisle
+        function addVerticalAisle() {
+            const rowName = document.getElementById('v-aisle-row').value.trim().toUpperCase();
+            const height = parseInt(document.getElementById('v-aisle-height').value);
+            const description = document.getElementById('v-aisle-desc').value.trim();
+
+            if (!rowName) {
+                showAlert('danger', 'Please enter a row letter');
+                return;
+            }
+
+            if (!height || height < 1) {
+                showAlert('danger', 'Please enter a valid height');
+                return;
+            }
+
+            // Create aisle
+            const aisle = {
+                position: 'after_row',
+                row_name: rowName,
+                height: height,
+                description: description || `Vertical aisle after row ${rowName}`
+            };
+
+            configData.aisles.vertical.push(aisle);
+
+            renderAisles();
+            renderVisualPreview();
+            showAlert('success', 'Vertical aisle added');
+
+            // Clear form
+            document.getElementById('v-aisle-row').value = '';
+            document.getElementById('v-aisle-desc').value = '';
+        }
+
+        // Render aisles list
+        function renderAisles() {
+            const container = document.getElementById('aisles-list');
+
+            const totalAisles = configData.aisles.horizontal.length + configData.aisles.vertical.length;
+
+            if (totalAisles === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">No aisles configured yet</p>';
+                return;
+            }
+
+            let html = '';
+
+            // Horizontal aisles
+            if (configData.aisles.horizontal.length > 0) {
+                html += '<h4 style="color: #667eea; margin-bottom: 10px;">Horizontal Aisles</h4>';
+                configData.aisles.horizontal.forEach((aisle, index) => {
+                    const rows = Array.isArray(aisle.applies_to_rows) ? aisle.applies_to_rows.join(', ') : aisle.applies_to_rows;
+                    html += `
+                        <div class="row-item">
+                            <div class="row-header">
+                                <span class="row-name">After Seat ${aisle.seat_number}</span>
+                                <div class="row-controls">
+                                    <button class="btn btn-danger" onclick="deleteHorizontalAisle(${index})">Delete</button>
+                                </div>
+                            </div>
+                            <div class="row-info">
+                                <div>Width: ${aisle.width} column(s)</div>
+                                <div>Rows: ${rows}</div>
+                                <div colspan="2">Description: ${aisle.description}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Vertical aisles
+            if (configData.aisles.vertical.length > 0) {
+                html += '<h4 style="color: #667eea; margin-top: 20px; margin-bottom: 10px;">Vertical Aisles</h4>';
+                configData.aisles.vertical.forEach((aisle, index) => {
+                    html += `
+                        <div class="row-item">
+                            <div class="row-header">
+                                <span class="row-name">After Row ${aisle.row_name}</span>
+                                <div class="row-controls">
+                                    <button class="btn btn-danger" onclick="deleteVerticalAisle(${index})">Delete</button>
+                                </div>
+                            </div>
+                            <div class="row-info">
+                                <div>Height: ${aisle.height} row(s)</div>
+                                <div>Description: ${aisle.description}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Delete horizontal aisle
+        function deleteHorizontalAisle(index) {
+            if (!confirm(`Delete horizontal aisle after seat ${configData.aisles.horizontal[index].seat_number}?`)) return;
+
+            configData.aisles.horizontal.splice(index, 1);
+            renderAisles();
+            renderVisualPreview();
+            showAlert('warning', 'Horizontal aisle deleted');
+        }
+
+        // Delete vertical aisle
+        function deleteVerticalAisle(index) {
+            if (!confirm(`Delete vertical aisle after row ${configData.aisles.vertical[index].row_name}?`)) return;
+
+            configData.aisles.vertical.splice(index, 1);
+            renderAisles();
+            renderVisualPreview();
+            showAlert('warning', 'Vertical aisle deleted');
         }
 
         // Update statistics
@@ -1058,7 +1315,15 @@
                     // Load rows
                     configData.rows = config.rows;
 
+                    // Load aisles (if present in config)
+                    if (config.venue && config.venue.aisles) {
+                        configData.aisles = config.venue.aisles;
+                    } else {
+                        configData.aisles = { horizontal: [], vertical: [] };
+                    }
+
                     renderRows();
+                    renderAisles();
                     renderVisualPreview();
                     updateStats();
 
@@ -1088,7 +1353,8 @@
                 capacity: parseInt(document.getElementById('capacity').value) || 0,
                 ba_code_siae: document.getElementById('ba-code').value.trim(),
                 local_code_siae: document.getElementById('local-code').value.trim(),
-                rows: configData.rows
+                rows: configData.rows,
+                aisles: configData.aisles
             };
         }
 
