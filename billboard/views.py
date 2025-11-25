@@ -26,10 +26,12 @@ def venue_config_generator(request):
     Allows staff to create hall seating configurations visually.
     """
     venues = Venue.objects.all()
+    venue_id = request.GET.get('venue_id', None)
 
     context = {
         'venues': venues,
         'page_title': 'Venue Configuration Generator',
+        'venue_id': venue_id,
     }
 
     return render(request, 'billboard/venue_config_generator.html', context)
@@ -151,6 +153,112 @@ def validate_venue_config(request):
             'valid': False,
             'error': str(e)
         }, status=400)
+
+
+@staff_member_required
+@require_http_methods(["POST"])
+def save_venue_config(request):
+    """
+    API endpoint to validate and save venue configuration to server.
+    Updates the existing venue's configuration file.
+    """
+    try:
+        data = json.loads(request.body)
+
+        # Build configuration
+        venue_info = {
+            "name": data.get('venue_name', ''),
+            "slug": data.get('venue_slug', ''),
+            "capacity": int(data.get('capacity', 0)),
+            "ba_code_siae": data.get('ba_code_siae', ''),
+            "local_code_siae": data.get('local_code_siae', ''),
+        }
+
+        # Extract aisles configuration (if present)
+        aisles = data.get('aisles', {'horizontal': [], 'vertical': []})
+        if aisles and (aisles.get('horizontal') or aisles.get('vertical')):
+            venue_info['aisles'] = aisles
+
+        config = {
+            "venue": venue_info,
+            "rows": data.get('rows', [])
+        }
+
+        # Validate
+        errors = validate_config(config)
+        if errors:
+            return JsonResponse({
+                'success': False,
+                'errors': errors
+            }, status=400)
+
+        # Find the venue - prefer by ID if provided, otherwise by slug
+        venue_id = data.get('venue_id')
+        try:
+            if venue_id:
+                venue = Venue.objects.get(pk=venue_id)
+            else:
+                venue = Venue.objects.get(slug=venue_info['slug'])
+        except Venue.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': f'Venue not found. Please create the venue in admin first.'
+            }, status=404)
+
+        # Save the configuration file
+        import os
+        from django.conf import settings
+        from datetime import datetime
+
+        # Create venue_configs directory if it doesn't exist
+        configs_dir = os.path.join(settings.BASE_DIR, 'venue_configs')
+        os.makedirs(configs_dir, exist_ok=True)
+
+        # Generate filename with timestamp to avoid overwriting
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        base_name = venue_info['slug']
+        filename = f"{base_name}_{timestamp}.json"
+        filepath = os.path.join(configs_dir, filename)
+
+        # Write JSON file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+
+        # Prepare message for user
+        if venue.configuration_file:
+            old_filename = os.path.basename(str(venue.configuration_file))
+            message = (
+                f'✅ Configurazione salvata con successo!\n\n'
+                f'Nuovo file: {filename}\n'
+                f'File precedente: {old_filename}\n\n'
+                f'⚠️ IMPORTANTE: Per usare il nuovo file, devi aggiornare il campo '
+                f'"Configuration file" nella pagina admin della venue selezionando il nuovo file.'
+            )
+        else:
+            message = f'Configurazione salvata con successo in {filename}'
+            # Auto-update if no previous file
+            relative_path = os.path.join('venue_configs', filename)
+            venue.configuration_file = relative_path
+            venue.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'file_path': filename,
+            'old_file': os.path.basename(str(venue.configuration_file)) if venue.configuration_file else None,
+            'needs_manual_update': bool(venue.configuration_file)
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error saving configuration: {str(e)}'
+        }, status=500)
 
 
 @staff_member_required

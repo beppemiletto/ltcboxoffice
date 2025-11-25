@@ -602,10 +602,10 @@
                 </div>
 
                 <div class="section">
-                    <h2>Actions</h2>
-                    <button class="btn btn-success btn-block" onclick="validateAndDownload()">Validate & Download JSON</button>
-                    <button class="btn btn-secondary btn-block" onclick="validateConfig()">Validate Only</button>
-                    <button class="btn btn-danger btn-block" onclick="clearAll()">Clear All</button>
+                    <h2>Azioni</h2>
+                    <button class="btn btn-success btn-block" onclick="validateAndDownload()">Valida e Scarica File JSON</button>
+                    <button class="btn btn-primary btn-block" onclick="validateAndSaveToServer()">Valida e Aggiorna sul Server</button>
+                    <button class="btn btn-danger btn-block" onclick="clearAll()">Cancella Tutto</button>
                 </div>
             </div>
 
@@ -709,6 +709,7 @@
                 vertical: []
             }
         };
+        let currentVenueId = null; // Store the venue ID when loading config
         let editingRowIndex = null;
         let editingAisleIndex = null;
         let editingAisleType = null;
@@ -1097,6 +1098,7 @@
             const container = document.getElementById('aisles-list');
 
             const totalAisles = configData.aisles.horizontal.length + configData.aisles.vertical.length;
+            console.log('Rendering aisles - Total:', totalAisles, 'Horizontal:', configData.aisles.horizontal.length, 'Vertical:', configData.aisles.vertical.length);
 
             if (totalAisles === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">No aisles configured yet</p>';
@@ -1267,17 +1269,54 @@
                     a.remove();
                     window.URL.revokeObjectURL(url);
 
-                    showAlert('success', 'Configuration downloaded successfully!');
+                    showAlert('success', 'File JSON scaricato con successo!');
                 } else {
                     const result = await response.json();
-                    let errorMsg = 'Validation errors:\n';
+                    let errorMsg = 'Errori di validazione:\n';
                     if (result.errors) {
                         errorMsg += result.errors.join('\n');
                     }
                     alert(errorMsg);
                 }
             } catch (error) {
-                showAlert('danger', 'Download failed: ' + error.message);
+                showAlert('danger', 'Download fallito: ' + error.message);
+            }
+        }
+
+        // Validate and save to server
+        async function validateAndSaveToServer() {
+            const data = collectFormData();
+
+            // Add venue_id if we loaded an existing config
+            if (currentVenueId) {
+                data.venue_id = currentVenueId;
+            }
+
+            try {
+                const response = await fetch('{% url "billboard:save_venue_config" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                } else {
+                    let errorMsg = 'Errori di validazione:\n';
+                    if (result.errors) {
+                        errorMsg += result.errors.join('\n');
+                    } else if (result.error) {
+                        errorMsg = result.error;
+                    }
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                showAlert('danger', 'Salvataggio fallito: ' + error.message);
             }
         }
 
@@ -1305,6 +1344,9 @@
                 if (result.success) {
                     const config = result.config;
 
+                    // Store the venue ID for saving
+                    currentVenueId = venueId;
+
                     // Load venue info
                     document.getElementById('venue-name').value = config.venue.name;
                     document.getElementById('venue-slug').value = config.venue.slug;
@@ -1318,8 +1360,10 @@
                     // Load aisles (if present in config)
                     if (config.venue && config.venue.aisles) {
                         configData.aisles = config.venue.aisles;
+                        console.log('Loaded aisles:', configData.aisles);
                     } else {
                         configData.aisles = { horizontal: [], vertical: [] };
+                        console.log('No aisles found in config');
                     }
 
                     renderRows();
@@ -1360,6 +1404,22 @@
 
         // Initialize
         updateStats();
+
+        // Auto-load venue configuration if venue_id is provided in URL
+        (function() {
+            {% if venue_id %}
+            const venueId = '{{ venue_id }}';
+            if (venueId) {
+                // Set the selected venue in the dropdown
+                document.getElementById('load-venue').value = venueId;
+
+                // Automatically load the configuration
+                setTimeout(function() {
+                    loadExistingConfig();
+                }, 500);
+            }
+            {% endif %}
+        })();
     </script>
 </body>
 </html>

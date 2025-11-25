@@ -51,6 +51,8 @@ class VenueAdmin(admin.ModelAdmin):
     def config_generator_link(self, obj):
         """Display link to configuration generator tool"""
         url = reverse('billboard:venue_config_generator')
+        if obj.pk:
+            url += f'?venue_id={obj.pk}'
         return format_html(
             '<a href="{}" target="_blank" style="display: inline-block; padding: 8px 16px; '
             'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; '
@@ -63,6 +65,8 @@ class VenueAdmin(admin.ModelAdmin):
     def generator_link(self, obj):
         """Display link in list view"""
         url = reverse('billboard:venue_config_generator')
+        if obj.pk:
+            url += f'?venue_id={obj.pk}'
         return format_html(
             '<a href="{}" target="_blank">Generator</a>',
             url
