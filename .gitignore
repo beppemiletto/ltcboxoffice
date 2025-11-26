@@ -59,6 +59,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+.env.example
 .cache
 nosetests.xml
 coverage.xml
