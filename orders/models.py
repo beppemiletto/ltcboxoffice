@@ -5,6 +5,7 @@ from django.conf import settings
 import os
 
 def barcode_image_path():
+    """Path per le immagini QR code (mantiene il nome 'barcode' per compatibilità DB)"""
     return os.path.join(settings.STATIC_ROOT,'images')
 
 class Payment(models.Model):

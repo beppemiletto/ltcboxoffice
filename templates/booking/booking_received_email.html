@@ -2,7 +2,7 @@
 <img src="cid:logo.png" alt="Logo">
 <p>Salve {{user.first_name}},</p>
 <p>Il tuo ordine {{ order.order_number }} e' stato ricevuto e processato.</p>
-<img src="cid:{{barcode}}" alt="Barcode">
+<img src="cid:{{barcode}}" alt="QR Code">
 <p>Hai prenotato i posti a teatro per lo spettacolo: {{ show.shw_title }}</p>
 <p>Data dell'evento: {{ event.date_time|date:'d-m-Y'}} alle {{ event.date_time|time:'H:i' }}</p>
 <p>Ti abbiamo destinato:</p>

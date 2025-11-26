@@ -13,7 +13,7 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '192.168.1.12', '192.168.1.3']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '192.168.1.12', '192.168.1.3','713680bf26cd.ngrok-free.app']
 
 # Database
 # Use ltcboxoffice_dev by default for development
@@ -53,3 +53,10 @@ CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 
 # Printer Configuration - Development (Emulation Mode)
 PRINTER_TYPE = 'dummy'  # Use dummy printer for development (shows emulated output)
+
+
+# Per CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://713680bf26cd.ngrok-free.app',
+    'https://*.ngrok.io',
+]

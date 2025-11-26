@@ -214,7 +214,14 @@
     <div class="col-sm">
         {% if orders %}
             <a href="{% url 'barcode_read' current_event.pk %}">
-                <button type="button" class="btn btn-info btn-lg btn-block">Read Barcode</button>
+                <button type="button" class="btn btn-secondary btn-lg btn-block">🖥️ Scanner Desktop</button>
+            </a>
+        {% endif %}
+    </div>
+    <div class="col-sm">
+        {% if orders %}
+            <a href="{% url 'qr_scanner_mobile' current_event.pk %}" target="_blank">
+                <button type="button" class="btn btn-info btn-lg btn-block">📱 Scanner QR Mobile</button>
             </a>
         {% endif %}
     </div>

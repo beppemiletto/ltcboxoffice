@@ -63,7 +63,7 @@
                                             <tr>
                                                 <th class="per35 text-center">Evento </th>
                                                 <th class="per45 text-center">Posti e prezzi</th>
-                                                <th class="per45 text-center">Barcode </th>
+                                                <th class="per45 text-center">QR Code </th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -90,8 +90,8 @@
                                                 </td>
 
                                                 <td >
-                                                    <img src="/{{orderevent.barcode_path}}" alt="Tickets booking barcode" style="max-height: 100px;" class="center" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                    <div style="display:none; color:red;">Barcode non disponibile</div>
+                                                    <img src="/{{orderevent.barcode_path}}" alt="QR Code prenotazione" style="max-height: 150px;" class="center" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                    <div style="display:none; color:red;">QR Code non disponibile</div>
                                                 </td>
                                             </tr>
 

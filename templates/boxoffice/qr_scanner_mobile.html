@@ -1,0 +1,485 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Scanner QR Code - Botteghino</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .event-info {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+
+        #reader video {
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        .controls {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            margin: 8px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #444;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .manual-input {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .manual-input.active {
+            display: block;
+        }
+
+        .manual-input input {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: #1a1a1a;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .status-message {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 16px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            min-width: 280px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .status-message.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .status-message.error {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .status-message.warning {
+            background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .scan-count {
+            text-align: center;
+            padding: 15px;
+            background: #2a2a2a;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .scan-count strong {
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .vibrate-on-scan {
+            animation: vibrate 0.3s linear;
+        }
+
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .last-scan {
+            padding: 15px 20px;
+            background: #2a2a2a;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .last-scan div {
+            margin: 5px 0;
+        }
+
+        .torch-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 100;
+            display: none;
+        }
+
+        .torch-btn.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <div class="header">
+            <h1>🎫 Scanner QR Code</h1>
+            <div class="event-info" id="eventInfo">
+                Evento: <strong>{{ event.show.shw_title }}</strong><br>
+                {{ event.date_time|date:"d/m/Y H:i" }} - {{ event.venue.name }}
+            </div>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="scan-count">
+            Scansioni completate: <strong id="scanCount">0</strong>
+        </div>
+
+        <div id="reader"></div>
+
+        <button id="torchBtn" class="torch-btn">🔦</button>
+
+        <div class="controls">
+            <button id="toggleManualBtn" class="btn btn-secondary" onclick="toggleManualInput()">
+                ⌨️ Inserimento Manuale
+            </button>
+            <a href="{% url 'event' event.id %}" class="btn btn-danger">
+                ❌ Chiudi Scanner
+            </a>
+        </div>
+
+        <div id="manualInput" class="manual-input">
+            <h3 style="margin-bottom: 15px;">Inserimento Manuale</h3>
+            <input type="text" id="manualCode" placeholder="Inserisci codice QR..." autocomplete="off">
+            <button class="btn btn-primary" onclick="processManualCode()">
+                ✓ Verifica Codice
+            </button>
+        </div>
+
+        <div id="lastScan" class="last-scan" style="display: none;">
+            <strong>Ultima scansione:</strong>
+            <div id="lastScanCode"></div>
+            <div id="lastScanTime"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        let html5QrcodeScanner = null;
+        let scanCount = 0;
+        let lastScannedCode = null;
+        let torchSupported = false;
+        let torchOn = false;
+        const eventId = {{ event.id }};
+        const csrfToken = '{{ csrf_token }}';
+
+        // Inizializza lo scanner al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            initScanner();
+
+            // Previeni lo zoom con doppio tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+        });
+
+        function initScanner() {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0,
+                formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+            };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanError
+            ).then(() => {
+                // Check if torch is supported
+                checkTorchSupport();
+            }).catch(err => {
+                showMessage('Errore accesso fotocamera: ' + err, 'error');
+            });
+        }
+
+        function checkTorchSupport() {
+            if (html5QrcodeScanner && html5QrcodeScanner.getState() === Html5QrcodeScannerState.SCANNING) {
+                const capabilities = html5QrcodeScanner.getCapabilities();
+                if (capabilities && capabilities.torch) {
+                    torchSupported = true;
+                    document.getElementById('torchBtn').classList.add('active');
+                }
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Evita scansioni duplicate rapide
+            if (decodedText === lastScannedCode) {
+                return;
+            }
+
+            lastScannedCode = decodedText;
+
+            // Feedback visivo e haptic
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+
+            // Invia al server per validazione
+            validateQRCode(decodedText);
+        }
+
+        function onScanError(errorMessage) {
+            // Gestione silenziosa degli errori di scansione continua
+            // console.log('Scan error:', errorMessage);
+        }
+
+        function validateQRCode(code) {
+            showMessage('🔍 Verifica in corso...', 'warning');
+
+            fetch(`/boxoffice/api/validate-qr/${eventId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ qr_code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    scanCount++;
+                    document.getElementById('scanCount').textContent = scanCount;
+                    showMessage('✓ Prenotazione valida!', 'success');
+                    updateLastScan(code, data);
+
+                    // Suono di successo (opzionale)
+                    playSuccessSound();
+
+                    // Reset dopo 2 secondi per permettere nuova scansione
+                    setTimeout(() => {
+                        lastScannedCode = null;
+                    }, 2000);
+
+                    // Mostra dettagli ordine
+                    if (data.redirect_url) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect_url;
+                        }, 1500);
+                    }
+                } else {
+                    showMessage('❌ ' + (data.message || 'QR Code non valido'), 'error');
+                    setTimeout(() => {
+                        lastScannedCode = null;
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                showMessage('❌ Errore di rete', 'error');
+                setTimeout(() => {
+                    lastScannedCode = null;
+                }, 2000);
+            });
+        }
+
+        function showMessage(message, type) {
+            const msgEl = document.getElementById('statusMessage');
+            msgEl.textContent = message;
+            msgEl.className = 'status-message ' + type;
+
+            setTimeout(() => {
+                msgEl.className = 'status-message';
+            }, 3000);
+        }
+
+        function toggleManualInput() {
+            const manualDiv = document.getElementById('manualInput');
+            manualDiv.classList.toggle('active');
+            if (manualDiv.classList.contains('active')) {
+                document.getElementById('manualCode').focus();
+            }
+        }
+
+        function processManualCode() {
+            const code = document.getElementById('manualCode').value.trim();
+            if (code) {
+                validateQRCode(code);
+                document.getElementById('manualCode').value = '';
+            }
+        }
+
+        function updateLastScan(code, data) {
+            const lastScanDiv = document.getElementById('lastScan');
+            document.getElementById('lastScanCode').textContent = `Codice: ${code}`;
+            document.getElementById('lastScanTime').textContent = `Ora: ${new Date().toLocaleTimeString('it-IT')}`;
+            if (data.seats) {
+                document.getElementById('lastScanTime').textContent += ` | Posti: ${data.seats}`;
+            }
+            lastScanDiv.style.display = 'block';
+        }
+
+        function playSuccessSound() {
+            // Beep di successo usando Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        // Toggle torch/flash
+        document.getElementById('torchBtn').addEventListener('click', function() {
+            if (!torchSupported) return;
+
+            torchOn = !torchOn;
+            html5QrcodeScanner.applyVideoConstraints({
+                advanced: [{ torch: torchOn }]
+            }).then(() => {
+                this.textContent = torchOn ? '🔦' : '💡';
+            }).catch(err => {
+                console.error('Torch error:', err);
+            });
+        });
+
+        // Gestione input manuale con Enter
+        document.getElementById('manualCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processManualCode();
+            }
+        });
+
+        // Cleanup quando si lascia la pagina
+        window.addEventListener('beforeunload', function() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop();
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

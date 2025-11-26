@@ -1579,6 +1579,116 @@ def barcode_read(request, event_id:int=None):
     }
     return render(request, 'boxoffice/barcode_read.html',context)
 
+@login_required(login_url='login')
+def qr_scanner_mobile(request, event_id:int=None):
+    """
+    View per scanner QR code mobile-friendly con accesso fotocamera.
+    Richiede autenticazione per proteggere l'accesso.
+    """
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        messages.error(request, "Evento non trovato")
+        return redirect('event_list')
+
+    context = {
+        'event': event,
+    }
+    return render(request, 'boxoffice/qr_scanner_mobile.html', context)
+
+@login_required(login_url='login')
+def validate_qr_code_api(request, event_id:int=None):
+    """
+    API endpoint per validare QR code scansionati.
+    Riceve JSON con il codice QR e risponde con validità e dettagli.
+
+    Request: POST JSON { "qr_code": "00042_000123_000456" }
+    Response: JSON {
+        "valid": true/false,
+        "message": "...",
+        "seats": "A01, A02",
+        "redirect_url": "/boxoffice/..."
+    }
+    """
+    import json
+    from django.http import JsonResponse
+    from django.views.decorators.csrf import csrf_exempt
+    from django.utils.decorators import method_decorator
+
+    if request.method != 'POST':
+        return JsonResponse({'valid': False, 'message': 'Metodo non permesso'}, status=405)
+
+    try:
+        # Parse JSON body
+        data = json.loads(request.body)
+        qr_code = data.get('qr_code', '').strip().replace('?', '_')
+
+        if not qr_code:
+            return JsonResponse({
+                'valid': False,
+                'message': 'Codice QR vuoto'
+            })
+
+        # Validate format (should be: event_order_orderevent)
+        codes = qr_code.split('_')
+        if len(codes) != 3:
+            return JsonResponse({
+                'valid': False,
+                'message': f'Formato codice non valido: {qr_code}'
+            })
+
+        # Find OrderEvent by orderevent_number
+        try:
+            orderevent = OrderEvent.objects.get(orderevent_number=qr_code)
+        except OrderEvent.DoesNotExist:
+            return JsonResponse({
+                'valid': False,
+                'message': f'Prenotazione non trovata: {qr_code}'
+            })
+
+        # Check if orderevent belongs to this event
+        if orderevent.event_id != event_id:
+            return JsonResponse({
+                'valid': False,
+                'message': 'Questo QR code è per un altro evento!'
+            })
+
+        # Check if already used (expired)
+        if orderevent.expired:
+            return JsonResponse({
+                'valid': False,
+                'message': 'Prenotazione già utilizzata/evasa'
+            })
+
+        # Get seat information
+        seats_list = orderevent.seats_list_name()
+        seats_str = ', '.join(seats_list)
+
+        # Valid QR code! Redirect to sell_booking page to complete sale
+        response_data = {
+            'valid': True,
+            'message': 'Prenotazione valida',
+            'orderevent_number': qr_code,
+            'seats': seats_str,
+            'seat_count': len(seats_list),
+            'user': f"{orderevent.user.first_name} {orderevent.user.last_name}",
+            'order_number': orderevent.order.order_number if orderevent.order else 'N/A',
+            'redirect_url': reverse('sell_booking', kwargs={'order': orderevent.id, 'mode': '1'})
+        }
+
+        return JsonResponse(response_data)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'valid': False,
+            'message': 'Errore nel parsing del JSON'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'valid': False,
+            'message': f'Errore server: {str(e)}'
+        }, status=500)
+
 def remove_seat(request, number = None, seat= None):
     item = get_object_or_404(OrderEvent, orderevent_number=number)
     removed_seat = seat

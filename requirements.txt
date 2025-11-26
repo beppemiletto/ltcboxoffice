@@ -36,11 +36,9 @@ pycairo==1.27.0
 rlPyCairo==0.2.0
 freetype-py==2.3.0
 
-# Barcode and QR code generation
-python-barcode==0.15.1
+# QR code generation
 qrcode==7.4.2
 pypng==0.20220715.0
-treepoem==3.23.0
 
 # Excel and data handling
 openpyxl==3.1.2

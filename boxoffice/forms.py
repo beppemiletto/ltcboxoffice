@@ -4,10 +4,11 @@ from django.utils.translation import gettext_lazy as _
 import re
 
 class Barcode_Reader(forms.Form):
-    barcode_code = forms.CharField(help_text="Enter the barcode code", 
+    """Form per lettura QR Code delle prenotazioni"""
+    barcode_code = forms.CharField(help_text="Inserisci il codice del QR Code",
                                    required=True,
-                                   initial='', 
-                                   max_length= 50, 
+                                   initial='',
+                                   max_length= 50,
                                    min_length=10 )
 
     def clean_barcode_code(self):
@@ -17,13 +18,13 @@ class Barcode_Reader(forms.Form):
 
         codes:list = re.split('[_?]',data)
         if len(codes) == 3:
-            print('Valid code detected')
+            print('Valid QR code detected')
             for idx, code in enumerate(codes):
                 if len(code) < lenghts[idx]:
-                    raise ValidationError(_(f'Invalid code read: {code} in {data}. Try again.'))
+                    raise ValidationError(_(f'Codice QR non valido: {code} in {data}. Riprova.'))
 
         else:
-            raise ValidationError(_(f'Invalid code:{data}'))
+            raise ValidationError(_(f'Codice QR non valido: {data}'))
 
         # Remember to always return the cleaned data.
         return data

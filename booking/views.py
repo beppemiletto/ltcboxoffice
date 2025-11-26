@@ -791,22 +791,22 @@ def booking_payments(request, newContext={}):
     for orderevent_number, orderevent_data in email_data.items():
         file_path:os.path = orderevent_data['barcode_path']
     #this name must be same as in the htmltemplate being only a placeholder
-        barcode:str = orderevent_data['barcode']
+        qrcode_img:str = orderevent_data['barcode']
 
-        # Check if barcode file exists (may not exist if Ghostscript is not installed)
+        # Check if QR code file exists
         if file_path and os.path.exists(file_path):
             try:
                 with open(file_path,'rb') as fip:
-                    brc = MIMEImage(fip.read(),_subtype='png')
-                    brc.add_header('Content-ID', '<{name}>'.format(name=barcode))
+                    qrc = MIMEImage(fip.read(),_subtype='png')
+                    qrc.add_header('Content-ID', '<{name}>'.format(name=qrcode_img))
                     # img.add_header('Content-Disposition', 'inline', filename=image)
-                send_email.attach(brc)
+                send_email.attach(qrc)
             except Exception as e:
                 # Log error but continue with email sending
-                print(f"Warning: Could not attach barcode {barcode}: {e}")
+                print(f"Warning: Could not attach QR code {qrcode_img}: {e}")
         else:
-            # Barcode file doesn't exist (Ghostscript not installed)
-            print(f"Warning: Barcode file not found: {file_path}. Install Ghostscript to generate barcodes.")
+            # QR code file doesn't exist
+            print(f"Warning: QR code file not found: {file_path}")
 
     send_email.send()
 
@@ -817,7 +817,7 @@ def booking_payments(request, newContext={}):
     newContext['data'] = {
         'order_number': order.order_number,
         'transID': payment.payment_id,
-        'barcode': barcode_image_path,
+        'qrcode': barcode_image_path,
         'email_data': email_data,
     }
 
@@ -830,11 +830,11 @@ def booking_complete(request, newContext={}):
     transID = newContext['data']['transID']
     email_data = newContext['data']['email_data']
     
-    # Update OrderEvent objects with barcode paths
-    # Note: barcode_printer.py now saves directly to static/images/ and returns relative path
+    # Update OrderEvent objects with QR code paths
+    # Note: barcode_printer.py now saves QR codes directly to static/images/ and returns relative path
     for number, orderevent in email_data.items():
         orderevent_object = OrderEvent.objects.get(orderevent_number=number)
-        # barcode_path is already in correct format: "static/images/barcode_img_*.png"
+        # barcode_path contains QR code path in format: "static/images/qrcode_img_*.png"
         orderevent_object.barcode_path = orderevent['barcode_path']
         orderevent_object.save()
     
