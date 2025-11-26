@@ -1815,7 +1815,7 @@ def send_updatemail(request, number):
     # Send order update email to customer
    # prepare a dictionary for email data
     from subscriptions.utils import is_subscription_price_code
-    
+
     email_data = {}
     orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
     event= orderevent.event
@@ -1829,7 +1829,7 @@ def send_updatemail(request, number):
     for item in orderevent.seats_price.split(','):
         seat, price = item.split('$')
         price_code = int(price)
-        
+
         # Build seat info dict similar to booking flow
         is_subscription = is_subscription_price_code(price_code)
         booked_seats[seat] = {
@@ -1841,6 +1841,7 @@ def send_updatemail(request, number):
     email_data[orderevent.booking_number] = {
     'show':orderevent.event.show.shw_title,
     'datetime': orderevent.event.date_time,
+    'venue': orderevent.event.venue.name if orderevent.event.venue else 'Teatro Comunale di Cambiano',
     'seats': booked_seats
     }
 
@@ -1890,7 +1891,7 @@ def send_cancelemail(request, number):
     # Send order update email to customer
    # prepare a dictionary for email data
     from subscriptions.utils import is_subscription_price_code
-    
+
     email_data = {}
     orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
     event= orderevent.event
@@ -1904,7 +1905,7 @@ def send_cancelemail(request, number):
     for item in orderevent.seats_price.split(','):
         seat, price = item.split('$')
         price_code = int(price)
-        
+
         # Build seat info dict similar to booking flow
         is_subscription = is_subscription_price_code(price_code)
         booked_seats[seat] = {
@@ -1916,6 +1917,7 @@ def send_cancelemail(request, number):
     email_data[orderevent.booking_number] = {
     'show':orderevent.event.show.shw_title,
     'datetime': orderevent.event.date_time,
+    'venue': orderevent.event.venue.name if orderevent.event.venue else 'Teatro Comunale di Cambiano',
     'seats': booked_seats
     }
 

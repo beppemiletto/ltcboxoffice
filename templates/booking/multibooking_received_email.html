@@ -3,9 +3,9 @@
 <p>Salve {{user.first_name}},</p>
 <p>Il tuo ordine {{ order.order_number }} e' stato ricevuto e processato.</p>
 {%if count > 1 %}
-<p>Hai prenotato posti per {{count}} eventi al Teatro Comunale di Cambiano.</p>
+<p>Hai prenotato posti per {{count}} eventi.</p>
 {% else %}
-<p>Hai prenotato posti per un evento al Teatro Comunale di Cambiano.</p>
+<p>Hai prenotato posti per un evento.</p>
 {% endif %}
 {%for number, orderevent in  email_data.items %}
 <p>Prenotazione Evento Codice {{number}}:</p>
@@ -14,6 +14,7 @@
 <p>Mostrando in cassa questo barcode la tua prenotazione verra' rintracciata rapidamente e senza rischio di errori. Puoi esibirla sullo schermo del tuo smartphone o stampata su carta.</p>
 <p>Hai prenotato i posti per lo spettacolo: {{ orderevent.show }}</p>
 <p>Replica del {{ orderevent.datetime|date:'l, d-m-Y'}} alle {{ orderevent.datetime|time:'H:i' }}</p>
+<p><strong>Locale: {{ orderevent.venue }}</strong></p>
 <p>I tuoi posti prenotati:</p>
 <ol>
 {% for seat, seat_info in orderevent.seats.items %}
@@ -31,6 +32,6 @@
 {%else%}
 <p>Nessuna nota all'ordine.</p>
 {%endif%}
-<p>Arrivederci al botteghino del Teatro Comunale di Cambiano, in via Lame 4 a Cambiano, dove pagherai la somma di {{ order.order_total }} Euro e riceverai i biglietti.</p>
+<p>Arrivederci al botteghino, dove pagherai la somma di {{ order.order_total }} Euro e riceverai i biglietti.</p>
 <p>A presto, Lo staff di LTCBoxOffice.</p>
 {% endautoescape %}

@@ -37,22 +37,22 @@
                                                 <td>{{ subscription.subscription_type.name }}</td>
                                                 <td>
                                                     {% if subscription.status == 'ACTIVE' %}
-                                                        <span class="badge badge-success">Attivo</span>
+                                                        <span class="badge badge-success text-dark">Attivo</span>
                                                     {% elif subscription.status == 'EXPIRED' %}
-                                                        <span class="badge badge-warning">Scaduto</span>
+                                                        <span class="badge badge-warning text-dark">Scaduto</span>
                                                     {% elif subscription.status == 'EXHAUSTED' %}
-                                                        <span class="badge badge-secondary">Esaurito</span>
+                                                        <span class="badge badge-secondary text-dark">Esaurito</span>
                                                     {% else %}
-                                                        <span class="badge badge-danger">{{ subscription.get_status_display }}</span>
+                                                        <span class="badge badge-danger text-dark">{{ subscription.get_status_display }}</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ subscription.valid_from|date:"d/m/Y" }} - {{ subscription.valid_to|date:"d/m/Y" }}</td>
                                                 <td>{{ subscription.events_used }} / {{ subscription.events_included }}</td>
                                                 <td>
                                                     {% if subscription.remaining_events > 0 %}
-                                                        <span class="badge badge-success">{{ subscription.remaining_events }}</span>
+                                                        <span class="badge badge-success text-dark">{{ subscription.remaining_events }}</span>
                                                     {% else %}
-                                                        <span class="badge badge-secondary">0</span>
+                                                        <span class="badge badge-secondary text-dark">0</span>
                                                     {% endif %}
                                                 </td>
                                             </tr>

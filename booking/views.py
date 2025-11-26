@@ -657,9 +657,10 @@ def booking_payments(request, newContext={}):
                 email_data[orderevent.orderevent_number] = {
                     'show': orderevent.event.show.shw_title,
                     'datetime': orderevent.event.date_time,
+                    'venue': orderevent.event.venue.name if orderevent.event.venue else 'Teatro Comunale di Cambiano',
                     'seats': booked_seats,
                     'barcode': orderevent.barcode_path.split('/')[-1] if orderevent.barcode_path else '',
-                    'barcode_path': orderevent.barcode_path 
+                    'barcode_path': orderevent.barcode_path
                 }
         except:
             items = '{}${}'.format(seat, item.ingresso)
@@ -692,9 +693,10 @@ def booking_payments(request, newContext={}):
             email_data[orderevent.orderevent_number] = {
             'show':orderevent.event.show.shw_title,
             'datetime': orderevent.event.date_time,
+            'venue': orderevent.event.venue.name if orderevent.event.venue else 'Teatro Comunale di Cambiano',
             'seats': booked_seats,
             'barcode': orderevent.barcode_path.split('/')[-1],
-            'barcode_path': orderevent.barcode_path 
+            'barcode_path': orderevent.barcode_path
             }
 
 

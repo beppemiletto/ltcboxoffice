@@ -2,11 +2,12 @@
 <img src="cid:logo.png" alt="Logo">
 <p>Salve {{customer.first_name}},</p>
 <p>Il tuo ordine e' stato registrato.</p>
-<p>BoxOffice ha prenotato posti per te ad un evento al Teatro Comunale di Cambiano.</p>
+<p>BoxOffice ha prenotato posti per te ad un evento.</p>
 {%for number, orderevent in  email_data.items %}
 <p>Prenotazione Evento Codice {{number}}:</p>
 <p>I tuoi posti per lo spettacolo: {{ orderevent.show }}</p>
 <p>Replica del {{ orderevent.datetime|date:'l, d-m-Y'}} alle {{ orderevent.datetime|time:'H:i' }}</p>
+<p><strong>Locale: {{ orderevent.venue }}</strong></p>
 <p>I posti prenotati sono:</p>
 <ol>
 {% for seat, seat_info in orderevent.seats.items %}
@@ -19,6 +20,6 @@
 <p>Cognome: {{ customer.last_name }}</p>
 <p>Telefono: {{ customer.phone_number }}</p>
 <p>Email: {{ customer.email }}</p>
-<p>Arrivederci al botteghino del Teatro Comunale di Cambiano, in via Lame 4 a Cambiano.</p>
+<p>Arrivederci al botteghino.</p>
 <p>A presto, Lo staff di LTCBoxOffice.</p>
 {% endautoescape %}

@@ -31,6 +31,22 @@ def hall_detail(request, event_slug=None):
         aisles = {'horizontal': [], 'vertical': []}
         rows_metadata = {}
 
+    # Load aisles from venue configuration (overrides event JSON if present)
+    venue = event.venue
+    if venue and venue.configuration_file:
+        config_path = venue.get_config_file_path()
+        if config_path and os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    venue_config = json.load(f)
+                    venue_data = venue_config.get('venue', {})
+                    venue_aisles = venue_data.get('aisles', {})
+                    if venue_aisles:
+                        # Use aisles from venue configuration
+                        aisles = venue_aisles
+            except Exception as e:
+                print(f"Error loading venue configuration: {e}")
+
     if request.method == 'POST':
         selected_seats = request.POST['selected_seats'].split(',')
         try:
