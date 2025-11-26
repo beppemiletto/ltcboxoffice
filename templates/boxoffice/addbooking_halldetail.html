@@ -27,10 +27,10 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <th scope="row"><small>{{event.show.shw_title}}</small></th>
-                    <td><small>{{event.date_time|date:"D d m Y"}}</small></td>
-                    <td><small>{{event.date_time|date:"H : i"}}</small></td>
-                    <td><small>Intero: {{event.price_full|stringformat:".2f"}} - Ridotto: {{event.price_reduced|stringformat:".2f"}}</small></td>
+                    <th scope="row"><strong style="font-size: 1.1rem;">{{event.show.shw_title}}</strong></th>
+                    <td><strong style="font-size: 1.1rem;">{{event.date_time|date:"D d m Y"}}</strong></td>
+                    <td><strong style="font-size: 1.1rem;">{{event.date_time|date:"H : i"}}</strong></td>
+                    <td><strong style="font-size: 1.1rem;">Intero: {{event.price_full|stringformat:".2f"}} - Ridotto: {{event.price_reduced|stringformat:".2f"}}</strong></td>
                   </tr>
                 </tbody>
               </table>
