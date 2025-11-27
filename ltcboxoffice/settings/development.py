@@ -13,7 +13,14 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '192.168.1.12', '192.168.1.3','713680bf26cd.ngrok-free.app']
+# In development, permetti tutti gli host (inclusi ngrok dinamici)
+# ATTENZIONE: Usare SOLO in development!
+ALLOWED_HOSTS = ['*']
+
+# Aggiungi middleware per ngrok (SOLO in development) - per CSRF
+MIDDLEWARE = [
+    'ltcboxoffice.middleware.NgrokMiddleware',  # Per gestire CSRF_TRUSTED_ORIGINS
+] + MIDDLEWARE  # MIDDLEWARE viene da base.py
 
 # Database
 # Use ltcboxoffice_dev by default for development
@@ -55,8 +62,9 @@ CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 PRINTER_TYPE = 'dummy'  # Use dummy printer for development (shows emulated output)
 
 
-# Per CSRF
+# Per CSRF - ngrok origins vengono aggiunti dinamicamente dal middleware
 CSRF_TRUSTED_ORIGINS = [
-    'https://713680bf26cd.ngrok-free.app',
-    'https://*.ngrok.io',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    # ngrok URLs vengono aggiunti automaticamente dal NgrokMiddleware
 ]

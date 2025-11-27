@@ -596,23 +596,50 @@ def boxoffice_minus_price(request, item_id = None):
 def boxoffice_set_price(request, item_id=None, price_code=0):
     """
     Directly set the price code for a boxoffice item (called from dropdown).
+    Also handles setting subscription_code for subscription-based tickets.
     """
+    from subscriptions.utils import get_subscription_price_options
+
     item = SellingSeats.objects.get(id=item_id)
     current_event = item.event
     costs = current_event.prices()
     # Extend costs array to support subscription codes (3-6 = €0.00)
     costs_extended = extend_price_array(costs)
     ingressi = INGRESSI_NAMES
-    
+
     price_new = int(price_code)
-    
+
     # Validate the price code is in valid range
     if price_new < 0 or price_new > 6:
         return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
-    
+
     item.price = price_new
     item.cost = safe_price_access(costs_extended, price_new)
     item.ingresso = ingressi[price_new] if price_new < len(ingressi) else f"Codice {price_new}"
+
+    # Se è un codice abbonamento, trova e imposta il subscription_code dell'utente corrente
+    if is_subscription_price_code(price_new):
+        # Determina l'utente: se esiste un orderevent, usa quello, altrimenti usa request.user
+        user = None
+        if item.orderevent:
+            try:
+                orderevent = OrderEvent.objects.get(orderevent_number=item.orderevent)
+                user = orderevent.user
+            except OrderEvent.DoesNotExist:
+                user = request.user if request.user.is_authenticated else None
+        else:
+            user = request.user if request.user.is_authenticated else None
+
+        if user:
+            subscription_options = get_subscription_price_options(user)
+            for opt in subscription_options:
+                if opt['code'] == price_new and opt['remaining'] > 0:
+                    item.subscription_code = opt['subscription_number']
+                    break
+    else:
+        # Se non è un abbonamento, rimuovi subscription_code
+        item.subscription_code = None
+
     item.save()
 
     return redirect(reverse('boxoffice_cart', kwargs={"event_id": current_event.pk}))
@@ -712,27 +739,21 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
         ticket.save()
 
         # Track subscription usage when selling with subscription code
+        # Questo è l'UNICO punto dove viene creato SubscriptionUsage e decrementato l'abbonamento.
+        # Avviene solo quando il cliente arriva in cassa e ritira i biglietti (ingresso effettivo).
         if is_subscription_price_code(sold_seat.price) and sold_seat.subscription_code:
             from subscriptions.models import Subscription
             try:
                 subscription = Subscription.objects.get(subscription_number=sold_seat.subscription_code)
                 if subscription.is_valid():
-                    # Check if usage already exists (evita duplicati)
-                    existing_usage = SubscriptionUsage.objects.filter(
+                    # Create usage record - decrementa abbonamento al momento dell'ingresso
+                    SubscriptionUsage.objects.create(
                         subscription=subscription,
                         event=current_event,
-                        seat=sold_seat.seat
-                    ).first()
-                    
-                    if not existing_usage:
-                        # Create usage record with actual subscription owner
-                        SubscriptionUsage.objects.create(
-                            subscription=subscription,
-                            event=current_event,
-                            seat=sold_seat.seat,
-                            used_by=request.user if request.user.is_authenticated else boxoffice_user,
-                        )
-                        # Counter incremented automatically by SubscriptionUsage.save()
+                        seat=sold_seat.seat,
+                        used_by=request.user if request.user.is_authenticated else boxoffice_user,
+                    )
+                    # Counter incremented automatically by SubscriptionUsage.save()
             except Subscription.DoesNotExist:
                 pass  # Should not happen, already verified
 

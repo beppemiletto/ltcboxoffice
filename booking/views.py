@@ -710,21 +710,9 @@ def booking_payments(request, newContext={}):
         else:
             print('Problems with {} file doesnt exist!'.format(json_filename_fullpath))
 
-        # Handle subscription usage if this is a subscription-based ticket
-        if is_subscription_price_code(item.ingresso):
-            subscription = get_subscription_by_price_code(current_user, item.ingresso)
-            if subscription:
-                # Create SubscriptionUsage record
-                usage = SubscriptionUsage(
-                    subscription=subscription,
-                    event=event,
-                    seat=seat,
-                )
-                usage.save()
-                
-                # Increment events_used counter
-                subscription.events_used += 1
-                subscription.save()
+        # NOTA: SubscriptionUsage NON viene creato qui durante la prenotazione.
+        # Viene creato solo quando il cliente arriva in cassa e ritira i biglietti (boxoffice/views.py).
+        # Questo permette di decrementare l'abbonamento solo quando effettivamente entra, non quando prenota.
 
         # Manage the UserEvent record (cross table connecting all orders of one user to one event
         # collecting all setas and prices of User for One event)
