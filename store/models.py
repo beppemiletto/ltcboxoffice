@@ -165,7 +165,7 @@ class Event(models.Model):
         # Get venue (use default Teatro Cambiano if not set)
         venue = self.venue
         if not venue:
-            venue = Venue.objects.filter(slug='teatro-cambiano').first()
+            venue = Venue.objects.filter(slug='teatro-comunale-di-cambiano').first()
             if not venue:
                 # Fallback to database seats if no venue configured
                 return self._load_seats_from_database(), {}, {}

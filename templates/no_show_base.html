@@ -91,6 +91,133 @@ $(document).ready(function() {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar styling */
+        .section-header {
+            background: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+            padding: 0.5rem 0 !important;
+        }
+
+        .section-header .navbar {
+            background: #ffffff !important;
+            padding: 0.25rem 0 !important;
+        }
+
+        .section-header .nav-link {
+            color: #333333 !important;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            font-size: 0.85rem;
+            padding: 0.3rem 0.5rem !important;
+        }
+
+        .section-header .nav-link:hover {
+            color: #d4af37 !important;
+        }
+
+        .section-header .navbar-toggler {
+            border-color: #d4af37;
+            padding: 0.2rem 0.4rem;
+        }
+
+        .section-header .btn-primary {
+            background: #d4af37 !important;
+            border-color: #d4af37 !important;
+            color: #1a1a2e !important;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .section-header .btn-primary:hover {
+            background: #c99b2f !important;
+            border-color: #c99b2f !important;
+        }
+
+        .section-header .logo {
+            max-height: 40px;
+        }
+
+        .header-main {
+            background: #ffffff !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            padding: 0.75rem 0 !important;
+        }
+
+        .header-main .widget-header {
+            color: #333333 !important;
+            font-size: 0.85rem;
+        }
+
+        .header-main a {
+            color: #d4af37 !important;
+            font-size: 0.85rem;
+        }
+
+        .header-main .form-control {
+            border-color: #ddd !important;
+            color: #333333 !important;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .header-main .form-control::placeholder {
+            color: #999 !important;
+        }
+
+        .header-main .dropdown-menu {
+            font-size: 0.85rem;
+        }
+
+        .header-main .icon {
+            font-size: 1.2rem;
+        }
+
+        /* Footer styling */
+        .section-footer {
+            background: #2a2a3e !important;
+            color: #ffffff !important;
+            margin-top: 1.5rem;
+            border-top: 2px solid #d4af37 !important;
+            padding: 1.5rem 0 !important;
+        }
+
+        .section-footer a {
+            color: #d4af37 !important;
+            font-size: 0.9rem;
+        }
+
+        .section-footer a:hover {
+            color: #e0c851 !important;
+            text-decoration: none;
+        }
+
+        .section-footer p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .footer-bottom {
+            background: #1a1a2e !important;
+            color: #ffffff !important;
+            padding: 1rem 0 !important;
+            margin: 0 !important;
+        }
+
+        .footer-bottom p {
+            margin: 0.25rem 0;
+            font-size: 0.85rem;
+        }
+
+        .section-footer .title {
+            color: #d4af37 !important;
+            font-size: 0.85rem;
         }
 
         .stars {
@@ -136,43 +263,43 @@ $(document).ready(function() {
         .container {
             position: relative;
             z-index: 3;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 1.5rem 20px !important;
             text-align: center;
+            min-height: auto;
         }
 
         .theater-logo {
-            width: 300px;
+            width: 200px;
             height: auto;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             animation: fadeInDown 1s ease-out;
             filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
         }
 
         .theater-icon {
-            font-size: 4rem;
+            font-size: 3rem;
             color: #d4af37;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             animation: fadeInDown 1s ease-out;
             text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
         }
 
         .main-title {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: #ffffff;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             animation: fadeInUp 1s ease-out 0.2s both;
         }
 
         .subtitle {
-            font-size: 1.2rem;
+            font-size: 0.95rem;
             color: #d4af37;
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
             font-weight: 300;
             letter-spacing: 1px;
             animation: fadeInUp 1s ease-out 0.4s both;
@@ -182,20 +309,20 @@ $(document).ready(function() {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 3rem;
-            max-width: 800px;
-            margin: 2rem 0;
+            border-radius: 15px;
+            padding: 1.5rem;
+            max-width: 600px;
+            margin: 1rem 0;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             animation: fadeInScale 1s ease-out 0.6s both;
             transform: translateY(20px);
         }
 
         .closure-notice {
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             color: #ffffff;
-            margin-bottom: 2rem;
-            line-height: 1.6;
+            margin-bottom: 1rem;
+            line-height: 1.4;
         }
 
         .months {
@@ -290,6 +417,72 @@ $(document).ready(function() {
             }
         }
 
+        /* Styling per la sezione di contenuto sottostante */
+        .section-name {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+            padding: 4rem 0 !important;
+        }
+
+        .section-name h1 {
+            color: #1a1a2e;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            text-shadow: none;
+        }
+
+        .section-name p {
+            color: #333333;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .section-name .row {
+            align-items: center;
+        }
+
+        .section-name a {
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: block;
+            padding: 2rem;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            margin-top: 1rem;
+        }
+
+        .section-name a:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
+        }
+
+        .section-name a h4 {
+            color: #d4af37;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        .section-name img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .section-name a:hover img {
+            transform: scale(1.05);
+        }
+
+        .img-responsive {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
         @media (max-width: 768px) {
             .theater-logo {
                 width: 250px;
@@ -318,6 +511,14 @@ $(document).ready(function() {
             
             .theater-icon {
                 font-size: 3rem;
+            }
+
+            .section-name h1 {
+                font-size: 1.8rem;
+            }
+
+            .section-name p {
+                font-size: 1rem;
             }
         }
     </style>
