@@ -178,39 +178,35 @@
                             {% csrf_token %}
 
                             <!-- Dati anagrafici -->
-                            <div class="border-bottom pb-3 mb-4">
-                                <h6 class="text-muted mb-3"><i class="fas fa-id-card mr-2"></i>Dati Anagrafici</h6>
-                                <div class="form-row">
-                                    <div class="form-group col-md-6">
-                                        <label class="font-weight-bold">Nome <span class="text-danger">*</span></label>
+                            <div class="border-bottom pb-3 mb-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-id-card me-2"></i>Dati Anagrafici</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Nome <span class="text-danger">*</span></label>
                                         {{customer_profile_form.first_name}}
                                     </div>
-                                    <div class="form-group col-md-6">
-                                        <label class="font-weight-bold">Cognome <span class="text-danger">*</span></label>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Cognome <span class="text-danger">*</span></label>
                                         {{customer_profile_form.last_name}}
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Contatti -->
-                            <div class="border-bottom pb-3 mb-4">
-                                <h6 class="text-muted mb-3"><i class="fas fa-address-book mr-2"></i>Contatti</h6>
-                                <div class="form-row">
-                                    <div class="form-group col-md-6">
-                                        <label class="font-weight-bold">Email <span class="text-danger">*</span></label>
+                            <div class="border-bottom pb-3 mb-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-address-book me-2"></i>Contatti</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
                                         <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                            </div>
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                             {{customer_profile_form.email}}
                                         </div>
                                     </div>
-                                    <div class="form-group col-md-6">
-                                        <label class="font-weight-bold">Telefono</label>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Telefono</label>
                                         <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                            </div>
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
                                             {{customer_profile_form.phone_number}}
                                         </div>
                                     </div>
@@ -218,40 +214,38 @@
                             </div>
 
                             <!-- Indirizzo -->
-                            <div class="pb-3 mb-4">
-                                <h6 class="text-muted mb-3"><i class="fas fa-map-marker-alt mr-2"></i>Indirizzo (Opzionale)</h6>
-                                <div class="form-row">
-                                    <div class="form-group col-md-12">
-                                        <label class="font-weight-bold">Via/Piazza</label>
+                            <div class="pb-3 mb-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-map-marker-alt me-2"></i>Indirizzo (Opzionale)</h6>
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Via/Piazza</label>
                                         {{customer_profile_form.address}}
                                     </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label class="font-weight-bold">CAP</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">CAP</label>
                                         {{customer_profile_form.post_code}}
                                     </div>
-                                    <div class="form-group col-md-5">
-                                        <label class="font-weight-bold">Città</label>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Città</label>
                                         {{customer_profile_form.city}}
                                     </div>
-                                    <div class="form-group col-md-3">
-                                        <label class="font-weight-bold">Provincia</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Provincia</label>
                                         {{customer_profile_form.province}}
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Pulsanti azione -->
-                            <div class="form-row mt-4">
-                                <div class="form-group col-md-6">
-                                    <button type="submit" class="btn btn-success btn-lg btn-block">
-                                        <i class="fas fa-save mr-2"></i>Salva e Continua
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-save me-2"></i>Salva e Continua
                                     </button>
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <a href="{%url 'boxoffice'%}" class="btn btn-outline-secondary btn-lg btn-block">
-                                        <i class="fas fa-times mr-2"></i>Annulla
+                                <div class="col-md-6">
+                                    <a href="{%url 'boxoffice'%}" class="btn btn-outline-secondary btn-lg w-100">
+                                        <i class="fas fa-times me-2"></i>Annulla
                                     </a>
                                 </div>
                             </div>

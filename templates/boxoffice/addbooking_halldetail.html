@@ -113,52 +113,64 @@
 <!-- ============================ COMPONENT 1 END .// ================================= -->
 
 
-        <div class="card">
-            <div class="row">
-            <div class="col-md-12">
+        <div class="card p-3">
             <form method="POST" action="{% url 'add_bookings' event_id=event.pk customer=customer.email %}">
-
                 {% csrf_token %}
-                <div class="form-row">
-                    <div class="form_group col-md-12">
-                        <label >Nome</label>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Nome</label>
                         {{customer_profile_form.first_name}}
-                        <label >Cognome</label>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Cognome</label>
                         {{customer_profile_form.last_name}}
-                        <label >Telefono</label>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Telefono</label>
                         {{customer_profile_form.phone_number}}
-                        <label >Email</label>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Email</label>
                         {{customer_profile_form.email}}
                     </div>
                 </div>
-                <div class="form-row">
 
-                <div class="form-group col-md-12" >
-                    <label> Indirizzo</label>
-                    {{customer_profile_form.address}}
-                        <label >CAP</label>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Indirizzo</label>
+                        {{customer_profile_form.address}}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">CAP</label>
                         {{customer_profile_form.post_code}}
-                        <label >Citta'</label>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Città</label>
                         {{customer_profile_form.city}}
-                        <label >Provincia</label>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Provincia</label>
                         {{customer_profile_form.province}}
                     </div>
                 </div>
-                <div class="form-row">
 
-                <div class="form-group col-md-12">
-                <button type="submit" class="btn btn-primary">Inserisci nel carrello.</button>
-            </div>
-        </div>
-        <input type="hidden" name="sender_type" value="sala_scheme" title="declare the sender of the seat booking request">
-        <input id="selected_seats" type="hidden" name="selected_seats" value="" title="declare the container of posted data of selected seats ">
+                <div class="row g-2">
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cart-plus me-1"></i>Inserisci nel carrello
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{% url 'add_bookings' event.pk %}" class="btn btn-warning">
+                            <i class="fas fa-undo me-1"></i>Azzera i posti (reset)
+                        </a>
+                    </div>
+                </div>
+
+                <input type="hidden" name="sender_type" value="sala_scheme">
+                <input id="selected_seats" type="hidden" name="selected_seats" value="">
             </form>
-            </div>
-            </div>
-
-            <a href="{% url 'add_bookings' event.pk %}">
-                    <button type="button" class="btn btn-warning">Azzera i posti (reset)</button>
-                </a>
             </div>
             <div class="card"> 
                 <a href="{% url 'event_list' %}">

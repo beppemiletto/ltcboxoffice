@@ -39,14 +39,14 @@ class OrderEventForm(forms.Form):
     expired = forms.BooleanField(label='Ordine evaso', required=False)
 
 class CustomerProfileForm(forms.Form):
-    first_name = forms.CharField(max_length=100)
-    last_name = forms.CharField(max_length=100)
-    address = forms.CharField(max_length=100, required=False)
-    city = forms.CharField(max_length=100, required=False)
-    province = forms.CharField(max_length=20, required=False)
-    post_code = forms.CharField(max_length=10, required=False)
-    email     = forms.EmailField(max_length=100, required=True)
-    phone_number = forms.CharField(max_length=50, required=False)
+    first_name   = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name    = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    address      = forms.CharField(max_length=100, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    city         = forms.CharField(max_length=100, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    province     = forms.CharField(max_length=20,  required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    post_code    = forms.CharField(max_length=10,  required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email        = forms.EmailField(max_length=100, required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    phone_number = forms.CharField(max_length=50,  required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
 
 
 class CustomerShortForm(forms.Form):

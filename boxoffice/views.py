@@ -394,29 +394,33 @@ def event(request, event_id):
 
     boxofficebookingevent = BoxOfficeBookingEvent.objects.filter(event=current_event).filter(expired=False).order_by('customer__last_name')
 
+    # Pre-fetch sold ticket counts per BoxOfficeBookingEvent (orderevent stores booking.pk as string)
+    sold_tickets_qs = (
+        Ticket.objects
+        .filter(event=current_event, sell_mode='C')
+        .values_list('orderevent', flat=True)
+    )
+    sold_by_booking_pk = {}
+    for oe in sold_tickets_qs:
+        sold_by_booking_pk[oe] = sold_by_booking_pk.get(oe, 0) + 1
+
     # Add sold/total count for boxoffice bookings
     boxoffice_bookings_with_count = []
     for booking in boxofficebookingevent:
-        sold_count = 0
-        total_count = 0
         seats_list = []
+        remaining_count = 0
 
-        # Count all seats with this booking_number in hall_status
-        # This includes both booked (status=1) and sold (status=5) seats
-        booking_number = booking.booking_number
-        for seat_name, seat_data in hall_status.items():
-            if seat_data.get('order') == booking_number:
-                total_count += 1
-                # Status 5 = sold (payed)
-                if seat_data['status'] == 5:
-                    sold_count += 1
-
-        # Also collect current seats still in booking for display
         if booking.seats_price:
             for seat_price in booking.seats_price.split(','):
                 if seat_price.strip():
                     seat_name = seat_price.split('$')[0]
                     seats_list.append(seat_name)
+                    remaining_count += 1
+
+        # sold = tickets already printed for this booking
+        sold_count = sold_by_booking_pk.get(str(booking.pk), 0)
+        # total = already sold + still in booking
+        total_count = sold_count + remaining_count
 
         boxoffice_bookings_with_count.append({
             'booking': booking,
@@ -2185,6 +2189,11 @@ def add_bookings(request, event_id=None, customer=None):
                     boxofficebookingevent.save()
                     boxofficebookingevent.booking_number = f'{current_event.pk:05d}_{the_customer.pk:05d}_{boxofficebookingevent.pk:06d}'
                     boxofficebookingevent.save()
+
+                    # Update hall_status with the real booking_number (replacing 'boxoffice_pending')
+                    for seat in selected_seats:
+                        hall_status[seat]['order'] = boxofficebookingevent.booking_number
+                    save_event_json_data(json_file_path, hall_status, aisles, rows_metadata)
 
                     return redirect(reverse('edit_booking', kwargs={"boxofficebookingevent_number": boxofficebookingevent.booking_number}))
                 else:
