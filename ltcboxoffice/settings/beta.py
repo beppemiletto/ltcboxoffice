@@ -49,6 +49,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'ltcboxoffice@teatrocambiano.com')
 
+# Less strict static files storage (avoids MissingFileError su CSS)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 # Printer in emulation mode for beta
 PRINTER_TYPE = 'dummy'
 
