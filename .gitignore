@@ -202,3 +202,4 @@ templates/fiscalmgm/sd2_monthly.html
 
 # Temp files
 nul
+.env.beta
