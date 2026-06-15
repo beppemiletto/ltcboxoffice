@@ -67,54 +67,6 @@
     </div>
     {%endif%}
     
-    <!-- ============================ SYSTEM PRINT SECTION (LaserJet/inkjet) ======= -->
-    {% if printer_type == 'bridge' and emulated_print_data %}
-    <div id="system-print-section" style="display:none;">
-        <div style="max-width:500px; margin:20px auto; font-family:'Courier New',monospace; font-size:13px;">
-            <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:8px;">
-                <strong>LABORATORIO TEATRALE DI CAMBIANO A.P.S.</strong><br>
-                Teatro Comunale di Cambiano — Box Office<br>
-                <strong>{{ print_header.show }}</strong><br>
-                {{ print_header.date }}
-            </div>
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="border-bottom:1px solid #000;">
-                        <th style="text-align:left; padding:4px;">Posto</th>
-                        <th style="text-align:left; padding:4px;">Tipo</th>
-                        <th style="text-align:right; padding:4px;">Prezzo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in emulated_print_data %}
-                    <tr>
-                        <td style="padding:4px;">{{ item.seat }}</td>
-                        <td style="padding:4px;">{{ item.ingresso }}</td>
-                        <td style="text-align:right; padding:4px;">€ {{ item.costo }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3" style="font-size:11px; padding:2px 4px; color:#555;">
-                            Biglietto n. {{ item.numero }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div style="text-align:center; border-top:2px solid #000; margin-top:8px; padding-top:8px; font-size:11px;">
-                Pagamento: {{ payment_method.name }}<br>
-                Buona visione!
-            </div>
-        </div>
-    </div>
-    <style>
-    @media print {
-        body > *:not(#system-print-wrapper) { display: none !important; }
-        #system-print-section { display: block !important; }
-        .navbar, footer, .section-content > .container > *:not(#system-print-section) { display: none !important; }
-    }
-    </style>
-    {% endif %}
-
     <!-- ============================ CLIENT PRINT SECTION ========================= -->
     {% if escpos_bytes and printer_type == 'webusb' or escpos_bytes and printer_type == 'bridge' %}
     <div class="row mb-4">
@@ -190,26 +142,9 @@
 
     window.addEventListener('load', async () => {
         try {
-            const [statusRes, configRes] = await Promise.all([
-                fetch(BRIDGE_URL + '/status', { signal: AbortSignal.timeout(1500) }),
-                fetch(BRIDGE_URL + '/config',  { signal: AbortSignal.timeout(1500) }),
-            ]);
-            const status = await statusRes.json();
-            const cfg    = configRes.ok ? await configRes.json() : {};
-
-            if (cfg.type === 'system') {
-                // Stampante di sistema (LaserJet/inkjet): stampa via browser
-                const section = document.getElementById('system-print-section');
-                if (section) {
-                    section.style.display = 'block';
-                    setPrintStatus('🖨️ Stampa browser in corso...', 'success');
-                    setPrintCard('success', 'success');
-                    document.getElementById('print-btn').style.display = 'none';
-                    setTimeout(() => window.print(), 600);
-                } else {
-                    setPrintStatus('⚠️ Nessun dato da stampare', 'warning');
-                }
-            } else if (status.printer === 'ok') {
+            const r = await fetch(BRIDGE_URL + '/status', { signal: AbortSignal.timeout(1500) });
+            const data = await r.json();
+            if (data.printer === 'ok') {
                 setPrintStatus('🖨️ Stampante pronta', 'success');
                 await doPrint();
             } else {
