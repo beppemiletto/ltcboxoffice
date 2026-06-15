@@ -40,6 +40,8 @@ DEFAULT_CONFIG = {
 }
 # ──────────────────────────────────────────────────────────────────────────────
 
+CONFIG = {}
+
 
 def load_config() -> dict:
     if os.path.exists(CONFIG_FILE):
@@ -48,7 +50,13 @@ def load_config() -> dict:
     return DEFAULT_CONFIG.copy()
 
 
-CONFIG = load_config()
+def reload_config():
+    global CONFIG
+    CONFIG.clear()
+    CONFIG.update(load_config())
+
+
+reload_config()
 
 
 def _usb_ids() -> tuple[int, int]:
@@ -76,6 +84,43 @@ def check_printer() -> bool:
             return usb.core.find(idVendor=vid, idProduct=pid) is not None
         except Exception:
             return False
+
+
+def scan_usb_devices() -> list:
+    """Elenca tutti i dispositivi USB connessi (per configurazione guidata)."""
+    try:
+        import usb.core
+        import usb.util
+        devices = []
+        for dev in usb.core.find(find_all=True):
+            entry = {
+                "vendor":       f"0x{dev.idVendor:04x}",
+                "product":      f"0x{dev.idProduct:04x}",
+                "manufacturer": None,
+                "product_name": None,
+            }
+            try:
+                if dev.iManufacturer:
+                    entry["manufacturer"] = usb.util.get_string(dev, dev.iManufacturer)
+            except Exception:
+                pass
+            try:
+                if dev.iProduct:
+                    entry["product_name"] = usb.util.get_string(dev, dev.iProduct)
+            except Exception:
+                pass
+            devices.append(entry)
+        return devices
+    except Exception as exc:
+        print(f"[scan] Errore enumerazione USB: {exc}", file=sys.stderr)
+        return []
+
+
+def save_config(new_cfg: dict):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(new_cfg, f, indent=2)
+    reload_config()
+    print(f"[bridge] Configurazione aggiornata: {new_cfg}")
 
 
 def send_to_printer(raw_bytes: bytes) -> None:
@@ -126,9 +171,12 @@ class BridgeHandler(BaseHTTPRequestHandler):
             self._json_response(200, body)
 
         elif self.path == "/config":
-            # Restituisce la configurazione attiva (senza segreti, solo metadati)
-            safe = {k: v for k, v in CONFIG.items()}
-            body = json.dumps(safe).encode()
+            body = json.dumps(dict(CONFIG)).encode()
+            self._json_response(200, body)
+
+        elif self.path == "/scan":
+            devices = scan_usb_devices()
+            body = json.dumps(devices).encode()
             self._json_response(200, body)
 
         else:
@@ -136,20 +184,36 @@ class BridgeHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        if self.path != "/print":
-            self.send_response(404)
-            self.end_headers()
-            return
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length)
-        try:
-            send_to_printer(data)
-            body = b'{"result":"ok"}'
-            self._json_response(200, body)
-        except Exception as exc:
-            body = json.dumps({"result": "error", "message": str(exc)}).encode()
-            print(f"[ERRORE STAMPA] {exc}", file=sys.stderr)
-            self._json_response(500, body)
+
+        if self.path == "/print":
+            try:
+                send_to_printer(data)
+                self._json_response(200, b'{"result":"ok"}')
+            except Exception as exc:
+                body = json.dumps({"result": "error", "message": str(exc)}).encode()
+                print(f"[ERRORE STAMPA] {exc}", file=sys.stderr)
+                self._json_response(500, body)
+
+        elif self.path == "/configure":
+            try:
+                new_cfg = json.loads(data)
+                save_config(new_cfg)
+                ok = check_printer()
+                body = json.dumps({
+                    "result": "ok",
+                    "printer": "ok" if ok else "not_found",
+                    "config": dict(CONFIG),
+                }).encode()
+                self._json_response(200, body)
+            except Exception as exc:
+                body = json.dumps({"result": "error", "message": str(exc)}).encode()
+                self._json_response(500, body)
+
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def _json_response(self, code: int, body: bytes):
         self.send_response(code)
@@ -178,7 +242,7 @@ def main():
     else:
         vid, pid = _usb_ids()
         print(f"  Stampante USB: {vid:04x}:{pid:04x}")
-        print(f"  Trovata: {'SI' if check_printer() else 'NO — verifica USB e permessi udev'}")
+        print(f"  Trovata: {'SI' if check_printer() else 'NO — verifica USB e permessi'}")
 
     if os.path.exists(CONFIG_FILE):
         print(f"  Config: {CONFIG_FILE}")

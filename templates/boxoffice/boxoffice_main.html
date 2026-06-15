@@ -408,6 +408,37 @@ window.addEventListener('load', checkWebUSBPrinter);
 {% endif %}
 
 {% if printer_type == 'bridge' %}
+<!-- Modale configurazione stampante termica -->
+<div class="modal fade" id="printerSetupModal" tabindex="-1" role="dialog" aria-labelledby="printerSetupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="printerSetupModalLabel">🖨️ Configurazione Stampante Termica</h5>
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <strong>Attenzione:</strong> Nessuna stampante termica trovata.<br>
+          Senza stampante non potrai stampare i tagliandini dei posti.<br>
+          Collega la stampante USB e clicca <strong>Scansiona dispositivi USB</strong>.
+        </div>
+        <ol>
+          <li>Collega la stampante termica USB al PC</li>
+          <li>Clicca <strong>Scansiona dispositivi USB</strong> — vedrai l'elenco dei dispositivi connessi</li>
+          <li>Identifica la tua stampante e clicca <strong>Usa questa stampante</strong></li>
+          <li>Il bridge salverà la configurazione e verificherà la connessione</li>
+        </ol>
+        <button class="btn btn-primary" onclick="scanUSBDevices()">🔍 Scansiona dispositivi USB</button>
+        <div id="usb-scan-result" class="mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <span class="text-muted small">La configurazione viene salvata in <code>print_bridge.json</code> sul tuo PC.</span>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="text/javascript">
 const BRIDGE_URL = 'http://localhost:{{ printer_bridge_port }}';
 
@@ -431,15 +462,67 @@ async function checkWebUSBPrinter() {
         if (status.printer === 'ok') {
             btn.className = 'btn btn-success btn-lg btn-block';
             btn.textContent = `🖨️ Stampante OK — ${label}`;
+            btn.onclick = null;
         } else {
             btn.className = 'btn btn-warning btn-lg btn-block';
-            btn.textContent = `⚠️ Bridge OK — stampante non trovata (${label})`;
+            btn.textContent = `⚠️ Stampante non trovata — clicca per configurare`;
+            btn.onclick = () => $('#printerSetupModal').modal('show');
         }
-        btn.onclick = null;
     } catch (err) {
         btn.className = 'btn btn-danger btn-lg btn-block';
         btn.textContent = '🖨️ Bridge non attivo — avvia print_bridge.py';
         btn.onclick = null;
+    }
+}
+
+async function scanUSBDevices() {
+    const container = document.getElementById('usb-scan-result');
+    container.innerHTML = '<p class="text-muted">Scansione in corso...</p>';
+    try {
+        const r = await fetch(BRIDGE_URL + '/scan', { signal: AbortSignal.timeout(5000) });
+        const devices = await r.json();
+        if (!devices.length) {
+            container.innerHTML = '<p class="text-danger">Nessun dispositivo USB trovato. Verifica la connessione della stampante.</p>';
+            return;
+        }
+        let html = '<table class="table table-sm table-bordered mt-2"><thead class="thead-light"><tr><th>Vendor</th><th>Product</th><th>Produttore</th><th>Nome</th><th></th></tr></thead><tbody>';
+        for (const d of devices) {
+            const name = d.product_name || '—';
+            const mfr  = d.manufacturer  || '—';
+            html += `<tr>
+                <td><code>${d.vendor}</code></td>
+                <td><code>${d.product}</code></td>
+                <td>${mfr}</td>
+                <td>${name}</td>
+                <td><button class="btn btn-sm btn-success" onclick="configureUSBPrinter('${d.vendor}','${d.product}')">Usa questa stampante</button></td>
+            </tr>`;
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = `<p class="text-danger">Errore scansione: ${err.message}</p>`;
+    }
+}
+
+async function configureUSBPrinter(vendor, product) {
+    const container = document.getElementById('usb-scan-result');
+    container.innerHTML = '<p class="text-muted">Configurazione in corso...</p>';
+    try {
+        const cfg = { type: 'usb', vendor, product, out_ep: 3, interface: 0 };
+        const r = await fetch(BRIDGE_URL + '/configure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cfg),
+        });
+        const data = await r.json();
+        if (data.printer === 'ok') {
+            container.innerHTML = `<div class="alert alert-success">✅ Stampante configurata e trovata! Ricarico la pagina...</div>`;
+            setTimeout(() => { $('#printerSetupModal').modal('hide'); checkWebUSBPrinter(); }, 1500);
+        } else {
+            container.innerHTML = `<div class="alert alert-warning">⚠️ Configurazione salvata ma stampante non ancora rilevata (${vendor}:${product}).<br>Verifica che la stampante sia accesa e connessa, poi ricarica.</div>`;
+        }
+    } catch (err) {
+        container.innerHTML = `<p class="text-danger">Errore configurazione: ${err.message}</p>`;
     }
 }
 
