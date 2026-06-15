@@ -414,7 +414,7 @@ window.addEventListener('load', checkWebUSBPrinter);
     <div class="modal-content">
       <div class="modal-header bg-warning">
         <h5 class="modal-title" id="printerSetupModalLabel">🖨️ Configurazione Stampante Termica</h5>
-        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
       </div>
       <div class="modal-body">
         <div class="alert alert-warning">
@@ -433,7 +433,7 @@ window.addEventListener('load', checkWebUSBPrinter);
       </div>
       <div class="modal-footer">
         <span class="text-muted small">La configurazione viene salvata in <code>print_bridge.json</code> sul tuo PC.</span>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
       </div>
     </div>
   </div>
@@ -466,7 +466,7 @@ async function checkWebUSBPrinter() {
         } else {
             btn.className = 'btn btn-warning btn-lg btn-block';
             btn.textContent = `⚠️ Stampante non trovata — clicca per configurare`;
-            btn.onclick = () => $('#printerSetupModal').modal('show');
+            btn.onclick = () => new bootstrap.Modal(document.getElementById('printerSetupModal')).show();
         }
     } catch (err) {
         btn.className = 'btn btn-danger btn-lg btn-block';
@@ -517,7 +517,7 @@ async function configureUSBPrinter(vendor, product) {
         const data = await r.json();
         if (data.printer === 'ok') {
             container.innerHTML = `<div class="alert alert-success">✅ Stampante configurata e trovata! Ricarico la pagina...</div>`;
-            setTimeout(() => { $('#printerSetupModal').modal('hide'); checkWebUSBPrinter(); }, 1500);
+            setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById('printerSetupModal'))?.hide(); checkWebUSBPrinter(); }, 1500);
         } else {
             container.innerHTML = `<div class="alert alert-warning">⚠️ Configurazione salvata ma stampante non ancora rilevata (${vendor}:${product}).<br>Verifica che la stampante sia accesa e connessa, poi ricarica.</div>`;
         }
