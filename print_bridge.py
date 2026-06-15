@@ -59,6 +59,15 @@ def reload_config():
 reload_config()
 
 
+def _usb_backend():
+    """Restituisce il backend libusb corretto (supporta libusb-package su Windows)."""
+    try:
+        import libusb_package
+        return libusb_package.get_libusb1_backend()
+    except ImportError:
+        return None  # pyusb cerca automaticamente (Linux/Mac)
+
+
 def _usb_ids() -> tuple[int, int]:
     vendor = CONFIG.get('vendor', '0x0483')
     product = CONFIG.get('product', '0x5840')
@@ -81,7 +90,7 @@ def check_printer() -> bool:
         try:
             import usb.core
             vid, pid = _usb_ids()
-            return usb.core.find(idVendor=vid, idProduct=pid) is not None
+            return usb.core.find(idVendor=vid, idProduct=pid, backend=_usb_backend()) is not None
         except Exception:
             return False
 
@@ -91,8 +100,19 @@ def scan_usb_devices() -> list:
     try:
         import usb.core
         import usb.util
-        devices = []
-        for dev in usb.core.find(find_all=True):
+    except ImportError:
+        print("[scan] pyusb non installato — esegui: pip install pyusb libusb-package", file=sys.stderr)
+        return []
+
+    try:
+        found = list(usb.core.find(find_all=True, backend=_usb_backend()))
+    except Exception as exc:
+        print(f"[scan] Impossibile accedere all'USB: {exc}", file=sys.stderr)
+        return []
+
+    devices = []
+    for dev in found:
+        try:
             entry = {
                 "vendor":       f"0x{dev.idVendor:04x}",
                 "product":      f"0x{dev.idProduct:04x}",
@@ -110,10 +130,9 @@ def scan_usb_devices() -> list:
             except Exception:
                 pass
             devices.append(entry)
-        return devices
-    except Exception as exc:
-        print(f"[scan] Errore enumerazione USB: {exc}", file=sys.stderr)
-        return []
+        except Exception:
+            pass
+    return devices
 
 
 def save_config(new_cfg: dict):
@@ -135,7 +154,7 @@ def send_to_printer(raw_bytes: bytes) -> None:
         vid, pid = _usb_ids()
         out_ep = CONFIG.get('out_ep', 3)
         interface = CONFIG.get('interface', 0)
-        dev = usb.core.find(idVendor=vid, idProduct=pid)
+        dev = usb.core.find(idVendor=vid, idProduct=pid, backend=_usb_backend())
         if dev is None:
             raise RuntimeError(f"Stampante USB {vid:04x}:{pid:04x} non trovata")
         if dev.is_kernel_driver_active(interface):
