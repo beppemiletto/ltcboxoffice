@@ -52,8 +52,9 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'ltcboxoffice@teatroca
 # Less strict static files storage (avoids MissingFileError su CSS)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Printer in emulation mode for beta
-PRINTER_TYPE = 'dummy'
+# Printer via bridge client-side (come in produzione)
+PRINTER_TYPE = 'bridge'
+PRINTER_BRIDGE_PORT = 9100
 
 # No Redis needed for beta — use local memory cache
 CACHES = {
