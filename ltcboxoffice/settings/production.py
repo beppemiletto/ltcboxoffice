@@ -67,8 +67,7 @@ CACHES = {
     }
 }
 
-# Printer Configuration - Production (Network Printer)
-PRINTER_TYPE = 'network'  # Use network printer in production
-PRINTER_NETWORK_HOST = os.environ.get('PRINTER_HOST', '192.168.1.100')  # Set via environment variable
-PRINTER_NETWORK_PORT = int(os.environ.get('PRINTER_PORT', '9100'))
-PRINTER_NETWORK_TIMEOUT = 60
+# Printer Configuration - Production (Bridge client-side)
+# Ogni PC di cassa esegue print_bridge.py con il proprio print_bridge.json
+PRINTER_TYPE = 'bridge'
+PRINTER_BRIDGE_PORT = 9100
