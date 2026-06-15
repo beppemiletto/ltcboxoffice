@@ -413,8 +413,9 @@ const BRIDGE_URL = 'http://localhost:{{ printer_bridge_port }}';
 
 function _printerLabel(cfg) {
     if (!cfg) return 'Bridge';
+    if (cfg.type === 'system')  return `Sistema (LaserJet/inkjet)`;
     if (cfg.type === 'network') return `Rete (${cfg.host}:${cfg.port || 9100})`;
-    if (cfg.type === 'usb') return `USB (${cfg.vendor}:${cfg.product})`;
+    if (cfg.type === 'usb')     return `USB (${cfg.vendor}:${cfg.product})`;
     return cfg.type || 'Bridge';
 }
 

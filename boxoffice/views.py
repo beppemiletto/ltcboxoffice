@@ -30,7 +30,7 @@ from billboard.models import Show
 import time
 from datetime import datetime, timedelta
 import pytz
-import json , os
+import json , os, base64
 from pdf2image import convert_from_path
 from PIL import Image, ImageFilter
 from collections import OrderedDict
@@ -135,6 +135,14 @@ def get_printer():
             print(f'Errore stampante USB: {e}')
             return (EscPosDummy(), True)
     
+    elif printer_type == 'webusb':
+        # Client-side WebUSB printing: server generates ESC/POS bytes, browser sends to printer
+        return (EscPosDummy(), True)
+
+    elif printer_type == 'bridge':
+        # Client-side bridge: print_bridge.py on client receives bytes via HTTP localhost
+        return (EscPosDummy(), True)
+
     else:  # dummy mode
         print('Modalità stampante dummy (emulazione)')
         return (EscPosDummy(), True)
@@ -429,7 +437,7 @@ def event(request, event_id):
             'seats': seats_list
         })
 
-    printer_status: bool = printer_ready()
+    printer_status = printer_ready()
 
     context = {
         'hall_status': hall_status,
@@ -438,6 +446,12 @@ def event(request, event_id):
         'current_event' : current_event,
         'orders' : orders,
         'printer_ready': printer_status,
+        'printer_type': getattr(settings, 'PRINTER_TYPE', 'dummy'),
+        'printer_vendor_id': getattr(settings, 'PRINTER_USB_VENDOR', 0x0483),
+        'printer_product_id': getattr(settings, 'PRINTER_USB_PRODUCT', 0x5840),
+        'printer_out_ep': getattr(settings, 'PRINTER_USB_OUT_EP', 0x03),
+        'printer_interface': getattr(settings, 'PRINTER_USB_INTERFACE', 0),
+        'printer_bridge_port': getattr(settings, 'PRINTER_BRIDGE_PORT', 9100),
         'boxofficebookings': boxoffice_bookings_with_count,
     }
 
@@ -814,29 +828,42 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
             printer.print_list_item(data=data)
             if idx == (seats_number -1):
                 printer.print_list_footer(data=data)
-        else:
-            # Emulation mode - collect data for display
-            emulated_print_data.append({
-                'seat': data['seat'],
-                'ingresso': data['ingresso'],
-                'costo': data['costo'],
-                'numero': data['numero'],
-            })
 
-    
+        # Always collect data for display and WebUSB client printing
+        emulated_print_data.append({
+            'seat': data['seat'],
+            'ingresso': data['ingresso'],
+            'costo': data['costo'],
+            'numero': data['numero'],
+        })
+
         hall_status[ticket.seat]['status'] = 5
         tickets_list.append(ticket)
 
-        
+    # Generate ESC/POS bytes via dummy printer for WebUSB client-side printing
+    dummy_gen = EscPosDummy()
+    if emulated_print_data:
+        dummy_gen.print_list_header(header=header)
+        for d in emulated_print_data:
+            dummy_gen.print_list_item(data=d)
+        dummy_gen.print_list_footer(data=emulated_print_data[-1])
+    escpos_bytes_b64 = base64.b64encode(dummy_gen.output).decode('ascii')
+
     context = {
        'event': current_event,
-       'tickets_list':tickets_list,
+       'tickets_list': tickets_list,
        'payment_method': payment_method,
        'recovery_mode': recovery,
-       'emulated_print_data': emulated_print_data if recovery else None,
-       'print_header': header if recovery else None,
-
-        }
+       'emulated_print_data': emulated_print_data,
+       'print_header': header,
+       'escpos_bytes': escpos_bytes_b64,
+       'printer_type': getattr(settings, 'PRINTER_TYPE', 'dummy'),
+       'printer_vendor_id': getattr(settings, 'PRINTER_USB_VENDOR', 0x0483),
+       'printer_product_id': getattr(settings, 'PRINTER_USB_PRODUCT', 0x5840),
+       'printer_out_ep': getattr(settings, 'PRINTER_USB_OUT_EP', 0x03),
+       'printer_interface': getattr(settings, 'PRINTER_USB_INTERFACE', 0),
+       'printer_bridge_port': getattr(settings, 'PRINTER_BRIDGE_PORT', 9100),
+    }
     
     for tckt in tickets_list:
         request = auto_obliterate(request, tckt.number)
@@ -1444,7 +1471,13 @@ def erase_order(request, userorder_id, order_id):
     return redirect(event_list)
 
 def printer_ready():
-    """Check if the configured printer is ready."""
+    """Check if the configured printer is ready.
+    Returns True (server printer OK), False (server printer not found),
+    or None (webusb mode - client-side check required).
+    """
+    printer_type = getattr(settings, 'PRINTER_TYPE', 'dummy')
+    if printer_type in ('webusb', 'bridge'):
+        return None
     try:
         printer, recovery = get_printer()
         return not recovery

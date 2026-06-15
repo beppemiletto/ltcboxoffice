@@ -61,6 +61,8 @@ def _usb_ids() -> tuple[int, int]:
 
 
 def check_printer() -> bool:
+    if CONFIG.get('type') == 'system':
+        return True  # sempre disponibile — usa il browser
     if CONFIG.get('type') == 'network':
         host = CONFIG.get('host', 'localhost')
         port = int(CONFIG.get('port', 9100))
@@ -79,6 +81,8 @@ def check_printer() -> bool:
 
 
 def send_to_printer(raw_bytes: bytes) -> None:
+    if CONFIG.get('type') == 'system':
+        return  # stampa gestita dal browser via window.print()
     if CONFIG.get('type') == 'network':
         host = CONFIG.get('host', 'localhost')
         port = int(CONFIG.get('port', 9100))
@@ -170,7 +174,9 @@ def main():
     print(f"ESC/POS Bridge avviato su http://localhost:{PORT}")
     print(f"  Tipo: {ptype}")
 
-    if ptype == 'network':
+    if ptype == 'system':
+        print(f"  Stampante di sistema (LaserJet/inkjet) — stampa via browser")
+    elif ptype == 'network':
         host = CONFIG.get('host', 'localhost')
         port = CONFIG.get('port', 9100)
         print(f"  Stampante di rete: {host}:{port}")

@@ -67,6 +67,226 @@
     </div>
     {%endif%}
     
+    <!-- ============================ SYSTEM PRINT SECTION (LaserJet/inkjet) ======= -->
+    {% if printer_type == 'bridge' and emulated_print_data %}
+    <div id="system-print-section" style="display:none;">
+        <div style="max-width:500px; margin:20px auto; font-family:'Courier New',monospace; font-size:13px;">
+            <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:8px;">
+                <strong>LABORATORIO TEATRALE DI CAMBIANO A.P.S.</strong><br>
+                Teatro Comunale di Cambiano — Box Office<br>
+                <strong>{{ print_header.show }}</strong><br>
+                {{ print_header.date }}
+            </div>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid #000;">
+                        <th style="text-align:left; padding:4px;">Posto</th>
+                        <th style="text-align:left; padding:4px;">Tipo</th>
+                        <th style="text-align:right; padding:4px;">Prezzo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in emulated_print_data %}
+                    <tr>
+                        <td style="padding:4px;">{{ item.seat }}</td>
+                        <td style="padding:4px;">{{ item.ingresso }}</td>
+                        <td style="text-align:right; padding:4px;">€ {{ item.costo }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="font-size:11px; padding:2px 4px; color:#555;">
+                            Biglietto n. {{ item.numero }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="text-align:center; border-top:2px solid #000; margin-top:8px; padding-top:8px; font-size:11px;">
+                Pagamento: {{ payment_method.name }}<br>
+                Buona visione!
+            </div>
+        </div>
+    </div>
+    <style>
+    @media print {
+        body > *:not(#system-print-wrapper) { display: none !important; }
+        #system-print-section { display: block !important; }
+        .navbar, footer, .section-content > .container > *:not(#system-print-section) { display: none !important; }
+    }
+    </style>
+    {% endif %}
+
+    <!-- ============================ CLIENT PRINT SECTION ========================= -->
+    {% if escpos_bytes and printer_type == 'webusb' or escpos_bytes and printer_type == 'bridge' %}
+    <div class="row mb-4">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card border-primary" id="print-card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🖨️ Stampa Termica</h5>
+                    <span id="print-status-badge" class="badge badge-light">Verifica stampante...</span>
+                </div>
+                <div class="card-body text-center">
+                    <button id="print-btn" class="btn btn-primary btn-lg mr-2" onclick="doPrint()">
+                        <i class="fa fa-print"></i> Stampa Biglietti
+                    </button>
+                    <button id="connect-btn" class="btn btn-warning btn-lg" style="display:none;" onclick="doConnect()">
+                        🔌 Connetti Stampante
+                    </button>
+                    <div id="print-msg" class="mt-2 text-muted small"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    const ESCPOS_B64 = '{{ escpos_bytes }}';
+
+    function b64ToUint8Array(b64) {
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return arr;
+    }
+
+    function setPrintStatus(text, color) {
+        const badge = document.getElementById('print-status-badge');
+        badge.textContent = text;
+        badge.className = 'badge badge-' + color;
+    }
+
+    function setPrintCard(borderColor, headerColor) {
+        document.getElementById('print-card').className = 'card border-' + borderColor;
+        document.getElementById('print-card').querySelector('.card-header').className =
+            'card-header bg-' + headerColor + ' text-white d-flex justify-content-between align-items-center';
+    }
+
+    {% if printer_type == 'bridge' %}
+    // ---- BRIDGE MODE (Firefox / tutti i browser) ----
+    const BRIDGE_URL = 'http://localhost:{{ printer_bridge_port }}';
+
+    async function doPrint() {
+        const btn = document.getElementById('print-btn');
+        const msg = document.getElementById('print-msg');
+        btn.disabled = true;
+        msg.textContent = 'Stampa in corso...';
+        try {
+            const bytes = b64ToUint8Array(ESCPOS_B64);
+            const r = await fetch(BRIDGE_URL + '/print', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/octet-stream' },
+                body: bytes
+            });
+            if (!r.ok) throw new Error('Bridge error ' + r.status);
+            setPrintStatus('✓ Stampato', 'success');
+            setPrintCard('success', 'success');
+            msg.textContent = 'Biglietti stampati con successo.';
+        } catch (err) {
+            btn.disabled = false;
+            setPrintStatus('✗ Errore', 'danger');
+            msg.textContent = 'Errore: ' + err.message + ' — Bridge attivo?';
+            console.error('Bridge print error:', err);
+        }
+    }
+
+    async function doConnect() { /* non usato in bridge mode */ }
+
+    window.addEventListener('load', async () => {
+        try {
+            const [statusRes, configRes] = await Promise.all([
+                fetch(BRIDGE_URL + '/status', { signal: AbortSignal.timeout(1500) }),
+                fetch(BRIDGE_URL + '/config',  { signal: AbortSignal.timeout(1500) }),
+            ]);
+            const status = await statusRes.json();
+            const cfg    = configRes.ok ? await configRes.json() : {};
+
+            if (cfg.type === 'system') {
+                // Stampante di sistema (LaserJet/inkjet): stampa via browser
+                const section = document.getElementById('system-print-section');
+                if (section) {
+                    section.style.display = 'block';
+                    setPrintStatus('🖨️ Stampa browser in corso...', 'success');
+                    setPrintCard('success', 'success');
+                    document.getElementById('print-btn').style.display = 'none';
+                    setTimeout(() => window.print(), 600);
+                } else {
+                    setPrintStatus('⚠️ Nessun dato da stampare', 'warning');
+                }
+            } else if (status.printer === 'ok') {
+                setPrintStatus('🖨️ Stampante pronta', 'success');
+                await doPrint();
+            } else {
+                setPrintStatus('⚠️ Bridge OK — stampante non trovata', 'warning');
+                document.getElementById('print-btn').disabled = false;
+            }
+        } catch {
+            setPrintStatus('⚠️ Bridge non attivo', 'danger');
+            document.getElementById('print-btn').style.display = 'none';
+            document.getElementById('connect-btn').style.display = '';
+            document.getElementById('connect-btn').textContent = '📋 Avvia print_bridge.py sul client';
+            document.getElementById('print-msg').textContent = 'Avvia il bridge sul PC client e ricarica la pagina.';
+        }
+    });
+
+    {% else %}
+    // ---- WEBUSB MODE (Chrome / Edge) ----
+    const WEBUSB_VENDOR_ID  = {{ printer_vendor_id }};
+    const WEBUSB_PRODUCT_ID = {{ printer_product_id }};
+    const WEBUSB_OUT_EP     = {{ printer_out_ep }};
+    const WEBUSB_INTERFACE  = {{ printer_interface }};
+
+    async function getAuthorizedPrinter() {
+        const devices = await navigator.usb.getDevices();
+        return devices.find(d => d.vendorId === WEBUSB_VENDOR_ID && d.productId === WEBUSB_PRODUCT_ID) || null;
+    }
+
+    async function doPrint() {
+        const btn = document.getElementById('print-btn');
+        btn.disabled = true;
+        document.getElementById('print-msg').textContent = 'Stampa in corso...';
+        try {
+            let device = await getAuthorizedPrinter();
+            if (!device) device = await navigator.usb.requestDevice(
+                { filters: [{ vendorId: WEBUSB_VENDOR_ID, productId: WEBUSB_PRODUCT_ID }] });
+            await device.open();
+            if (device.configuration === null) await device.selectConfiguration(1);
+            await device.claimInterface(WEBUSB_INTERFACE);
+            await device.transferOut(WEBUSB_OUT_EP, b64ToUint8Array(ESCPOS_B64));
+            await device.releaseInterface(WEBUSB_INTERFACE);
+            await device.close();
+            setPrintStatus('✓ Stampato', 'success');
+            setPrintCard('success', 'success');
+        } catch (err) {
+            btn.disabled = false;
+            setPrintStatus('✗ Errore', 'danger');
+            document.getElementById('print-msg').textContent = 'Errore: ' + err.message;
+        }
+    }
+
+    async function doConnect() {
+        try {
+            await navigator.usb.requestDevice(
+                { filters: [{ vendorId: WEBUSB_VENDOR_ID, productId: WEBUSB_PRODUCT_ID }] });
+            document.getElementById('connect-btn').style.display = 'none';
+            document.getElementById('print-btn').style.display = '';
+            await doPrint();
+        } catch (err) { if (err.name !== 'NotFoundError') console.error(err); }
+    }
+
+    window.addEventListener('load', async () => {
+        if (!navigator.usb) {
+            setPrintStatus('⚠️ Usa Chrome/Edge', 'warning');
+            document.getElementById('print-btn').style.display = 'none';
+            return;
+        }
+        const device = await getAuthorizedPrinter();
+        if (device) { setPrintStatus('🖨️ Stampante trovata', 'success'); await doPrint(); }
+        else {
+            setPrintStatus('⚠️ Stampante non autorizzata', 'warning');
+            document.getElementById('print-btn').style.display = 'none';
+            document.getElementById('connect-btn').style.display = '';
+        }
+    });
+    {% endif %}
+    </script>
+    {% endif %}
     <!-- ============================ COMPONENT 1 ================================= -->
     {%if not tickets_list%}
         <H2 class="text-center">Non ci sono biglietti stampati da visualizzare.</H2>
