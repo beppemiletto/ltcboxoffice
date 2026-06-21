@@ -514,6 +514,31 @@ def record_booking(request):
 
             del data
 
+            # Aggiorna UserProfile con i dati di spedizione se ancora vuoti
+            try:
+                profile = UserProfile.objects.get(user=current_user)
+                profile_changed = False
+                account_changed = False
+                mapping = [
+                    ('address_line1',  'address_line_1'),
+                    ('address_line2',  'address_line_2'),
+                    ('city',           'city'),
+                    ('province',       'province'),
+                    ('post_code',      'post_code'),
+                ]
+                for profile_field, form_field in mapping:
+                    if not getattr(profile, profile_field) and form.cleaned_data.get(form_field):
+                        setattr(profile, profile_field, form.cleaned_data[form_field])
+                        profile_changed = True
+                if not current_user.phone_number and form.cleaned_data.get('phone'):
+                    current_user.phone_number = form.cleaned_data['phone']
+                    current_user.save()
+                    account_changed = True
+                if profile_changed:
+                    profile.save()
+            except UserProfile.DoesNotExist:
+                pass
+
             order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
             del order_number
             # change for booking only - the payment_required is always FALSE

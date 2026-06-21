@@ -102,7 +102,16 @@ def login(request):
             if 'cookie_consent_given' in request.session:
                 del request.session['cookie_consent_given']
             messages.success(request, 'Adesso sei loggato come {}'.format(email))
-            
+
+            # Se il profilo non è completo, chiedi di completarlo prima di continuare
+            try:
+                profile = UserProfile.objects.get(user=user)
+                if not profile.city and not profile.address_line1:
+                    messages.info(request, 'Per favore completa il tuo profilo: i dati sono necessari per effettuare prenotazioni.')
+                    return redirect('edit_profile')
+            except UserProfile.DoesNotExist:
+                return redirect('edit_profile')
+
             # Redirect to 'next' parameter if present, otherwise go to dashboard
             next_url = request.GET.get('next') or request.POST.get('next')
             if next_url:
