@@ -330,8 +330,9 @@ def delete_order(request, order_id):
 
     for seat in seats_changed:
         key = seat.split('$')[0]
-        hall_status[key]['status'] = 0
-        hall_status[key]['order'] = None
+        if key in hall_status:
+            hall_status[key]['status'] = 0
+            hall_status[key]['order'] = None
 
 
 
