@@ -41,21 +41,8 @@
                 <img class="logo" src="{% static './images/logo.png' %}">
             </a> <!-- brand-wrap.// -->
         </div>
-        <div class="col-lg col-sm col-md col-6 flex-grow-0">
-            <div class="category-wrap dropdown d-inline-block float-right">
-                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"> 
-                    <i class="fa fa-bars"></i> Tutti 
-                </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="{% url 'store' %}">Tutte</a>
-                    {% for section in links %}
-                    <a class="dropdown-item" href="{{ section.get_url }}">{{ section.name }}</a>
-                    {% endfor %}
-                </div>
-            </div>  <!-- category-wrap.// -->
-        </div> <!-- col.// -->
         <div class="col-md-3 ">
-            <a href="{% url 'store' %}" class="btn btn-outline-primary">Botteghino</a>
+            <a href="{% url 'store' %}" class="btn btn-outline-primary">Tutti gli Spettacoli</a>
         </div>
         <div class="col-lg  col-md-6 col-sm-12 col">
             <form action="{%url 'search'%}" class="search" method="get">
