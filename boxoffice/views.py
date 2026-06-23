@@ -2028,65 +2028,57 @@ def hall_detail(request, event_slug=None, number=None):
         return render(request, 'boxoffice/hall_detail.html', context)
     
 def send_updatemail(request, number):
-    # Send order update email to customer
-   # prepare a dictionary for email data
+    """Invia email di aggiornamento prenotazione.
+    Gestisce sia OrderEvent (prenotazioni web) che BoxOfficeBookingEvent (botteghino).
+    """
     from subscriptions.utils import is_subscription_price_code
 
-    email_data = {}
-    orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
-    event= orderevent.event
+    # Determina il tipo di prenotazione dal numero
+    try:
+        orderevent = BoxOfficeBookingEvent.objects.get(booking_number=number)
+        customer = orderevent.customer
+        event = orderevent.event
+        order_number_key = orderevent.booking_number
+    except BoxOfficeBookingEvent.DoesNotExist:
+        orderevent = get_object_or_404(OrderEvent, orderevent_number=number)
+        customer = orderevent.user   # Account ha stessi campi di CustomerProfile
+        event = orderevent.event
+        order_number_key = orderevent.orderevent_number
 
     prices = event.prices()
-    # Extend prices array to support subscription codes (3-6 = €0.00)
     prices_extended = extend_price_array(prices)
-    ingressi_names = INGRESSI_NAMES
     booked_seats = {}
 
     for item in orderevent.seats_price.split(','):
         seat, price = item.split('$')
         price_code = int(price)
-
-        # Build seat info dict similar to booking flow
         is_subscription = is_subscription_price_code(price_code)
         booked_seats[seat] = {
             'price': safe_price_access(prices_extended, price_code),
             'is_subscription': is_subscription,
-            'ingresso_type': ingressi_names[price_code] if price_code < len(ingressi_names) else f"Codice {price_code}"
+            'ingresso_type': INGRESSI_NAMES[price_code] if price_code < len(INGRESSI_NAMES) else f"Codice {price_code}"
         }
 
-    email_data[orderevent.booking_number] = {
-    'show':orderevent.event.show.shw_title,
-    'datetime': orderevent.event.date_time,
-    'venue': orderevent.event.venue.name if orderevent.event.venue else 'Teatro Comunale di Cambiano',
-    'seats': booked_seats
+    email_data = {
+        order_number_key: {
+            'show':     event.show.shw_title,
+            'datetime': event.date_time,
+            'venue':    event.venue.name if event.venue else 'Teatro Comunale di Cambiano',
+            'seats':    booked_seats,
+        }
     }
-
-
-
-    # Count the order events included in the single order
-    orderevents_count = len(email_data)
-
-    # Send order received email to customer 
 
     current_site = get_current_site(request)
-
-    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata registrata!'
+    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata aggiornata!'
     email_context = {
-        'count': orderevents_count,
-        'customer': orderevent.customer,
-        'email_data' : email_data,
+        'count':      len(email_data),
+        'customer':   customer,
+        'email_data': email_data,
     }
     message = render_to_string('boxoffice/order_changed_email.html', email_context).strip()
-    to_email = [orderevent.customer.email,]
-    # send_email = EmailMessage(mail_subject, message, to=[to_email])
-    send_email = EmailMultiAlternatives(
-        mail_subject,
-        message,
-        to=to_email
-    )
+    send_email = EmailMultiAlternatives(mail_subject, message, to=[customer.email])
     send_email.content_subtype = 'html'
     send_email.mixed_subtype = 'related'
-    # send_email.attach(message, "text/html")
     img_dir = 'static/images'
     image = 'logo.png'
     file_path = os.path.join(img_dir, image)
