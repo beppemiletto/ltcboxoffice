@@ -43,11 +43,11 @@
     border-radius: 3px;
 }
 
-/* Posto selezionato - Giallo oro */
+/* Posto selezionato - Blu brillante */
 .button_seat_selected {
-    background-color: #FBBF24 !important;
-    border: 2px solid #F59E0B !important;
-    color: #1F2937 !important;
+    background-color: #2563EB !important;
+    border: 2px solid #1D4ED8 !important;
+    color: #ffffff !important;
     padding: 4px 6px;
     text-align: center;
     text-decoration: none;
@@ -58,6 +58,7 @@
     cursor: pointer;
     border-radius: 3px;
     animation: pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
 }
 
 @keyframes pulse {
@@ -69,10 +70,10 @@
     }
 }
 
-/* Posto prenotato - Arancione */
+/* Posto prenotato - Arancione vivo */
 .button_seat_booked {
-    background-color: #F59E0B !important;
-    border: 2px solid #D97706 !important;
+    background-color: #F97316 !important;
+    border: 2px solid #EA580C !important;
     color: white !important;
     padding: 4px 6px;
     text-align: center;

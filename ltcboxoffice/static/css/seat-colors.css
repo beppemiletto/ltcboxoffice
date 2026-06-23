@@ -18,15 +18,15 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Status 1 e 2 - PRENOTATO - Arancione */
+/* Status 1 e 2 - PRENOTATO - Arancione vivo */
 .table-danger {
-    background-color: #F59E0B !important;
+    background-color: #F97316 !important;
     color: #ffffff !important;
     font-weight: 600;
     cursor: not-allowed;
 }
 
-/* Status 2 - BLOCCATO - Rosso vivo (per differenziare da status 1 se necessario) */
+/* Status 2 - BLOCCATO - Rosso vivo */
 .table-danger.blocked {
     background-color: #DC2626 !important;
     color: #ffffff !important;
@@ -34,14 +34,14 @@
     cursor: not-allowed;
 }
 
-/* Status 3 - SELEZIONATO (in fase di vendita) - Giallo oro */
+/* Status 3 - SELEZIONATO (in fase di vendita) - Blu brillante */
 .table-warning {
-    background-color: #FBBF24 !important;
-    color: #1F2937 !important;
+    background-color: #2563EB !important;
+    color: #ffffff !important;
     font-weight: 700;
     cursor: pointer;
     animation: pulse 1.5s ease-in-out infinite;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);
 }
 
 /* Animazione per posti selezionati - attira l'attenzione */
@@ -55,7 +55,7 @@
 }
 
 .table-warning:hover {
-    background-color: #F59E0B !important;
+    background-color: #1D4ED8 !important;
 }
 
 /* Status 4 - NEL CARRELLO (altro utente) - Viola */
