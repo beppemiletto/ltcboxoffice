@@ -26,7 +26,6 @@ class OrderEventLogAdmin(admin.ModelAdmin):
     list_filter   = ['operation', 'operator']
     search_fields = ['orderevent__orderevent_number', 'operator__email', 'notes']
     readonly_fields = ['orderevent', 'operation', 'timestamp', 'operator', 'notes', 'ip_address']
-    date_hierarchy = 'timestamp'
     list_per_page = 50
 
     def get_operation(self, obj):
