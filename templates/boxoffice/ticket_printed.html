@@ -277,7 +277,8 @@
     
             <div class="card">
             <div class="card-body">
-                <a href="{%url 'close_transaction' event.id%}" class="btn btn-primary btn-block"> Biglietti Stampati </a>
+                <a href="{%url 'close_transaction' event.id%}" class="btn btn-primary btn-block mb-2"> Biglietti Stampati </a>
+                <a href="{% url 'barcode_read' event.id %}" class="btn btn-success btn-block">📷 Prossimo cliente (scanner)</a>
             </div> <!-- card-body.// -->
             </div> <!-- card.// -->
     
