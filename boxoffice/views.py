@@ -1184,6 +1184,11 @@ def select_booking_seats(request, booking_id, mode):
         if all_seats_selected:
             booking.expired = True
             booking.save()
+            if mode == '1' and isinstance(booking, OrderEvent):
+                log_orderevent(booking, OrderEventLog.OP_EVASA,
+                               operator=request.user if request.user.is_authenticated else None,
+                               request=request,
+                               notes=f"Evasione completa — tutti i posti: {booking.seats_price}")
             messages.success(request, f"Tutti i posti della prenotazione sono stati venduti. Prenotazione chiusa.")
         else:
             # Update booking removing sold seats
@@ -1192,9 +1197,14 @@ def select_booking_seats(request, booking_id, mode):
                 seat, price = seat_price.split('$')
                 if seat not in selected_seats:
                     remaining_seats.append(seat_price)
-            
+
             booking.seats_price = ','.join(remaining_seats)
             booking.save()
+            if mode == '1' and isinstance(booking, OrderEvent):
+                log_orderevent(booking, OrderEventLog.OP_EVASA,
+                               operator=request.user if request.user.is_authenticated else None,
+                               request=request,
+                               notes=f"Evasione parziale — venduti: {','.join(selected_seats)} — rimangono: {booking.seats_price}")
             messages.info(request, f"Venduti {len(selected_seats)} posti. Rimangono {len(remaining_seats)} posti nella prenotazione.")
         
         payment_methods = PaymentMethod.objects.all()
@@ -1830,12 +1840,21 @@ def remove_seat(request, number = None, seat= None):
         seats_price_new = re.sub(seat_patterns['begin'],'',seats_price_old)
         item.seats_price = seats_price_new
         item.save()
+        log_orderevent(item, OrderEventLog.OP_MODIFICATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request, notes=f"Rimosso posto {removed_seat} — rimasti: {item.seats_price}")
     elif subs_type == 'center' or subs_type=='end':
         pattern = re.compile(rf',{removed_seat}\$[0-2]')
         seats_price_new = re.sub(pattern,'',seats_price_old)
         item.seats_price = seats_price_new
         item.save()
+        log_orderevent(item, OrderEventLog.OP_MODIFICATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request, notes=f"Rimosso posto {removed_seat} — rimasti: {item.seats_price}")
     elif subs_type == 'only':
+        log_orderevent(item, OrderEventLog.OP_CANCELLATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request, notes=f"Rimosso unico posto {removed_seat} — ordine eliminato")
         deleted_orderevent = item.pk
         item.delete()
         
@@ -1917,6 +1936,9 @@ def plus_ingresso(request, number = None, seat= None):
         seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
         item.seats_price = seats_price_new
         item.save()
+        log_orderevent(item, OrderEventLog.OP_MODIFICATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request, notes=f"Ingresso aumentato posto {seat}: {seat_price_old} → {seat_price_new}")
         #  Update also related Order Total
         main_order_id = item.order.pk
         total , tax = updateorder(main_order_id)
@@ -1947,6 +1969,9 @@ def minus_ingresso(request, number = None, seat= None):
         seats_price_new = re.sub(find_pattern,seat_price_new,seats_price)
         item.seats_price = seats_price_new
         item.save()
+        log_orderevent(item, OrderEventLog.OP_MODIFICATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request, notes=f"Ingresso diminuito posto {seat}: {seat_price_old} → {seat_price_new}")
         #  Update also related Order Total
         main_order_id = item.order.pk
         total , tax = updateorder(main_order_id)
