@@ -174,7 +174,7 @@
             var seatStatus = seatsStatus[seatNumberSelected]
             // seat status = 0 significa posto libero 
             if (seatStatus == '0') {
-                if (choice.length <= 10){
+                if (choice.length < 10){
                 toggleStatus(seatNumberSelected,'3')
                 choice.splice(0,0,seat);
                 seatsStatus[seatNumberSelected]='3'
