@@ -8,7 +8,8 @@ from .forms import RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from carts.models import Cart, CartItem
 from carts.views import _cart_id
-from orders.models import Order, OrderEvent, UserEvent
+from orders.models import Order, OrderEvent, UserEvent, OrderEventLog
+from orders.utils import log_orderevent
 from subscriptions.models import Subscription
 from store.models import Event
 import random
@@ -339,6 +340,10 @@ def delete_order(request, order_id):
     with open(json_file_path,'w') as jfp:
         json.dump(hall_status,jfp, indent=2)
 
+    log_orderevent(orderevent, OrderEventLog.OP_CANCELLATA,
+                   operator=request.user if request.user.is_authenticated else None,
+                   request=request,
+                   notes=f"Cancellata dall'utente — posti: {orderevent.seats_price}")
     orderevent.delete()
 
     # Delete also the order if was the only orderevent in that order o update the economics

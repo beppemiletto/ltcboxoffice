@@ -19,7 +19,8 @@ from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from .price_utils import extend_price_array, safe_price_access, INGRESSI_NAMES, get_price_name, is_subscription
 from escpos.printer import Usb, USBNotFoundError, Dummy
 from store.models import Event
-from orders.models import OrderEvent, UserEvent, Order, Payment
+from orders.models import OrderEvent, UserEvent, Order, Payment, OrderEventLog
+from orders.utils import log_orderevent
 from subscriptions.models import SubscriptionUsage
 from subscriptions.utils import is_subscription_price_code, get_subscription_by_price_code
 from tickets.models import Ticket
@@ -1350,6 +1351,11 @@ def sell_booking(request, order = None, mode=None):
     # OrderEvent is set as expired
     order_event.expired = True
     order_event.save()
+    if mode == '1':
+        log_orderevent(order_event, OrderEventLog.OP_EVASA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request,
+                       notes=f"Evasione al botteghino — posti: {order_event.seats_price}")
     payment_methods = PaymentMethod.objects.all()
     context = {
         'event' : current_event,
@@ -1973,6 +1979,10 @@ def hall_detail(request, event_slug=None, number=None):
         orderevent_seats_price +=added_seats
         orderevent.seats_price = orderevent_seats_price
         orderevent.save()
+        log_orderevent(orderevent, OrderEventLog.OP_MODIFICATA,
+                       operator=request.user if request.user.is_authenticated else None,
+                       request=request,
+                       notes=f"Posti aggiornati: {orderevent.seats_price}")
         #  Update also related Order Total
         main_order_id = orderevent.order.pk
         total , tax = updateorder(main_order_id)

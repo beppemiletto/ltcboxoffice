@@ -7,7 +7,8 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage , EmailMultiAlternatives
 from email.mime.image import MIMEImage
 from store.models import Event
-from orders.models import Order, Payment, OrderEvent, UserEvent
+from orders.models import Order, Payment, OrderEvent, UserEvent, OrderEventLog
+from orders.utils import log_orderevent
 from orders.forms import OrderForm
 from accounts.models import UserProfile
 from carts.models import Cart, CartItem
@@ -708,6 +709,9 @@ def booking_payments(request, newContext={}):
             barcode_image_path: os.path = barcode_printer.make_barcode()
             orderevent.barcode_path = barcode_image_path
             orderevent.save()
+            log_orderevent(orderevent, OrderEventLog.OP_CREATA,
+                           operator=current_user, request=request,
+                           notes=f"Posti: {orderevent.seats_price}")
             booked_seats = {}
             booked_seats[seat] = {
                 'price': item.price,

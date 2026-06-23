@@ -122,6 +122,38 @@ class OrderEvent(models.Model):
     def seats_count(self):
         return len(self.seats_price.split(','))
 
+class OrderEventLog(models.Model):
+    OP_CREATA     = 1
+    OP_EVASA      = 2
+    OP_CANCELLATA = 3
+    OP_MODIFICATA = 4
+    OP_ALTRO      = 5
+
+    OPERATIONS = (
+        (OP_CREATA,     'Creata'),
+        (OP_EVASA,      'Evasa'),
+        (OP_CANCELLATA, 'Cancellata'),
+        (OP_MODIFICATA, 'Modificata'),
+        (OP_ALTRO,      'Altro'),
+    )
+
+    orderevent   = models.ForeignKey(OrderEvent, on_delete=models.CASCADE, related_name='logs')
+    operation    = models.IntegerField(choices=OPERATIONS)
+    timestamp    = models.DateTimeField(auto_now_add=True)
+    operator     = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True)
+    notes        = models.CharField(max_length=500, blank=True)
+    ip_address   = models.CharField(max_length=45, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        ts = self.timestamp.strftime('%d/%m/%Y %H:%M')
+        op = self.get_operation_display()
+        who = self.operator.email if self.operator else 'sistema'
+        return f"[{ts}] {op} — {self.orderevent.orderevent_number} — {who}"
+
+
 class UserEvent(models.Model):
     ordersevents = models.CharField(max_length=100)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
