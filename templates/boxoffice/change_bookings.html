@@ -76,15 +76,18 @@
                                                 <!-- la prenotazione expired == FALSE -->
                                                 {%else%}
                                             <tr>
-                                                <td > 
-                                                    <div class="text-right">
-                                                        <a href="{% url 'select_booking_seats' key_order '1' %}" class="btn btn-success btn-sm" title="Seleziona posti da vendere">
-                                                            <i class="fas fa-key"></i> {{key_order}}
-                                                        </a>
-                                                    </div> 
+                                                <td>
+                                                    <a href="{% url 'edit_order' key_order %}" class="btn btn-info btn-sm" title="Modifica prenotazione (posti, tipo ingresso)">
+                                                        <i class="fas fa-edit"></i> Modifica
+                                                    </a>
                                                 </td>
                                                 <td>
-                                                    {{order.0}}
+                                                    <a href="{% url 'select_booking_seats' key_order '1' %}" class="btn btn-success btn-sm" title="Vendi al botteghino">
+                                                        <i class="fas fa-cash-register"></i> Vendi
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {{order.0}} posti
                                                 </td>
                                                 <td>
                                                     {{order.1|date:"D d m Y"}}
@@ -92,7 +95,6 @@
                                                 <td>
                                                     <a href="{% url 'erase_order' orderevent.0 key_order %}" title="Cancella prenotazione"> <i class='fas fa-eraser' style='font-size:18px'></i> </a>
                                                 </td>
-                                                
                                             </tr>
                                                 {%endif%}
                                             {%endfor%}
