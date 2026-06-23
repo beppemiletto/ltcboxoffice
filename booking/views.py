@@ -650,6 +650,7 @@ def booking_payments(request, newContext={}):
 
     # prepare a dictionary for email data
     email_data = {}
+    created_orderevents = {}  # pk → orderevent, per loggarli dopo il loop con seats_price completo
 
 
     for item in cart_items:
@@ -709,9 +710,7 @@ def booking_payments(request, newContext={}):
             barcode_image_path: os.path = barcode_printer.make_barcode()
             orderevent.barcode_path = barcode_image_path
             orderevent.save()
-            log_orderevent(orderevent, OrderEventLog.OP_CREATA,
-                           operator=current_user, request=request,
-                           notes=f"Posti: {orderevent.seats_price}")
+            created_orderevents[orderevent.pk] = orderevent  # log dopo il loop
             booked_seats = {}
             booked_seats[seat] = {
                 'price': item.price,
@@ -762,6 +761,14 @@ def booking_payments(request, newContext={}):
 
 
 
+
+    # Log delle prenotazioni create (con seats_price completo, dopo il loop)
+    for oe in created_orderevents.values():
+        oe.refresh_from_db()
+        n_posti = len(oe.seats_price.split(','))
+        log_orderevent(oe, OrderEventLog.OP_CREATA,
+                       operator=current_user, request=request,
+                       notes=f"{n_posti} posto/i: {oe.seats_price}")
 
     # Clear the cart
 
