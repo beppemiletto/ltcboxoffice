@@ -1596,46 +1596,84 @@ def auto_obliterate( request, ticket_number):
     return request
 
 def barcode_read(request, event_id:int=None):
+    current_event = get_object_or_404(Event, id=event_id)
     orderevents = OrderEvent.objects.filter(event_id=event_id)
     form = Barcode_Reader(initial={'barcode_code': ''})
     if request.method == 'POST':
         form = Barcode_Reader(request.POST)
         if form.is_valid():
-            barcode_code = form.cleaned_data['barcode_code'].replace('?', '_')
+            barcode_code = form.cleaned_data['barcode_code'].strip().replace('?', '_')
             try:
-                orderevent = OrderEvent.objects.get(orderevent_number=barcode_code)
-                if orderevent in orderevents:
-                    orderevent_form = OrderEventForm(data={'barcode_code':orderevent.orderevent_number,
-                                                           'user': orderevent.user,
-                                                           'event': orderevent.event,
-                                                           'seats_price': orderevent.seats_price,
-                                                           'created_at':orderevent.created_at,
-                                                           'updated_at': orderevent.updated_at,
-                                                           'expired': orderevent.expired})
-                    valid_order:bool = not orderevent.expired
+                orderevent = OrderEvent.objects.select_related('event', 'event__show', 'order', 'user').get(
+                    orderevent_number=barcode_code
+                )
+            except OrderEvent.DoesNotExist:
+                messages.error(request, f"❌ Codice non riconosciuto: {barcode_code} — QR non valido o danneggiato.")
+                form = Barcode_Reader(initial={'barcode_code': ''})
+                return render(request, 'boxoffice/barcode_read.html', {'form': form, 'event': event_id, 'orderevents': orderevents})
 
-                    context = {
-                        'valid': valid_order,
-                        'form': orderevent_form,
-                        'event' : event_id,
-                        'orderevent' : orderevent,
-                    }
-                    messages.success(request,f"Il codice {barcode_code} letto o digitato è valido! Procedura di lettura del codice corretta.")
-                    return render(request, 'boxoffice/orderevent_details.html',context)
-                else:
-                    print('NOT FOUND, coglione, altro spettacolo? Fake, mispelled?')
+            # ── Controllo ordine cancellato ─────────────────────────────────
+            if orderevent.order and orderevent.order.status == 'Cancelled':
+                messages.error(request,
+                    f"❌ Prenotazione ANNULLATA — "
+                    f"{orderevent.user.full_name()} · {orderevent.orderevent_number}")
+                form = Barcode_Reader(initial={'barcode_code': ''})
+                return render(request, 'boxoffice/barcode_read.html', {'form': form, 'event': event_id, 'orderevents': orderevents})
 
-            except Exception as e:
-                print(e)
-                messages.warning(request,f"Il codice {barcode_code} letto o digitato non è valido! \n Procedura di lettura del codice per ordine fallita e abortita.")
-                return redirect(reverse('event', kwargs={"event_id": event_id}))
+            # ── Controllo ordine non confermato ─────────────────────────────
+            if orderevent.order and not orderevent.order.is_ordered:
+                messages.error(request,
+                    f"❌ Prenotazione NON CONFERMATA — "
+                    f"{orderevent.user.full_name()} · {orderevent.orderevent_number}")
+                form = Barcode_Reader(initial={'barcode_code': ''})
+                return render(request, 'boxoffice/barcode_read.html', {'form': form, 'event': event_id, 'orderevents': orderevents})
+
+            # ── Controllo evento sbagliato ──────────────────────────────────
+            if orderevent.event_id != event_id:
+                oe = orderevent.event
+                messages.error(request,
+                    f"❌ SERATA SBAGLIATA — Questa prenotazione è per: "
+                    f"«{oe.show.shw_title}» del {oe.date_time.strftime('%d/%m/%Y alle %H:%M')} "
+                    f"— {orderevent.user.full_name()} · Posti: {orderevent.seats_price}")
+                form = Barcode_Reader(initial={'barcode_code': ''})
+                return render(request, 'boxoffice/barcode_read.html', {'form': form, 'event': event_id, 'orderevents': orderevents})
+
+            # ── Controllo già processato ────────────────────────────────────
+            if orderevent.expired:
+                messages.warning(request,
+                    f"⚠️ Prenotazione GIÀ EVASA — "
+                    f"{orderevent.user.full_name()} · {orderevent.orderevent_number} "
+                    f"(aggiornata il {orderevent.updated_at.strftime('%d/%m/%Y %H:%M')})")
+                form = Barcode_Reader(initial={'barcode_code': ''})
+                return render(request, 'boxoffice/barcode_read.html', {'form': form, 'event': event_id, 'orderevents': orderevents})
+
+            # ── Tutto OK: mostra riepilogo ordine ──────────────────────────
+            orderevent_form = OrderEventForm(data={
+                'barcode_code': orderevent.orderevent_number,
+                'user':         orderevent.user,
+                'event':        orderevent.event,
+                'seats_price':  orderevent.seats_price,
+                'created_at':   orderevent.created_at,
+                'updated_at':   orderevent.updated_at,
+                'expired':      orderevent.expired,
+            })
+            messages.success(request,
+                f"✅ Prenotazione valida — {orderevent.user.full_name()} · "
+                f"{orderevent.seats_count()} posto/i · {orderevent.orderevent_number}")
+            context = {
+                'valid':     True,
+                'form':      orderevent_form,
+                'event':     event_id,
+                'orderevent': orderevent,
+            }
+            return render(request, 'boxoffice/orderevent_details.html', context)
 
     context = {
-        'form':form,
-        'event' : event_id,
-        'orderevents' : orderevents,
+        'form':        form,
+        'event':       event_id,
+        'orderevents': orderevents,
     }
-    return render(request, 'boxoffice/barcode_read.html',context)
+    return render(request, 'boxoffice/barcode_read.html', context)
 
 @login_required(login_url='login')
 def qr_scanner_mobile(request, event_id:int=None):
