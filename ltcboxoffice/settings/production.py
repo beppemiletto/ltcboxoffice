@@ -31,6 +31,9 @@ DATABASES = {
     }
 }
 
+# Django è dietro Apache che termina SSL — necessario per evitare redirect loop
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Security settings
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
@@ -53,7 +56,7 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 # Static files handling with WhiteNoise (recommended)
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Logging - more verbose in production
 LOGGING['handlers']['file']['level'] = 'WARNING'
