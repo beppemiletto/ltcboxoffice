@@ -58,8 +58,8 @@ EMAIL_TIMEOUT = 10  # Timeout in seconds
 # Development-specific settings
 CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 
-# Printer Configuration - Development (Emulation Mode)
-PRINTER_TYPE = 'dummy'  # Use dummy printer for development (shows emulated output)
+# Printer Configuration: bridge script (print_bridge.py) sul PC client
+PRINTER_TYPE = 'bridge'
 
 
 # Per CSRF - ngrok origins vengono aggiunti dinamicamente dal middleware

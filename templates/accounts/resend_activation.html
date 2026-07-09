@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-conten padding-y" style="min-height:84vh">
+
+    <div class="card mx-auto" style="max-width: 600px; margin-top:100px;">
+        <div class="card-body">
+            <h4 class="card-title mb-4">Conferma il tuo account</h4>
+            {% include 'includes/alerts.html' %}
+
+            <p>
+                Il tuo account è stato trasferito dal vecchio sito del Laboratorio Teatrale
+                di Cambiano e deve essere confermato prima di poter essere utilizzato.
+            </p>
+            <p>
+                Clicca il pulsante qui sotto per ricevere una nuova email di conferma
+                all'indirizzo <strong>{{ email }}</strong>.
+            </p>
+
+            <form action="{% url 'resend_activation' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="email" value="{{ email }}">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Invia email di conferma
+                    </button>
+                </div>
+            </form>
+
+            <div class="form-group mt-3">
+                <a href="{% url 'login' %}">Torna al login</a>
+            </div>
+        </div>
+    </div>
+
+</section>
+{% endblock content %}

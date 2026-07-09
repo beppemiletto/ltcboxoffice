@@ -64,7 +64,7 @@ Data e ora: {contact_message.created_at.strftime('%d/%m/%Y alle %H:%M')}
                     subject,
                     message_body,
                     settings.DEFAULT_FROM_EMAIL,
-                    ['ltcboxoffice@teatrocambiano.com'],
+                    ['ltcboxoffice@teatrocambiano.com', 'info@teatrocambiano.com'],
                     fail_silently=False,
                 )
 

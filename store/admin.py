@@ -5,7 +5,7 @@ from billboard.models import Show, Venue
 # Register your models here.
 class EventAdmin(admin.ModelAdmin):
     my_slug = 'my_calculated_slug_string'
-    list_display = ('show', 'event_slug', 'date_time', 'booking_deadline_hours', 'venue') 
+    list_display = ('id', 'show', 'event_slug', 'date_time', 'booking_deadline_hours', 'venue')
     list_filter = ('venue', 'date_time')
     search_fields = ('show__shw_title', 'event_slug')
     

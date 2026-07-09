@@ -198,14 +198,19 @@ LOGGING = {
 }
 
 # Printer Configuration - Default values (override in environment-specific settings)
-PRINTER_TYPE = 'dummy'  # Options: 'usb', 'network', 'dummy'
+PRINTER_TYPE = 'bridge'  # Options: 'usb', 'network', 'dummy', 'webusb', 'bridge'
 
-# USB Printer Settings (for environments that need it)
+# USB/WebUSB Printer Settings
 PRINTER_USB_VENDOR = 0x0483
 PRINTER_USB_PRODUCT = 0x5840
 PRINTER_USB_TIMEOUT = 0
 PRINTER_USB_IN_EP = 0x81
 PRINTER_USB_OUT_EP = 0x03
+PRINTER_USB_INTERFACE = 0  # USB interface number (0 for most ESC/POS printers)
+
+# Bridge Printer Settings (script print_bridge.py running on the client PC)
+# The bridge script listens on localhost and forwards raw ESC/POS bytes to the USB printer.
+PRINTER_BRIDGE_PORT = 9100
 
 # Network Printer Settings (override in production.py)
 PRINTER_NETWORK_HOST = '192.168.1.100'

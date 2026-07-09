@@ -75,19 +75,39 @@ class EscPosDummy(Dummy):
         self.static_url_logo = os.path.join(BASE_DIR,STATIC_ROOT,'images/logos/logo_ltc_retinato.png')
 
     def print_ticket(self, data=None):
-
         self.image(self.static_url_logo)
-        # self.set(align='center', font='a',  width=1, height=1)
-        # self.text(data['numero'])
-        # self.set(align='right', font='b',  width=2, height=2)
-        # self.text(data['numero'])
-        # self.set(align='right', font='a',  width=1, height=1)
-        # self.text(data['numero'])
-        # self.set(align='center', font='b',  width=3, height=3)
         self.text("Buona visione")
         self.cut(mode=u'FULL')
-
         return self.output
+
+    def print_list_header(self, header=None):
+        self.set(align='center', font='b', width=1, height=2)
+        self.text("Laboratorio Teatrale di Cambiano A.P.S. \n")
+        self.image(self.static_url_logo)
+        self.set(align='center', font='b', width=2, height=2)
+        self.text("Teatro Comunale di Cambiano \n")
+        self.set(align='center', font='a', width=3, height=3)
+        self.text("Box Office")
+        self.text('\n')
+        self.set(align='center', font='b', width=1, height=1)
+        self.text(f"{header['show']} \n")
+        self.text(f"{header['date']} \n")
+        self.text('\n')
+
+    def print_list_item(self, data=None):
+        self.set(align='left', font='a', width=1, height=1)
+        self.text(f"N. {data['numero']} - P. ")
+        self.set(align='center', font='a', width=2, height=2)
+        self.text(f"{data['seat']} ")
+        self.set(align='right', font='a', width=1, height=1)
+        self.text(f"- {data['ingresso']} ")
+        self.text('\n')
+
+    def print_list_footer(self, data=None):
+        self.set(align='center', font='b', width=3, height=3)
+        self.text('\n')
+        self.text("Buona visione")
+        self.cut(mode=u'FULL')
 
 class EscPosNetwork(Network):
     def __init__(self, host='localhost', port=9100, timeout=60, *args, **kwargs):

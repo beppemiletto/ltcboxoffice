@@ -667,7 +667,7 @@ def boxoffice_print(request, event_id, method_id=None, orderevent_id=None, mode_
     # Get configured printer
     printer, recovery = get_printer()
     
-    boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+    boxoffice_user = Account.objects.get(email='ltcboxoffice@teatrocambiano.com')
     current_event = Event.objects.get(id = event_id)
     
     # Handle free transactions (method_id=0 means no payment required)
@@ -891,7 +891,7 @@ def close_transaction(request, event_id=None, context=None):
     costs_extended = extend_price_array(costs)
     ingressi = ['Gratuito','Ridotto', 'Intero']
     show= current_event.show
-    boxoffice_user = Account.objects.get(first_name = 'Cassa', last_name = 'Laboratorio')
+    boxoffice_user = Account.objects.get(email='ltcboxoffice@teatrocambiano.com')
 
     try:
         payments = BoxOfficeTransaction.objects.filter(event=current_event)
@@ -1690,23 +1690,6 @@ def barcode_read(request, event_id:int=None):
         'orderevents': orderevents,
     }
     return render(request, 'boxoffice/barcode_read.html', context)
-
-@login_required(login_url='login')
-def qr_scanner_mobile(request, event_id:int=None):
-    """
-    View per scanner QR code mobile-friendly con accesso fotocamera.
-    Richiede autenticazione per proteggere l'accesso.
-    """
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        messages.error(request, "Evento non trovato")
-        return redirect('event_list')
-
-    context = {
-        'event': event,
-    }
-    return render(request, 'boxoffice/qr_scanner_mobile.html', context)
 
 @login_required(login_url='login')
 def validate_qr_code_api(request, event_id:int=None):

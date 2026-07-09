@@ -22,4 +22,5 @@ urlpatterns = [
     path('order_detail_tkts/<str:order_number>/', views.order_detail_tkts, name='order_detail_tkts'),
     path('cookie-consent/', views.cookie_consent, name='cookie_consent'),
     path('cookie-policy/', views.cookie_policy, name='cookie_policy'),
+    path('resend_activation/', views.resend_activation, name='resend_activation'),
 ] 

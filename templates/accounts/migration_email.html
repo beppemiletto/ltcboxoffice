@@ -1,0 +1,25 @@
+{%autoescape off%}
+Salve {{user.first_name}},
+
+il Laboratorio Teatrale di Cambiano ha rinnovato il proprio sito di prenotazione online.
+
+Il tuo account ({{user.email}}) è stato trasferito sul nuovo sito ma richiede una tua conferma
+prima di poter essere utilizzato, in conformità con le normative sulla privacy (GDPR).
+
+Per confermare il tuo account e continuare ad usare il servizio di prenotazione online,
+clicca sul link qui sotto:
+
+http://{{domain}}{%url 'activate' uidb64=uid token=token%}
+
+Il link è valido per 24 ore. Se scade, potrai richiederne uno nuovo dalla pagina di login.
+
+Se non desideri più utilizzare il servizio, ignora semplicemente questa email:
+il tuo account non verrà attivato e i tuoi dati saranno eliminati dopo 90 giorni.
+
+Per qualsiasi domanda scrivi a info@teatrocambiano.com
+
+Cordiali saluti
+
+lo staff del Laboratorio Teatrale di Cambiano
+
+{%endautoescape%}

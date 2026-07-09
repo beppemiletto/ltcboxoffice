@@ -120,11 +120,57 @@ def login(request):
             else:
                 return redirect('dashboard')
         else:
+            # Controlla se è un utente migrato dal vecchio sito con account non ancora confermato
+            try:
+                candidate = Account.objects.get(
+                    email=email, is_active=False, migrated_from_old_site=True
+                )
+                if candidate.check_password(password):
+                    messages.warning(
+                        request,
+                        'Il tuo account è stato trasferito dal vecchio sito ma deve essere '
+                        'confermato. Controlla la tua email oppure richiedi un nuovo link.'
+                    )
+                    return redirect(f'/accounts/resend_activation/?email={email}')
+            except Account.DoesNotExist:
+                pass
             messages.error(request, 'Le credenziali fornite non sono valide')
             return redirect('login')
 
 
     return render(request, 'accounts/login.html')
+
+
+def resend_activation(request):
+    email = request.GET.get('email', '') or request.POST.get('email', '')
+
+    if request.method == 'POST':
+        try:
+            user = Account.objects.get(email=email, is_active=False)
+        except Account.DoesNotExist:
+            messages.error(request, 'Nessun account da attivare trovato per questa email.')
+            return redirect('login')
+
+        current_site = get_current_site(request)
+        if user.migrated_from_old_site:
+            template = 'accounts/migration_email.html'
+            subject = '[Teatro Cambiano] Conferma il tuo account sul nuovo sito'
+        else:
+            template = 'accounts/account_verification_email.html'
+            subject = 'LTCBoxOffice - Attivazione utente sul sito {}'.format(current_site.name)
+
+        message_body = render_to_string(template, {
+            'user': user,
+            'domain': current_site,
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': default_token_generator.make_token(user),
+        })
+        EmailMessage(subject, message_body, to=[email]).send()
+        messages.success(request, f'Email di conferma inviata a {email}. Controlla la posta.')
+        return redirect('login')
+
+    context = {'email': email}
+    return render(request, 'accounts/resend_activation.html', context)
 
 @login_required(login_url= 'login')
 def logout(request):
