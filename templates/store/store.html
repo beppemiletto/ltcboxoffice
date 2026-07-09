@@ -53,15 +53,33 @@
             </div>
     </header><!-- sect-heading -->
     
+    {% if show_count == 0 and not keyword %}
+    <!-- Nessuno spettacolo prenotabile in tutto il cartellone -->
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fa fa-ticket fa-4x text-muted mb-4" style="opacity:0.4;"></i>
+            <h2 class="mb-3">Siamo felici che tu sia arrivato qui!</h2>
+            <p class="lead text-muted mb-2">
+                Al momento non c'è nessuno spettacolo programmato.
+            </p>
+            <p class="text-muted mb-4">
+                Stiamo preparando la prossima stagione&nbsp;&mdash;&nbsp;torna a visitarci tra qualche tempo.
+            </p>
+            <p class="text-muted">
+                <i class="fa fa-envelope-o"></i>
+                Per informazioni scrivi a
+                <a href="mailto:info@teatrocambiano.com">info@teatrocambiano.com</a>
+            </p>
+        </div>
+    </div>
+    {% else %}
     <div class="row">
         {%if billboard%}
         {% for show in billboard %}
         <div class="col-md-5">
             <figure class="card card-product-grid">
-                <div class="img-wrap"> 
+                <div class="img-wrap">
                     <a href="{{show.show_url}}" class="img-wrap"> <img src="{{show.image.url}}"> </a>
-                    <!-- <img src="{{ show.image.url }}"> -->
-                    
                 </div> <!-- img-wrap.// -->
                 <figcaption class="info-wrap">
                     <div class="fix-height">
@@ -97,11 +115,11 @@
                 <p>
                     Se ritieni che questo sia un errore contatta via mail il BoxOffice.
                 </p>
-
             </span>
         </h2>
         {%endif%}
     </div> <!-- row end.// -->
+    {% endif %}
     
     
     <nav class="mt-4" aria-label="Page navigation sample">
