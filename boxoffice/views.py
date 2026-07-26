@@ -37,7 +37,10 @@ import time
 from datetime import datetime, timedelta
 import pytz
 import json , os, base64
-from pdf2image import convert_from_path
+try:
+    from pdf2image import convert_from_path
+except ImportError:
+    convert_from_path = None
 from PIL import Image, ImageFilter
 from collections import OrderedDict
 import re
