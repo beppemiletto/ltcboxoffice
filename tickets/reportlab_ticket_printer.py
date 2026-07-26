@@ -12,8 +12,6 @@ from datetime import datetime
 import pytz
 import locale
 import os
-import cv2
-
 
 class TicketPrinter():
     def __init__(self,
