@@ -1,4 +1,9 @@
-from escpos.printer import Usb, Dummy, Network
+try:
+    from escpos.printer import Usb, Dummy, Network
+except ImportError:
+    Usb = object
+    Dummy = object
+    Network = object
 from django.templatetags.static import static
 from ltcboxoffice.settings import BASE_DIR, STATIC_ROOT
 import os

@@ -17,7 +17,12 @@ from .models import SellingSeats , PaymentMethod, BoxOfficeTransaction, Customer
 from .forms import Barcode_Reader, OrderEventForm, CustomerProfileForm, CustomerShortForm
 from .escpos_printer import EscPosPrinter, EscPosDummy, EscPosNetwork
 from .price_utils import extend_price_array, safe_price_access, INGRESSI_NAMES, get_price_name, is_subscription
-from escpos.printer import Usb, USBNotFoundError, Dummy
+try:
+    from escpos.printer import Usb, USBNotFoundError, Dummy
+except ImportError:
+    Usb = object
+    USBNotFoundError = Exception
+    Dummy = object
 from store.models import Event
 from orders.models import OrderEvent, UserEvent, Order, Payment, OrderEventLog
 from orders.utils import log_orderevent
