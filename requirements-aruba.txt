@@ -4,24 +4,14 @@ asgiref==3.6.0
 sqlparse==0.4.4
 tzdata==2023.3
 
-# Database
-
-# Celery for background tasks
-
 # Django apps and extensions
 django-adaptors==0.2.5
 django-appconf==1.0.5
 django-cookie-consent==0.3.1
 
-# Document and image processing
+# Image and PDF (base — senza pycairo/opencv non usati sul server web)
 reportlab==4.0.0
 Pillow==10.4.0
-pdf2image==1.16.3
-opencv-python==4.10.0.84
-numpy==2.1.3
-pycairo==1.27.0
-rlPyCairo==0.2.0
-freetype-py==2.3.0
 
 # QR code generation
 qrcode==7.4.2
@@ -31,11 +21,6 @@ pypng==0.20220715.0
 openpyxl==3.1.2
 et-xmlfile==1.1.0
 odfdo==3.3.7
-
-# Printer support
-python-escpos==2.2.0
-pyserial==3.5
-pyusb==1.2.1
 
 # Utilities
 python-dateutil==2.8.2
@@ -51,7 +36,6 @@ charset-normalizer==3.1.0
 idna==3.4
 argcomplete==3.1.1
 appdirs==1.4.4
-async-timeout==4.0.2
 
 # Environment variables
 python-dotenv==1.0.1
@@ -61,3 +45,6 @@ whitenoise==6.6.0
 
 # WSGI server for production
 gunicorn==21.2.0
+
+# SSH per management commands (import storico da vecchio sito)
+paramiko==3.4.0
