@@ -23,12 +23,18 @@ class Command(BaseCommand):
         parser.add_argument('--dry-run', action='store_true', help='Simula senza inviare')
         parser.add_argument('--batch', type=int, default=0,
                             help='Invia solo i primi N (0 = tutti)')
+        parser.add_argument('--staff-only', action='store_true',
+                            help='Invia solo agli utenti staff/admin')
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']
         batch = options['batch']
+        staff_only = options['staff_only']
 
         users = Account.objects.filter(migrated_from_old_site=True, is_active=False)
+        if staff_only:
+            from django.db.models import Q
+            users = users.filter(Q(is_staff=True) | Q(is_admin=True))
         if batch:
             users = users[:batch]
 
