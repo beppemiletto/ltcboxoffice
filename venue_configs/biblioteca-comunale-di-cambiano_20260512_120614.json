@@ -1,0 +1,491 @@
+{
+  "venue": {
+    "name": "Biblioteca Comunale di Cambiano",
+    "slug": "biblioteca-comunale-di-cambiano",
+    "capacity": 100,
+    "ba_code_siae": "",
+    "local_code_siae": ""
+  },
+  "rows": [
+    {
+      "name": "A",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "C",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "D",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "E",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "F",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "G",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "H",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "I",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    },
+    {
+      "name": "L",
+      "offset_start": 1,
+      "offset_end": 1,
+      "is_active": true,
+      "seats": [
+        {
+          "num": 1,
+          "active": true
+        },
+        {
+          "num": 2,
+          "active": true
+        },
+        {
+          "num": 3,
+          "active": true
+        },
+        {
+          "num": 4,
+          "active": true
+        },
+        {
+          "num": 5,
+          "active": true
+        },
+        {
+          "num": 6,
+          "active": true
+        },
+        {
+          "num": 7,
+          "active": true
+        },
+        {
+          "num": 8,
+          "active": true
+        },
+        {
+          "num": 9,
+          "active": true
+        },
+        {
+          "num": 10,
+          "active": true
+        }
+      ]
+    }
+  ]
+}
