@@ -182,7 +182,7 @@
 
         <div class="menu-grid">
             <!-- Apri Cassa -->
-            <a href="{%url 'event' next_close_event.pk%}" class="menu-card primary">
+            <a href="{% if next_close_event %}{% url 'event' next_close_event.pk %}{% else %}{% url 'event_list' %}{% endif %}" class="menu-card primary">
                 <span class="menu-badge">Default</span>
                 <div class="menu-icon">
                     <i class="fas fa-cash-register"></i>
