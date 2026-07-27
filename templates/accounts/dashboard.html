@@ -34,7 +34,7 @@
                                     <div class="col-md-6">
                                         <div class="card" style="text-align: center;">
                                             <div class="card-body">
-                                               <img src="{{ userprofile.profile_picture.url }}" alt="Immagine Utente" class="avatar" width="75" height="75" style="border-radius:45%;">
+                                               {% if userprofile.profile_picture %}<img src="{{ userprofile.profile_picture.url }}" alt="Immagine Utente" class="avatar" width="75" height="75" style="border-radius:45%;">{% else %}<div style="width:75px;height:75px;border-radius:45%;background:linear-gradient(135deg,#667eea,#764ba2);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:1.8rem;"><i class="fas fa-user"></i></div>{% endif %}
                                                 <p class="mb-0">{{ user.email }}</p>
                                                 <p>{{ user.phone_number }}</p>
                                             </div>
