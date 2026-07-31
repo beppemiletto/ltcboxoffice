@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+<div class="container">
+
+  <div class="mb-3">
+    {% if show.shw_season %}
+    <a href="{% url 'history_season' show.shw_season.season_label %}" class="text-muted small">
+      <i class="fas fa-arrow-left mr-1"></i> Stagione {{ show.shw_season.season_label }}
+    </a>
+    {% else %}
+    <a href="{% url 'history_home' %}" class="text-muted small">
+      <i class="fas fa-arrow-left mr-1"></i> Storia
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="row">
+
+    <!-- Immagine -->
+    <div class="col-md-4 mb-4">
+      {% if show.shw_image %}
+      <img src="{{ show.shw_image.url }}" alt="{{ show.shw_title }}" class="img-fluid rounded shadow"
+           style="width:100%;object-fit:cover;max-height:360px;">
+      {% else %}
+      <div class="rounded shadow d-flex align-items-center justify-content-center"
+           style="height:280px;background:linear-gradient(135deg,#667eea,#764ba2);">
+        <i class="fas fa-theater-masks text-white" style="font-size:4rem;opacity:.5;"></i>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Dettagli -->
+    <div class="col-md-8">
+      <h1 class="font-weight-bold mb-1" style="color:#2d3748;">{{ show.shw_title }}</h1>
+
+      {% if show.shw_season %}
+      <a href="{% url 'history_season' show.shw_season.season_label %}"
+         class="badge badge-pill text-decoration-none mb-3 d-inline-block"
+         style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:.85rem;padding:.4em .9em;">
+        {{ show.shw_season.season_label }}
+      </a>
+      {% endif %}
+
+      <table class="table table-sm mt-3" style="max-width:480px;">
+        <tbody>
+          {% if show.shw_date %}
+          <tr>
+            <th class="text-muted pl-0 border-0" style="width:130px;">Data</th>
+            <td class="border-0">{{ show.shw_date|date:"d F Y" }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <th class="text-muted pl-0">Regia</th>
+            <td>
+              {% for d in director_links %}
+              <a href="{% url 'history_director' d.slug %}">{{ d.name }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% if show.shw_author and show.shw_author != 'My Author' %}
+          <tr>
+            <th class="text-muted pl-0">Autore</th>
+            <td>{{ show.shw_author }}</td>
+          </tr>
+          {% endif %}
+          {% if show.shw_theater_company and show.shw_theater_company != 'Laboratorio Teatrale di Cambiano' %}
+          <tr>
+            <th class="text-muted pl-0">Compagnia</th>
+            <td>{{ show.shw_theater_company }}</td>
+          </tr>
+          {% endif %}
+          {% if show.shw_venue %}
+          <tr>
+            <th class="text-muted pl-0">Teatro</th>
+            <td>{{ show.shw_venue.name }}</td>
+          </tr>
+          {% endif %}
+          {% if show.shw_spectators %}
+          <tr>
+            <th class="text-muted pl-0">Spettatori</th>
+            <td><i class="fas fa-users mr-1 text-muted"></i>{{ show.shw_spectators }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      {% if show.shw_description %}
+      <div class="mt-3">
+        <h6 class="font-weight-bold text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.1em;">Note</h6>
+        <p>{{ show.shw_description }}</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+</section>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+<div class="container">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <h1 class="display-5 font-weight-bold" style="color:#2d3748;">
+        <i class="fas fa-theater-masks text-primary mr-2"></i> Storia del Laboratorio Teatrale di Cambiano
+      </h1>
+      <p class="lead text-muted">Oltre trent'anni di teatro, passione e comunità</p>
+    </div>
+  </div>
+
+  <!-- Statistiche globali -->
+  <div class="row mb-5">
+    <div class="col-md-4 mb-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body py-4">
+          <div style="font-size:2.5rem;color:#667eea;"><i class="fas fa-calendar-alt"></i></div>
+          <h2 class="font-weight-bold mt-2" style="color:#2d3748;">{{ total_seasons }}</h2>
+          <p class="text-muted mb-0">Stagioni teatrali</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body py-4">
+          <div style="font-size:2.5rem;color:#764ba2;"><i class="fas fa-masks-theater"></i></div>
+          <h2 class="font-weight-bold mt-2" style="color:#2d3748;">{{ total_shows }}</h2>
+          <p class="text-muted mb-0">Spettacoli in scena</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body py-4">
+          <div style="font-size:2.5rem;color:#f093fb;"><i class="fas fa-users"></i></div>
+          <h2 class="font-weight-bold mt-2" style="color:#2d3748;">{{ total_spectators }}</h2>
+          <p class="text-muted mb-0">Spettatori totali</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <!-- Timeline stagioni -->
+    <div class="col-lg-8 mb-4">
+      <h4 class="font-weight-bold mb-3" style="color:#2d3748;">
+        <i class="fas fa-history mr-2 text-primary"></i>Le Stagioni
+      </h4>
+      <div class="timeline-list">
+        {% for season in seasons %}
+        <a href="{% url 'history_season' season.season_label %}" class="text-decoration-none">
+          <div class="card mb-2 shadow-sm border-0 season-card">
+            <div class="card-body py-3 px-4">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="badge badge-pill mr-2" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:.85rem;padding:.4em .8em;">
+                    {{ season.season_label }}
+                  </span>
+                  <span class="text-muted small">
+                    {{ season.season_start_date|date:"d M Y" }} → {{ season.season_end_date|date:"d M Y" }}
+                  </span>
+                </div>
+                <div class="text-right">
+                  <span class="font-weight-bold" style="color:#2d3748;">{{ season.show_count }}</span>
+                  <span class="text-muted small ml-1">spettacoli</span>
+                  {% if season.total_spectators %}
+                  <span class="text-muted small ml-3">
+                    <i class="fas fa-user ml-1"></i> {{ season.total_spectators }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Top registi -->
+    <div class="col-lg-4 mb-4">
+      <h4 class="font-weight-bold mb-3" style="color:#2d3748;">
+        <i class="fas fa-star mr-2 text-warning"></i>I Registi
+      </h4>
+      <div class="card shadow-sm border-0">
+        <div class="list-group list-group-flush">
+          {% for d in top_directors %}
+          <a href="{% url 'history_director' d.slug %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+            <div>
+              <i class="fas fa-user-tie text-primary mr-2"></i>
+              <span>{{ d.name }}</span>
+            </div>
+            <span class="badge badge-primary badge-pill">{{ d.count }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="card-footer text-center bg-white border-0 pb-3">
+          <a href="{% url 'history_directors' %}" class="btn btn-sm btn-outline-primary">
+            Tutti i registi <i class="fas fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<style>
+.season-card { transition: transform .15s, box-shadow .15s; }
+.season-card:hover { transform: translateX(4px); box-shadow: 0 4px 15px rgba(102,126,234,.2) !important; }
+</style>
+{% endblock %}

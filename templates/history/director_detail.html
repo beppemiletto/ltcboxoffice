@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+<div class="container">
+
+  <div class="mb-3">
+    <a href="{% url 'history_directors' %}" class="text-muted small">
+      <i class="fas fa-arrow-left mr-1"></i> Registi
+    </a>
+  </div>
+
+  <!-- Header regista -->
+  <div class="card border-0 mb-4" style="background:linear-gradient(135deg,#764ba2,#f093fb);border-radius:12px;">
+    <div class="card-body py-4 px-5 text-white">
+      <div class="d-flex align-items-center mb-2">
+        <div class="rounded-circle d-flex align-items-center justify-content-center mr-4 flex-shrink-0"
+             style="width:64px;height:64px;background:rgba(255,255,255,.2);">
+          <i class="fas fa-user" style="font-size:1.8rem;"></i>
+        </div>
+        <div>
+          <h1 class="font-weight-bold mb-1">{{ director_name }}</h1>
+          <p class="mb-0 opacity-75">Regista teatrale</p>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-auto">
+          <span class="h4 font-weight-bold">{{ shows|length }}</span>
+          <span class="ml-1 small">spettacoli diretti</span>
+        </div>
+        <div class="col-auto">
+          <span class="h4 font-weight-bold">{{ seasons|length }}</span>
+          <span class="ml-1 small">stagioni</span>
+        </div>
+        {% if total_spectators %}
+        <div class="col-auto">
+          <span class="h4 font-weight-bold">{{ total_spectators }}</span>
+          <span class="ml-1 small">spettatori</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Stagioni attive -->
+  <div class="mb-4">
+    {% for s in seasons %}
+    <a href="{% url 'history_season' s %}" class="badge badge-pill mr-1 mb-1 text-decoration-none"
+       style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:.85rem;padding:.4em .8em;">
+      {{ s }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Spettacoli -->
+  <h5 class="font-weight-bold mb-3" style="color:#2d3748;">
+    <i class="fas fa-list mr-2 text-primary"></i>Spettacoli diretti
+  </h5>
+  {% for show in shows %}
+  <a href="{% url 'history_show' show.shw_slug %}" class="text-decoration-none">
+    <div class="card mb-2 border-0 shadow-sm show-card">
+      <div class="card-body py-3">
+        <div class="row align-items-center">
+          {% if show.shw_image %}
+          <div class="col-auto pr-0">
+            <img src="{{ show.shw_image.url }}" alt="" width="55" height="55"
+                 style="object-fit:cover;border-radius:6px;">
+          </div>
+          {% endif %}
+          <div class="col">
+            <h6 class="font-weight-bold mb-0" style="color:#2d3748;">{{ show.shw_title }}</h6>
+            <small class="text-muted">
+              {% if show.shw_date %}<i class="fas fa-calendar mr-1"></i>{{ show.shw_date|date:"d M Y" }}{% endif %}
+              {% if show.shw_season %}
+              <span class="ml-2 badge badge-light">{{ show.shw_season.season_label }}</span>
+              {% endif %}
+            </small>
+          </div>
+          {% if show.shw_spectators %}
+          <div class="col-auto text-right">
+            <small class="text-muted"><i class="fas fa-users mr-1"></i>{{ show.shw_spectators }}</small>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+
+</div>
+</section>
+
+<style>
+.show-card { transition: transform .15s, box-shadow .15s; }
+.show-card:hover { transform: translateX(4px); box-shadow: 0 4px 15px rgba(118,75,162,.2) !important; }
+</style>
+{% endblock %}

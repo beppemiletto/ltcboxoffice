@@ -34,6 +34,7 @@ urlpatterns = [
     path('booking/', include('booking.urls')),
     path('billboard/', include('billboard.urls', namespace='billboard')),
     path('contact/', include('contact.urls')),
+    path('storia/', include('history.urls')),
     # path('cookie_consent/', include('cookie_consent.urls')),
 ]
 

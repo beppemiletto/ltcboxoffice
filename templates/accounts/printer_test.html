@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-conten padding-y bg">
+    {% include 'includes/alerts.html' %}
+    <div class="container">
+        <div class="row">
+            {% include 'includes/dashboard_sidebar.html' %}
+            <main class="col-md-9">
+                <article class="card">
+                    <header class="card-header d-flex align-items-center justify-content-between">
+                        <strong><i class="fas fa-print mr-2"></i>Test Stampante Cassa</strong>
+                        <span id="bridge-badge" class="badge badge-secondary">Verifica in corso...</span>
+                    </header>
+                    <div class="card-body">
+
+                        <!-- Stato Bridge -->
+                        <div class="card mb-4 border-left-primary" style="border-left: 4px solid #007bff;">
+                            <div class="card-body py-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-plug mr-1"></i>Print Bridge (localhost:9100)</h6>
+                                <div class="d-flex align-items-center">
+                                    <span id="bridge-dot" style="width:14px;height:14px;border-radius:50%;background:#aaa;display:inline-block;margin-right:10px;"></span>
+                                    <span id="bridge-status">Verifica in corso...</span>
+                                </div>
+                                <div id="bridge-detail" class="text-muted small mt-1" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Stato Stampante -->
+                        <div class="card mb-4 border-left-success" style="border-left: 4px solid #28a745;">
+                            <div class="card-body py-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-receipt mr-1"></i>Stampante USB</h6>
+                                <div class="d-flex align-items-center">
+                                    <span id="printer-dot" style="width:14px;height:14px;border-radius:50%;background:#aaa;display:inline-block;margin-right:10px;"></span>
+                                    <span id="printer-status">In attesa del bridge...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pulsanti -->
+                        <div class="d-flex gap-2 flex-wrap" style="gap:12px;">
+                            <button id="btn-refresh" class="btn btn-outline-secondary" onclick="checkStatus()">
+                                <i class="fas fa-sync-alt mr-1"></i>Aggiorna stato
+                            </button>
+                            <button id="btn-print" class="btn btn-primary" onclick="testPrint()" disabled>
+                                <i class="fas fa-print mr-1"></i>Stampa pagina di test
+                            </button>
+                        </div>
+
+                        <!-- Testo personalizzato -->
+                        <div class="card mt-4">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-3"><i class="fas fa-keyboard mr-1"></i>Stampa testo personalizzato</h6>
+                                <textarea id="custom-text" class="form-control mb-3" rows="4" placeholder="Scrivi qui il testo da stampare..."></textarea>
+                                <button id="btn-custom-print" class="btn btn-success" onclick="customPrint()" disabled>
+                                    <i class="fas fa-print mr-1"></i>Stampa testo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Log -->
+                        <div id="log-area" class="mt-4" style="display:none;">
+                            <h6 class="text-muted">Log</h6>
+                            <pre id="log-text" class="bg-dark text-light p-3 rounded" style="font-size:0.82rem;max-height:180px;overflow-y:auto;"></pre>
+                        </div>
+
+                    </div>
+                </article>
+            </main>
+        </div>
+    </div>
+</section>
+
+<script>
+const BRIDGE = 'http://localhost:9100';
+
+function log(msg) {
+    const area = document.getElementById('log-area');
+    const pre = document.getElementById('log-text');
+    area.style.display = 'block';
+    const ts = new Date().toLocaleTimeString('it-IT');
+    pre.textContent += `[${ts}] ${msg}\n`;
+    pre.scrollTop = pre.scrollHeight;
+}
+
+function setBridgeState(ok, detail) {
+    const dot = document.getElementById('bridge-dot');
+    const txt = document.getElementById('bridge-status');
+    const badge = document.getElementById('bridge-badge');
+    const det = document.getElementById('bridge-detail');
+    if (ok) {
+        dot.style.background = '#28a745';
+        txt.textContent = 'Bridge attivo';
+        badge.className = 'badge badge-success';
+        badge.textContent = 'Bridge OK';
+    } else {
+        dot.style.background = '#dc3545';
+        txt.textContent = 'Bridge non raggiungibile';
+        badge.className = 'badge badge-danger';
+        badge.textContent = 'Bridge offline';
+    }
+    if (detail) {
+        det.style.display = 'block';
+        det.textContent = detail;
+    }
+}
+
+function setPrinterState(ok) {
+    const dot = document.getElementById('printer-dot');
+    const txt = document.getElementById('printer-status');
+    document.getElementById('btn-print').disabled = !ok;
+    document.getElementById('btn-custom-print').disabled = !ok;
+    if (ok) {
+        dot.style.background = '#28a745';
+        txt.textContent = 'Stampante trovata e pronta';
+    } else {
+        dot.style.background = '#dc3545';
+        txt.textContent = 'Stampante non trovata — verifica USB e alimentazione';
+    }
+}
+
+async function checkStatus() {
+    try {
+        const resp = await fetch(`${BRIDGE}/status`, {signal: AbortSignal.timeout(3000)});
+        const data = await resp.json();
+        log(`Status: ${JSON.stringify(data)}`);
+        setBridgeState(true, `Tipo: ${data.type}`);
+        setPrinterState(data.printer === 'ok');
+    } catch(e) {
+        log(`Errore bridge: ${e.message}`);
+        setBridgeState(false, 'Assicurati che print_bridge.py sia in esecuzione su questo PC');
+        document.getElementById('printer-dot').style.background = '#aaa';
+        document.getElementById('printer-status').textContent = 'Non verificabile (bridge offline)';
+        document.getElementById('btn-print').disabled = true;
+    }
+}
+
+function buildTestPrint() {
+    const enc = new TextEncoder();
+    const now = new Date().toLocaleString('it-IT');
+    const lines = [
+        '\x1b\x40',                        // ESC @ init
+        '\x1b\x61\x01',                    // center
+        '================================\n',
+        '   TEST STAMPANTE CASSA\n',
+        '   LTC Boxoffice\n',
+        '================================\n',
+        '\x1b\x61\x00',                    // left
+        `Data/ora: ${now}\n`,
+        'Connessione: Print Bridge OK\n',
+        'Stampante: USB OK\n',
+        '\n\n\n',
+        '\x1d\x56\x41\x03',               // GS V A = cut
+    ];
+    const str = lines.join('');
+    return enc.encode(str);
+}
+
+async function testPrint() {
+    const btn = document.getElementById('btn-print');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Stampa in corso...';
+    try {
+        const bytes = buildTestPrint();
+        const resp = await fetch(`${BRIDGE}/print`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/octet-stream'},
+            body: bytes,
+            signal: AbortSignal.timeout(8000),
+        });
+        const data = await resp.json();
+        if (data.result === 'ok') {
+            log('Stampa inviata con successo.');
+        } else {
+            log(`Errore stampa: ${data.message}`);
+        }
+    } catch(e) {
+        log(`Errore: ${e.message}`);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-print mr-1"></i>Stampa pagina di test';
+        btn.disabled = false;
+    }
+}
+
+async function customPrint() {
+    const text = document.getElementById('custom-text').value.trim();
+    if (!text) {
+        log('Nessun testo da stampare.');
+        return;
+    }
+    const btn = document.getElementById('btn-custom-print');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Stampa in corso...';
+    try {
+        const enc = new TextEncoder();
+        const lines = [
+            '\x1b\x40',           // init
+            text + '\n',
+            '\n\n\n',
+            '\x1d\x56\x41\x03',  // cut
+        ];
+        const bytes = enc.encode(lines.join(''));
+        const resp = await fetch(`${BRIDGE}/print`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/octet-stream'},
+            body: bytes,
+            signal: AbortSignal.timeout(8000),
+        });
+        const data = await resp.json();
+        log(data.result === 'ok' ? 'Testo inviato con successo.' : `Errore: ${data.message}`);
+    } catch(e) {
+        log(`Errore: ${e.message}`);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-print mr-1"></i>Stampa testo';
+        btn.disabled = false;
+    }
+}
+
+// Controlla subito all'apertura pagina e poi ogni 10 secondi
+checkStatus();
+setInterval(checkStatus, 10000);
+</script>
+{% endblock %}

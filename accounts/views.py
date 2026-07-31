@@ -520,4 +520,12 @@ def subscriptions(request):
     return render(request, 'accounts/subscriptions.html', context)
 
     order.save()
-    return (total, tax) 
+    return (total, tax)
+
+
+@login_required(login_url='login')
+def printer_test(request):
+    if not (request.user.is_admin or request.user.is_staff):
+        messages.error(request, 'Accesso riservato a staff e amministratori.')
+        return redirect('dashboard')
+    return render(request, 'accounts/printer_test.html') 
