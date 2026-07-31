@@ -6,6 +6,14 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import *
 import pytz
 
+
+def _history_context():
+    from history.models import Season, HistoryShow
+    return {
+        'history_seasons': Season.objects.count(),
+        'history_shows': HistoryShow.objects.count(),
+    }
+
 def home(request):
     shows = Show.objects.all().filter(is_in_billboard=True, is_active=True)
 
@@ -49,6 +57,7 @@ def home(request):
         if not evidence_show_found:
             context = {
                 'message': 'Al Teatro Comunale di Cambiano non ci sono spettacoli prenotabili. Il Laboratorio Teatrale di Cambiano APS sta preparando il nuovo programma e presto sarà prenotabile.',
+                **_history_context(),
             }
             return render(request, 'no_bookable_events.html', context)
 
@@ -67,8 +76,8 @@ def home(request):
 
         context = {
             'billboard': billboard,
+            **_history_context(),
         }
-        # return HttpResponse("<H1>My Home page</H1>")
         return render(request, 'home.html', context)
     else:
         now = datetime.now()

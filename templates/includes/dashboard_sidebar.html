@@ -78,6 +78,12 @@
             <i class="fas fa-key"></i>
             <span>Cambia la Password</span>
         </a>
+        {% if user.is_admin or user.is_staff %}
+        <a class="menu-item {% if '/printer-test/' in request.path %}active{% endif %}" href="{% url 'printer_test' %}">
+            <i class="fas fa-print"></i>
+            <span>Test Stampante</span>
+        </a>
+        {% endif %}
     </ul>
     <br>
     <a class="btn logout-btn btn-block" href="{% url 'logout' %}">

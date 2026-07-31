@@ -42,7 +42,46 @@
 </section>
 <!-- ========================= SECTION  END// ========================= -->
 
-</body>
-</html>
+<!-- ========================= SEZIONE STORIA ========================= -->
+<section class="section-name padding-y-sm">
+<div class="container">
+
+  <header class="section-heading">
+    <a href="{% url 'history_home' %}" class="btn btn-outline-primary float-right">Esplora</a>
+    <h3 class="section-title">La nostra storia</h3>
+  </header>
+
+  <div class="row align-items-center">
+    <div class="col-md-7 mb-3">
+      <p class="text-muted mb-3">
+        Oltre trent'anni di teatro, passione e comunità. Sfoglia le stagioni passate, scopri gli spettacoli che hanno scritto la storia del Laboratorio e le persone che li hanno portati in scena.
+      </p>
+      <a href="{% url 'history_home' %}" class="btn btn-primary btn-lg px-4">
+        <i class="fas fa-theater-masks mr-2"></i>Stagioni Precedenti
+      </a>
+    </div>
+    <div class="col-md-5 mb-3">
+      <div class="row">
+        <div class="col-6">
+          <div class="card text-center border-0 shadow-sm py-3">
+            <div style="font-size:1.6rem;color:#667eea;"><i class="fas fa-calendar-alt"></i></div>
+            <div class="font-weight-bold h5 mt-1 mb-0">{{ history_seasons }}</div>
+            <small class="text-muted">Stagioni</small>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="card text-center border-0 shadow-sm py-3">
+            <div style="font-size:1.6rem;color:#764ba2;"><i class="fas fa-masks-theater"></i></div>
+            <div class="font-weight-bold h5 mt-1 mb-0">{{ history_shows }}</div>
+            <small class="text-muted">Spettacoli</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+<!-- ========================= SEZIONE STORIA END // ========================= -->
 
 {% endblock %}
