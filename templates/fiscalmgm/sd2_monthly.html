@@ -1,0 +1,109 @@
+{% extends 'boxoffice_base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y bg">
+    <div class="container">
+
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="mb-0"><i class="fas fa-file-invoice mr-2"></i>MOD SD2 — Dichiarazione mensile abbonamenti</h5>
+                        <a href="{% url 'fiscalmgm:fiscalmgm_main' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i>Torna agli eventi
+                        </a>
+                    </div>
+
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Il modulo SD2 va consegnato alla SIAE in duplice copia entro il <strong>15 del mese successivo</strong>
+                            a quello di vendita degli abbonamenti.
+                        </p>
+
+                        {% if not months_list %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Nessun abbonamento venduto registrato nel sistema.
+                            </div>
+                        {% else %}
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr class="small text-uppercase text-muted">
+                                    <th>Mese</th>
+                                    <th class="text-center">Abbonamenti venduti</th>
+                                    <th class="text-center">Stato report</th>
+                                    <th class="text-center">Azione</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in months_list %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ m.month_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">Scadenza SIAE: 15/{{ m.month|stringformat:"02d" }}/{% if m.month == 12 %}{{ m.year|add:1 }}{% else %}{{ m.year }}{% endif %}</small>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="badge badge-primary badge-pill" style="font-size:1rem;">{{ m.count }}</span>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        {% if m.report %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check mr-1"></i>Generato
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">n° {{ m.report.progress_number }}</small>
+                                        {% else %}
+                                            <span class="badge badge-warning text-dark">
+                                                <i class="fas fa-clock mr-1"></i>Da generare
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <a href="{% url 'fiscalmgm:sd2_generate' m.year m.month %}"
+                                           class="btn btn-sm {% if m.report %}btn-outline-success{% else %}btn-success{% endif %}"
+                                           title="{% if m.report %}Rigenera e scarica{% else %}Genera e scarica{% endif %} MOD SD2">
+                                            <i class="fas fa-file-excel mr-1"></i>
+                                            {% if m.report %}Rigenera{% else %}Genera{% endif %} SD2
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-info-circle mr-1"></i>Cos'è il MOD SD2</h6>
+                        <hr>
+                        <p class="small text-muted">
+                            Modulo SIAE per la dichiarazione mensile degli abbonamenti agli spettacoli venduti.
+                        </p>
+                        <p class="small text-muted">
+                            Va presentato alla SIAE in <strong>duplice copia</strong> entro il <strong>15 del mese successivo</strong>.
+                        </p>
+                        <p class="small text-muted mb-0">
+                            Il file Excel generato è pronto per la stampa e la firma del legale rappresentante.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <a href="{% url 'fiscalmgm:fiscalmgm_main' %}" class="btn btn-light btn-block">
+                            <i class="fas fa-arrow-left mr-1"></i>Torna agli eventi
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
