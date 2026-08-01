@@ -201,7 +201,6 @@ staticfiles/
 
 # Old/backup templates
 templates/fiscalmgm/event_reportdata_old.html
-templates/fiscalmgm/sd2_monthly.html
 
 # Temp files
 nul
