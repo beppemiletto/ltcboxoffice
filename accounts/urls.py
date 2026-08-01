@@ -24,4 +24,6 @@ urlpatterns = [
     path('cookie-policy/', views.cookie_policy, name='cookie_policy'),
     path('resend_activation/', views.resend_activation, name='resend_activation'),
     path('printer-test/', views.printer_test, name='printer_test'),
+    path('printer-guide/', views.printer_guide, name='printer_guide'),
+    path('printer-download/<str:filename>', views.printer_download, name='printer_download'),
 ]
