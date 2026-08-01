@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-conten padding-y bg">
+    {% include 'includes/alerts.html' %}
+    <div class="container">
+        <div class="row">
+            {% include 'includes/dashboard_sidebar.html' %}
+            <main class="col-md-9">
+
+                <article class="card mb-4">
+                    <header class="card-header d-flex align-items-center justify-content-between">
+                        <strong><i class="fas fa-book mr-2"></i>Guida Installazione Print Bridge</strong>
+                        <a href="{% url 'printer_test' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-print mr-1"></i>Vai al Test Stampante
+                        </a>
+                    </header>
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Il <strong>Print Bridge</strong> è un piccolo programma che gira sul PC della cassa
+                            e permette al sito di stampare i biglietti con i posti a sedere sulla stampante USB locale.
+                            Va avviato <strong>prima</strong> di aprire una sessione di cassa.
+                        </p>
+
+                        <!-- Download files -->
+                        <div class="card mb-4" style="border-left: 4px solid #28a745;">
+                            <div class="card-body py-3">
+                                <h6 class="mb-3"><i class="fas fa-download mr-1"></i>Scarica i file necessari</h6>
+                                <div class="d-flex flex-wrap" style="gap:10px;">
+                                    <a href="{% url 'printer_download' 'print_bridge.py' %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-file-code mr-1"></i>print_bridge.py
+                                    </a>
+                                    <a href="{% url 'printer_download' 'check_endpoints.py' %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-search mr-1"></i>check_endpoints.py
+                                    </a>
+                                </div>
+                                <p class="text-muted small mt-2 mb-0">
+                                    Salva i file nella cartella <code>print_bridge</code> che creerai nei passi seguenti.
+                                    Il file <code>print_bridge.json</code> lo crei tu con la configurazione della tua stampante (vedi sotto).
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- OS Tabs -->
+                        <ul class="nav nav-tabs mb-4" id="osTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="linux-tab" data-toggle="tab" href="#linux">
+                                    <i class="fab fa-linux mr-1"></i>Linux
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="windows-tab" data-toggle="tab" href="#windows">
+                                    <i class="fab fa-windows mr-1"></i>Windows
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+
+                            <!-- ══════════ LINUX ══════════ -->
+                            <div class="tab-pane fade show active" id="linux">
+
+                                <h6 class="text-primary mt-2"><i class="fas fa-cube mr-1"></i>Passo 1 — Crea la cartella e copia i file</h6>
+                                <pre class="bg-dark text-light p-3 rounded">mkdir ~/print_bridge
+cd ~/print_bridge
+# copia qui print_bridge.py e check_endpoints.py scaricati sopra</pre>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 2 — Crea l'ambiente virtuale e installa le dipendenze</h6>
+                                <pre class="bg-dark text-light p-3 rounded">python3 -m venv ~/print_bridge_env
+source ~/print_bridge_env/bin/activate
+pip install pyusb</pre>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 3 — Permessi USB (necessario su Linux)</h6>
+                                <p class="text-muted small">Senza questo passaggio il bridge non riesce ad accedere alla stampante senza sudo.</p>
+                                <pre class="bg-dark text-light p-3 rounded">sudo tee /etc/udev/rules.d/99-escpos.rules &lt;&lt;'EOF'
+SUBSYSTEM=="usb", ATTRS{idVendor}=="<span class="text-warning">XXXX</span>", ATTRS{idProduct}=="<span class="text-warning">YYYY</span>", MODE="0666"
+EOF
+sudo udevadm control --reload-rules && sudo udevadm trigger</pre>
+                                <p class="text-muted small">
+                                    Sostituisci <code>XXXX</code> e <code>YYYY</code> con vendor e product ID della tua stampante
+                                    (es. <code>0471</code> e <code>0055</code> per Philips POS).
+                                    Per trovare gli ID: <code>lsusb</code> con la stampante collegata.
+                                </p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 4 — Trova l'endpoint corretto della stampante</h6>
+                                <pre class="bg-dark text-light p-3 rounded">source ~/print_bridge_env/bin/activate
+cd ~/print_bridge
+python check_endpoints.py</pre>
+                                <p class="text-muted small">
+                                    Cerca la riga <strong>BULK OUT</strong> (es. <code>ep=0x02  OUT  BULK</code>).
+                                    Il numero esadecimale (es. <code>2</code>) è il valore di <code>out_ep</code> da usare nel JSON.
+                                </p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 5 — Crea print_bridge.json</h6>
+                                <p class="text-muted small">Crea il file <code>~/print_bridge/print_bridge.json</code> con questo contenuto, adattando i valori:</p>
+                                <pre class="bg-dark text-light p-3 rounded">{
+  "type": "usb",
+  "vendor": "0x<span class="text-warning">XXXX</span>",
+  "product": "0x<span class="text-warning">YYYY</span>",
+  "out_ep": <span class="text-warning">2</span>,
+  "interface": 0
+}</pre>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-play-circle mr-1"></i>Avvio</h6>
+                                <pre class="bg-dark text-light p-3 rounded">source ~/print_bridge_env/bin/activate
+cd ~/print_bridge
+python print_bridge.py</pre>
+                                <p class="text-muted small">Il bridge stampa <code>Trovata: SI</code> se la stampante è riconosciuta.</p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-stop-circle mr-1"></i>Stop</h6>
+                                <pre class="bg-dark text-light p-3 rounded">pkill -f print_bridge.py</pre>
+
+                            </div>
+                            <!-- ══════════ FINE LINUX ══════════ -->
+
+                            <!-- ══════════ WINDOWS ══════════ -->
+                            <div class="tab-pane fade" id="windows">
+
+                                <div class="alert alert-info py-2 small">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Su Windows non servono regole udev. È necessario avere <strong>Python 3.9+</strong> installato
+                                    (<a href="https://www.python.org/downloads/" target="_blank">python.org</a>)
+                                    con l'opzione <em>"Add Python to PATH"</em> spuntata.
+                                </div>
+
+                                <h6 class="text-primary mt-2"><i class="fas fa-cube mr-1"></i>Passo 1 — Crea la cartella e copia i file</h6>
+                                <p class="text-muted small">Apri il Prompt dei comandi (cmd) o PowerShell:</p>
+                                <pre class="bg-dark text-light p-3 rounded">mkdir %USERPROFILE%\print_bridge
+cd %USERPROFILE%\print_bridge
+rem copia qui print_bridge.py e check_endpoints.py scaricati sopra</pre>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 2 — Crea l'ambiente virtuale e installa le dipendenze</h6>
+                                <pre class="bg-dark text-light p-3 rounded">python -m venv %USERPROFILE%\print_bridge_env
+%USERPROFILE%\print_bridge_env\Scripts\activate
+pip install pyusb libusb-package</pre>
+                                <p class="text-muted small">
+                                    Su Windows è necessario anche <code>libusb-package</code> che include il driver libusb
+                                    senza dover installare nulla a livello di sistema.
+                                </p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 3 — Trova l'endpoint corretto della stampante</h6>
+                                <pre class="bg-dark text-light p-3 rounded">%USERPROFILE%\print_bridge_env\Scripts\activate
+cd %USERPROFILE%\print_bridge
+python check_endpoints.py</pre>
+                                <p class="text-muted small">
+                                    Cerca la riga <strong>BULK OUT</strong> (es. <code>ep=0x02  OUT  BULK</code>).
+                                    Il numero (es. <code>2</code>) è il valore di <code>out_ep</code>.
+                                </p>
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    Se la stampante non viene trovata su Windows potrebbe essere necessario installare
+                                    il driver <strong>WinUSB</strong> tramite <a href="https://zadig.akeo.ie/" target="_blank">Zadig</a>:
+                                    apri Zadig, seleziona la stampante POS, scegli driver <em>WinUSB</em>, clicca <em>Install Driver</em>.
+                                </div>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-cube mr-1"></i>Passo 4 — Crea print_bridge.json</h6>
+                                <p class="text-muted small">Crea il file <code>print_bridge.json</code> nella cartella <code>print_bridge</code>:</p>
+                                <pre class="bg-dark text-light p-3 rounded">{
+  "type": "usb",
+  "vendor": "0x<span class="text-warning">XXXX</span>",
+  "product": "0x<span class="text-warning">YYYY</span>",
+  "out_ep": <span class="text-warning">2</span>,
+  "interface": 0
+}</pre>
+                                <p class="text-muted small">
+                                    Per trovare vendor e product ID su Windows: apri <em>Gestione dispositivi</em>,
+                                    tasto destro sulla stampante → Proprietà → Dettagli → ID hardware.
+                                    Oppure usa <code>check_endpoints.py</code> che li mostra direttamente.
+                                </p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-play-circle mr-1"></i>Avvio</h6>
+                                <pre class="bg-dark text-light p-3 rounded">%USERPROFILE%\print_bridge_env\Scripts\activate
+cd %USERPROFILE%\print_bridge
+python print_bridge.py</pre>
+                                <p class="text-muted small">Lascia aperta questa finestra del terminale finché la cassa è in uso.</p>
+
+                                <h6 class="text-primary mt-4"><i class="fas fa-stop-circle mr-1"></i>Stop</h6>
+                                <pre class="bg-dark text-light p-3 rounded">taskkill /F /IM python.exe /FI "WINDOWTITLE eq print_bridge*"</pre>
+                                <p class="text-muted small">Oppure chiudi semplicemente la finestra del terminale dove gira il bridge.</p>
+
+                            </div>
+                            <!-- ══════════ FINE WINDOWS ══════════ -->
+
+                        </div><!-- tab-content -->
+
+                        <!-- Risoluzione problemi -->
+                        <hr class="mt-4">
+                        <h6><i class="fas fa-tools mr-1"></i>Risoluzione problemi</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered small">
+                                <thead class="thead-light">
+                                    <tr><th>Problema</th><th>Causa</th><th>Soluzione</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Bridge non parte: <code>Address already in use</code></td>
+                                        <td>Bridge già in esecuzione</td>
+                                        <td>Linux: <code>pkill -f print_bridge.py</code><br>Windows: chiudi il terminale precedente</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bridge parte ma dice <code>Trovata: NO</code></td>
+                                        <td>Stampante non collegata o permessi mancanti</td>
+                                        <td>Verifica cavo USB e alimentazione. Su Linux: controlla le regole udev. Su Windows: installa WinUSB con Zadig.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bridge OK ma non stampa nulla</td>
+                                        <td><code>out_ep</code> sbagliato nel JSON</td>
+                                        <td>Esegui <code>check_endpoints.py</code> e aggiorna <code>out_ep</code> nel JSON con il valore BULK OUT corretto</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pagina test dice "Bridge non raggiungibile"</td>
+                                        <td>Bridge non avviato o bloccato dal browser</td>
+                                        <td>Avvia il bridge. Se usi HTTP (non HTTPS) il browser potrebbe bloccare localhost — usa sempre HTTPS</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pagina test OK ma cassa non stampa</td>
+                                        <td>Sessione di cassa aperta prima del bridge</td>
+                                        <td>Avvia sempre il bridge <strong>prima</strong> di aprire la sessione di cassa</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </article>
+
+            </main>
+        </div>
+    </div>
+</section>
+{% endblock %}

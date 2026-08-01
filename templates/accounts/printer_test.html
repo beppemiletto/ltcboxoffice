@@ -10,7 +10,12 @@
                 <article class="card">
                     <header class="card-header d-flex align-items-center justify-content-between">
                         <strong><i class="fas fa-print mr-2"></i>Test Stampante Cassa</strong>
-                        <span id="bridge-badge" class="badge badge-secondary">Verifica in corso...</span>
+                        <div class="d-flex align-items-center" style="gap:10px;">
+                            <span id="bridge-badge" class="badge badge-secondary">Verifica in corso...</span>
+                            <a href="{% url 'printer_guide' %}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-book mr-1"></i>Guida installazione
+                            </a>
+                        </div>
                     </header>
                     <div class="card-body">
 

@@ -528,4 +528,29 @@ def printer_test(request):
     if not (request.user.is_admin or request.user.is_staff):
         messages.error(request, 'Accesso riservato a staff e amministratori.')
         return redirect('dashboard')
-    return render(request, 'accounts/printer_test.html') 
+    return render(request, 'accounts/printer_test.html')
+
+
+@login_required(login_url='login')
+def printer_guide(request):
+    if not (request.user.is_admin or request.user.is_staff):
+        messages.error(request, 'Accesso riservato a staff e amministratori.')
+        return redirect('dashboard')
+    return render(request, 'accounts/printer_guide.html')
+
+
+@login_required(login_url='login')
+def printer_download(request, filename):
+    if not (request.user.is_admin or request.user.is_staff):
+        return HttpResponse(status=403)
+    allowed = {'print_bridge.py', 'print_bridge.json', 'check_endpoints.py'}
+    if filename not in allowed:
+        return HttpResponse(status=404)
+    filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), filename)
+    if not os.path.exists(filepath):
+        return HttpResponse(f'{filename} non trovato sul server.', status=404)
+    with open(filepath, 'rb') as f:
+        content = f.read()
+    response = HttpResponse(content, content_type='application/octet-stream')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response 
