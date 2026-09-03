@@ -31,7 +31,7 @@
     <tr>
         <td>
             <figure class="itemside align-items-center">
-                <div class="aside"><img src="{{item.event.show.shw_image.url}}" class="img-sm"></div>
+                <div class="aside">{% if item.event.show.shw_image %}<img src="{{item.event.show.shw_image.url}}" class="img-sm">{% else %}<div class="img-sm" style="background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🎭</div>{% endif %}</div>
                 <figcaption class="info">
                     <a href="#" class="title text-dark">Posto {{item.seat}}</a>
                         <p class="text-muted small">{{item.event.show.shw_title}} 

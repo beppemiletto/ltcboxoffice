@@ -79,7 +79,9 @@
         <div class="col-md-5">
             <figure class="card card-product-grid">
                 <div class="img-wrap">
-                    <a href="{{show.show_url}}" class="img-wrap"> <img src="{{show.image.url}}"> </a>
+                    <a href="{{show.show_url}}" class="img-wrap">
+                        {% if show.image %}<img src="{{show.image.url}}">{% else %}<div style="width:100%;height:180px;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:3rem;">🎭</div>{% endif %}
+                    </a>
                 </div> <!-- img-wrap.// -->
                 <figcaption class="info-wrap">
                     <div class="fix-height">
