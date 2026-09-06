@@ -2076,14 +2076,10 @@ def send_updatemail(request, number):
             'ingresso_type': INGRESSI_NAMES[price_code] if price_code < len(INGRESSI_NAMES) else f"Codice {price_code}"
         }
 
-    # Genera QR code se non già presente
-    if not orderevent.barcode_path:
-        barcode_printer = OrderBarCodePrinter(save_path='images', numero=order_number_key)
-        barcode_image_path = barcode_printer.make_barcode()
-        orderevent.barcode_path = barcode_image_path
-        orderevent.save()
-
-    barcode_filename = orderevent.barcode_path.split('/')[-1] if orderevent.barcode_path else ''
+    # Genera QR code (path deterministico, non richiede campo sul modello)
+    barcode_printer = OrderBarCodePrinter(save_path='images', numero=order_number_key)
+    barcode_image_path = barcode_printer.make_barcode()
+    barcode_filename = barcode_image_path.split('/')[-1] if barcode_image_path else ''
 
     email_data = {
         order_number_key: {
@@ -2092,7 +2088,7 @@ def send_updatemail(request, number):
             'venue':        event.venue.name if event.venue else 'Teatro Comunale di Cambiano',
             'seats':        booked_seats,
             'barcode':      barcode_filename,
-            'barcode_path': orderevent.barcode_path,
+            'barcode_path': barcode_image_path,
         }
     }
 
