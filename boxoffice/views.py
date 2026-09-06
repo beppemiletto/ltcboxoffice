@@ -2044,10 +2044,11 @@ def hall_detail(request, event_slug=None, number=None):
         return render(request, 'boxoffice/hall_detail.html', context)
     
 def send_updatemail(request, number):
-    """Invia email di aggiornamento prenotazione.
+    """Invia email di conferma nuova prenotazione botteghino.
     Gestisce sia OrderEvent (prenotazioni web) che BoxOfficeBookingEvent (botteghino).
     """
     from subscriptions.utils import is_subscription_price_code
+    from booking.barcode_printer import OrderBarCodePrinter
 
     # Determina il tipo di prenotazione dal numero
     try:
@@ -2075,17 +2076,28 @@ def send_updatemail(request, number):
             'ingresso_type': INGRESSI_NAMES[price_code] if price_code < len(INGRESSI_NAMES) else f"Codice {price_code}"
         }
 
+    # Genera QR code se non già presente
+    if not orderevent.barcode_path:
+        barcode_printer = OrderBarCodePrinter(save_path='images', numero=order_number_key)
+        barcode_image_path = barcode_printer.make_barcode()
+        orderevent.barcode_path = barcode_image_path
+        orderevent.save()
+
+    barcode_filename = orderevent.barcode_path.split('/')[-1] if orderevent.barcode_path else ''
+
     email_data = {
         order_number_key: {
-            'show':     event.show.shw_title,
-            'datetime': event.date_time,
-            'venue':    event.venue.name if event.venue else 'Teatro Comunale di Cambiano',
-            'seats':    booked_seats,
+            'show':         event.show.shw_title,
+            'datetime':     event.date_time,
+            'venue':        event.venue.name if event.venue else 'Teatro Comunale di Cambiano',
+            'seats':        booked_seats,
+            'barcode':      barcode_filename,
+            'barcode_path': orderevent.barcode_path,
         }
     }
 
     current_site = get_current_site(request)
-    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è stata aggiornata!'
+    mail_subject = f'LTC BoxOffice. La tua prenotazione {number} è confermata!'
     email_context = {
         'count':      len(email_data),
         'customer':   customer,
@@ -2098,11 +2110,20 @@ def send_updatemail(request, number):
     img_dir = 'static/images'
     image = 'logo.png'
     file_path = os.path.join(img_dir, image)
-    with open(file_path,'rb') as fip:
-        img = MIMEImage(fip.read(),_subtype='png')
+    with open(file_path, 'rb') as fip:
+        img = MIMEImage(fip.read(), _subtype='png')
         img.add_header('Content-ID', '<{name}>'.format(name=image))
-        # img.add_header('Content-Disposition', 'inline', filename=image)
     send_email.attach(img)
+
+    # Allega QR code
+    if barcode_filename and os.path.exists(orderevent.barcode_path):
+        try:
+            with open(orderevent.barcode_path, 'rb') as fip:
+                qrc = MIMEImage(fip.read(), _subtype='png')
+                qrc.add_header('Content-ID', f'<{barcode_filename}>')
+            send_email.attach(qrc)
+        except Exception as e:
+            print(f"Warning: impossibile allegare QR code {barcode_filename}: {e}")
 
     send_email.send()
 

@@ -1,10 +1,13 @@
 {% autoescape off %}
 <img src="cid:logo.png" alt="Logo">
 <p>Salve {{customer.first_name}},</p>
-<p>Il tuo ordine e' stato registrato.</p>
+<p>La tua prenotazione e' stata registrata e confermata.</p>
 <p>BoxOffice ha prenotato posti per te ad un evento.</p>
-{%for number, orderevent in  email_data.items %}
+{%for number, orderevent in email_data.items %}
 <p>Prenotazione Evento Codice {{number}}:</p>
+{% if orderevent.barcode %}<p>QR Code per questo evento:</p>
+<img src="cid:{{orderevent.barcode}}" alt="QR Code {{number}}">
+<p>Mostra questo QR Code in cassa per un accesso rapido. Puoi esibirlo sullo schermo del tuo smartphone o stampato su carta.</p>{% endif %}
 <p>I tuoi posti per lo spettacolo: {{ orderevent.show }}</p>
 <p>Replica del {{ orderevent.datetime|date:'l, d-m-Y'}} alle {{ orderevent.datetime|time:'H:i' }}</p>
 <p><strong>Locale: {{ orderevent.venue }}</strong></p>
