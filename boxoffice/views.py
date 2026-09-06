@@ -2112,9 +2112,9 @@ def send_updatemail(request, number):
     send_email.attach(img)
 
     # Allega QR code
-    if barcode_filename and os.path.exists(orderevent.barcode_path):
+    if barcode_filename and barcode_image_path and os.path.exists(barcode_image_path):
         try:
-            with open(orderevent.barcode_path, 'rb') as fip:
+            with open(barcode_image_path, 'rb') as fip:
                 qrc = MIMEImage(fip.read(), _subtype='png')
                 qrc.add_header('Content-ID', f'<{barcode_filename}>')
             send_email.attach(qrc)
