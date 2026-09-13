@@ -10,4 +10,5 @@ urlpatterns = [
     path('show/<str:showcode>/', views.show_detail_showcode, name='show_detail_showcode'),
     path('section/<slug:section_slug>/<slug:show_slug>/<slug:event_slug>/', views.select_seats, name='select_seats'),
     path('search/', views.search, name='search'),
-] 
+    path('prenota/<slug:show_slug>/', views.show_by_slug, name='show_by_slug'),
+]

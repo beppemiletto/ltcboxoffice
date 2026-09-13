@@ -186,3 +186,11 @@ def show_detail_showcode(request, showcode=None):
     }
     return render(request, 'store/show_detail.html', context)
 
+
+def show_by_slug(request, show_slug):
+    """Shortlink pubblico: /store/prenota/<show_slug>/
+    Usato dal sito principale per link diretti a uno spettacolo senza section slug.
+    """
+    show = get_object_or_404(Show, slug=show_slug, is_active=True)
+    return redirect('show_detail', section_slug=show.section.slug, show_slug=show.slug)
+
