@@ -49,6 +49,7 @@ def store(request, section_slug=None):
                 'show_url': show_url}
                 )
 
+    billboard_list.sort(key=lambda x: x['from_date'])
     show_count = len(billboard_list)
 
     paginator = Paginator(billboard_list, 4)
@@ -130,6 +131,7 @@ def search(request):
                         'show_url': show_url}
                         )
 
+            billboard_list.sort(key=lambda x: x['from_date'])
             show_count = len(billboard_list)
 
             paginator = Paginator(billboard_list, 4)
@@ -137,7 +139,7 @@ def search(request):
             paged_shows = paginator.get_page(page)
 
             context = {
-                'billboard': billboard_list,
+                'billboard': paged_shows,
                 'show_count': show_count,
                 'keyword': keyword,
             }
