@@ -17,6 +17,9 @@ Pillow==10.4.0
 qrcode==7.4.2
 pypng==0.20220715.0
 
+# ESC/POS printer (generazione byte per print bridge)
+python-escpos==3.1
+
 # Excel and data handling
 openpyxl==3.1.2
 et-xmlfile==1.1.0
