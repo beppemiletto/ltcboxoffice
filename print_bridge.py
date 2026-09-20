@@ -172,6 +172,7 @@ def send_to_printer(raw_bytes: bytes) -> None:
             dev.write(out_ep, raw_bytes)
         finally:
             usb.util.release_interface(dev, interface)
+            usb.util.dispose_resources(dev)
 
 
 class BridgeHandler(BaseHTTPRequestHandler):
