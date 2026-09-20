@@ -230,62 +230,79 @@
             <a href="{%url 'event' event.id%}" class="btn btn-outline-primary">Torna alla pagina principale</a>
         </div>
     {%else%}
-    <div class="row">
-        <div class="card">
-            <div class="card-title">
-                Lista dei biglietti stampati.
+
+    <!-- Bottone principale in cima — sempre visibile, focus automatico per Enter -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a id="btn-cassa" href="{%url 'close_transaction' event.id%}"
+               class="btn btn-success btn-lg btn-block"
+               style="font-size:1.4rem; padding:1rem;">
+                ✅ Torna alla Cassa
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-title pl-3 pt-2">Lista biglietti stampati</div>
+                <table class="table table-borderless table-shopping-cart">
+                <thead class="text-muted">
+                <tr class="small text-uppercase">
+                  <th scope="col">Posto</th>
+                  <th scope="col" width="120">Prezzo</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {%for item in tickets_list %}
+                <tr>
+                    <td>
+                        <figure class="itemside align-items-center">
+                            <div class="aside"><img src="{%static 'images/poltrona_blu.png'%}" class="img-sm"></div>
+                            <figcaption class="info">
+                                <a href="#" class="title text-dark">Posto {{item.seat}}</a>
+                            </figcaption>
+                        </figure>
+                    </td>
+                    <td>
+                        <div class="price-wrap">
+                            {{item.ingresso}}<br>
+                            <var class="price">{{item.cost}}</var>
+                        </div>
+                    </td>
+                </tr>
+                {%endfor%}
+                </tbody>
+                </table>
             </div>
         </div>
     </div>
-    <div class="row">
-        <aside class="col-lg-9">
-    <div class="card">
-    <table class="table table-borderless table-shopping-cart">
-    <thead class="text-muted">
-    <tr class="small text-uppercase">
-      <th scope="col">Posto</th>
-      <th scope="col" width="120">Prezzo</th>
-    </tr>
-    </thead>
-    <tbody>
-        {%for item in tickets_list %}
-    <tr>
-        <td>
-            <figure class="itemside align-items-center">
-                <div class="aside"><img src="{%static 'images/poltrona_blu.png'%}" class="img-sm"></div>
-                <figcaption class="info">
-                    <a href="#" class="title text-dark">Posto {{item.seat}}</a>
-                </figcaption>
-            </figure>
-        </td>
 
-        <td> 
-            <div class="price-wrap"> 
-                {{item.ingresso}}
-                <br>
-                <var class="price">{{item.cost}}</var> 
-            </div> <!-- price-wrap .// -->
-        </td>
-    </tr>
-    {%endfor%}
-    </tbody>
-    </table>
-    </div> <!-- card.// -->
-    
-        </aside> <!-- col.// -->
-        <aside class="col-lg-3">
-    
-            <div class="card">
-            <div class="card-body">
-                <a href="{%url 'close_transaction' event.id%}" class="btn btn-primary btn-block mb-2"> Biglietti Stampati </a>
-                <a href="{% url 'barcode_read' event.id %}" class="btn btn-success btn-block">📷 Prossimo cliente (scanner)</a>
-            </div> <!-- card-body.// -->
-            </div> <!-- card.// -->
-    
-    </aside> <!-- col.// -->
-    
-    
-    </div> <!-- row.// -->
+    <!-- Barra fissa in fondo — visibile anche su liste lunghe -->
+    <div style="position:fixed; bottom:0; left:0; right:0; z-index:1000;
+                background:#fff; border-top:2px solid #28a745; padding:10px 20px;
+                display:flex; gap:10px;">
+        <a href="{%url 'close_transaction' event.id%}"
+           class="btn btn-success btn-lg flex-fill"
+           style="font-size:1.2rem;">
+            ✅ Torna alla Cassa &nbsp;<kbd style="font-size:0.8rem; opacity:0.8;">↵ Enter</kbd>
+        </a>
+        <a href="{% url 'barcode_read' event.id %}" class="btn btn-outline-secondary btn-lg">
+            📷 Scanner
+        </a>
+    </div>
+    <!-- Spazio per non nascondere contenuto sotto la barra fissa -->
+    <div style="height:80px;"></div>
+
+    <script>
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.target.matches('input,textarea,select,button,a')) {
+            window.location.href = document.getElementById('btn-cassa').href;
+        }
+    });
+    document.getElementById('btn-cassa').focus();
+    </script>
+
     <!-- ============================ COMPONENT 1 END .// ================================= -->
     {%endif%}
     </div> <!-- container .//  -->
