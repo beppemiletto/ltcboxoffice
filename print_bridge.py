@@ -27,6 +27,7 @@ import os
 import signal
 import socket
 import sys
+import threading
 
 # ── Configurazione ─────────────────────────────────────────────────────────────
 PORT = 9100
@@ -157,9 +158,15 @@ def send_to_printer(raw_bytes: bytes) -> None:
         dev = usb.core.find(idVendor=vid, idProduct=pid, backend=_usb_backend())
         if dev is None:
             raise RuntimeError(f"Stampante USB {vid:04x}:{pid:04x} non trovata")
-        if dev.is_kernel_driver_active(interface):
-            dev.detach_kernel_driver(interface)
-        dev.set_configuration()
+        try:
+            if dev.is_kernel_driver_active(interface):
+                dev.detach_kernel_driver(interface)
+        except Exception:
+            pass  # non disponibile su Windows (libusb restituisce LIBUSB_ERROR_NOT_SUPPORTED)
+        try:
+            dev.set_configuration()
+        except Exception:
+            pass  # già configurata
         usb.util.claim_interface(dev, interface)
         try:
             dev.write(out_ep, raw_bytes)
@@ -268,15 +275,16 @@ def main():
     else:
         print(f"  Config: predefinita USB (crea {CONFIG_FILE} per personalizzare)")
 
-    print("  Premi Ctrl+C per fermare.\n")
+    print("  Per fermare: CTRL+C\n")
 
-    def _shutdown(sig, frame):
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+
+    try:
+        t.join()
+    except KeyboardInterrupt:
         print("\nBridge fermato.")
         server.shutdown()
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, _shutdown)
-    server.serve_forever()
 
 
 if __name__ == "__main__":
