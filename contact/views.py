@@ -1,45 +1,35 @@
+import time
 import requests
+from datetime import timedelta
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.core.mail import send_mail
+from django.utils import timezone
 from .forms import ContactForm
+from .models import ContactMessage
+
+MIN_SUBMIT_SECONDS = 3
+MAX_MESSAGES_PER_WINDOW = 3
+RATE_LIMIT_WINDOW_MINUTES = 10
+
 
 def contact(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            # Verifica reCAPTCHA solo se configurato
-            recaptcha_token = request.POST.get('recaptcha_token')
-            recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+            ip_address = get_client_ip(request)
+            is_bot = _looks_like_bot(request, form, ip_address)
 
-            if recaptcha_secret and recaptcha_token:
-                try:
-                    recaptcha_data = {
-                        'secret': recaptcha_secret,
-                        'response': recaptcha_token
-                    }
-                    recaptcha_response = requests.post(
-                        'https://www.google.com/recaptcha/api/siteverify',
-                        data=recaptcha_data,
-                        timeout=5
-                    )
-                    result = recaptcha_response.json()
-
-                    if not result.get('success', False) or result.get('score', 0) < 0.5:
-                        messages.error(request, 'Verifica anti-robot fallita. Per favore riprova.')
-                        context = {
-                            'form': form,
-                            'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
-                        }
-                        return render(request, 'contact/contact.html', context)
-                except Exception as e:
-                    print(f"reCAPTCHA verification error: {e}")
-                    # Continua comunque se reCAPTCHA fallisce per motivi tecnici
+            if is_bot:
+                # Risposta identica a quella di successo: non diamo ai bot
+                # nessun segnale su cosa li ha fatti rilevare.
+                messages.success(request, 'Il tuo messaggio è stato inviato con successo! Ti risponderemo al più presto.')
+                return redirect('home')
 
             # Salva il messaggio
             contact_message = form.save(commit=False)
-            contact_message.ip_address = get_client_ip(request)
+            contact_message.ip_address = ip_address
             contact_message.save()
 
             # Invia email
@@ -78,13 +68,57 @@ Data e ora: {contact_message.created_at.strftime('%d/%m/%Y alle %H:%M')}
         else:
             messages.error(request, 'Per favore correggi gli errori nel form.')
     else:
-        form = ContactForm()
+        form = ContactForm(initial={'form_rendered_at': time.time()})
 
     context = {
         'form': form,
         'recaptcha_site_key': getattr(settings, 'RECAPTCHA_SITE_KEY', ''),
     }
     return render(request, 'contact/contact.html', context)
+
+
+def _looks_like_bot(request, form, ip_address):
+    """Applica le euristiche anti-bot. True se il submit va scartato in silenzio."""
+
+    # Honeypot: nessun utente reale vede/compila questo campo
+    if form.cleaned_data.get('website'):
+        return True
+
+    # Submit troppo rapido rispetto al rendering del form
+    rendered_at = form.cleaned_data.get('form_rendered_at')
+    if rendered_at and (time.time() - rendered_at) < MIN_SUBMIT_SECONDS:
+        return True
+
+    # Rate limiting per IP
+    if ip_address:
+        recent_count = ContactMessage.objects.filter(
+            ip_address=ip_address,
+            created_at__gte=timezone.now() - timedelta(minutes=RATE_LIMIT_WINDOW_MINUTES),
+        ).count()
+        if recent_count >= MAX_MESSAGES_PER_WINDOW:
+            return True
+
+    # reCAPTCHA: se configurata, deve essere superata (fail-closed)
+    recaptcha_secret = getattr(settings, 'RECAPTCHA_SECRET_KEY', None)
+    if recaptcha_secret:
+        recaptcha_token = request.POST.get('recaptcha_token')
+        if not recaptcha_token:
+            return True
+        try:
+            recaptcha_response = requests.post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                data={'secret': recaptcha_secret, 'response': recaptcha_token},
+                timeout=5,
+            )
+            result = recaptcha_response.json()
+            if not result.get('success', False) or result.get('score', 0) < 0.5:
+                return True
+        except Exception as e:
+            print(f"reCAPTCHA verification error: {e}")
+            return True
+
+    return False
+
 
 def get_client_ip(request):
     """Ottiene l'indirizzo IP del client"""

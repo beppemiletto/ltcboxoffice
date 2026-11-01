@@ -52,6 +52,12 @@
                             </div>
 
                             <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
+                            {{ form.form_rendered_at }}
+
+                            <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+                                <label for="{{ form.website.id_for_label }}">Lascia vuoto questo campo</label>
+                                {{ form.website }}
+                            </div>
 
                             {% if recaptcha_site_key %}
                             <div class="form-group">

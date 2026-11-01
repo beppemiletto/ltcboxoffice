@@ -4,6 +4,15 @@ from .models import ContactMessage
 class ContactForm(forms.ModelForm):
     recaptcha_token = forms.CharField(widget=forms.HiddenInput(), required=False)
 
+    # Honeypot: campo invisibile agli utenti reali, i bot tendono a compilarlo
+    website = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        'autocomplete': 'off',
+        'tabindex': '-1',
+    }))
+
+    # Timestamp di rendering del form, per scartare submit troppo rapidi (bot)
+    form_rendered_at = forms.FloatField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = ContactMessage
         fields = ['name', 'email', 'subject', 'message']
